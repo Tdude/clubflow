@@ -200,6 +200,11 @@ final class ClubFlow_Admin {
 		$max_spots = get_post_meta($post->ID, '_clubflow_max_spots', true);
 		$price = get_post_meta($post->ID, '_clubflow_price', true);
 		$booking_enabled = get_post_meta($post->ID, '_clubflow_booking_enabled', true);
+		
+		// Default booking enabled for new events
+		if ($post->post_status === 'auto-draft' && $booking_enabled === '') {
+			$booking_enabled = '1';
+		}
 
 		echo '<hr style="margin: 20px 0;" />';
 		echo '<h4 style="margin-bottom: 10px;">' . esc_html__('Booking Settings', 'clubflow') . '</h4>';

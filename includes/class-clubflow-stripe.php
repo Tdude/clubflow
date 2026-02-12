@@ -29,9 +29,39 @@ class ClubFlow_Stripe {
         
         add_action( 'wp_ajax_clubflow_check_stripe_payment', array( $this, 'ajax_check_payment_status' ) );
         add_action( 'wp_ajax_nopriv_clubflow_check_stripe_payment', array( $this, 'ajax_check_payment_status' ) );
+        
+        // Test connection (admin only)
+        add_action( 'wp_ajax_clubflow_test_stripe', array( $this, 'ajax_test_connection' ) );
 
         // REST API webhook endpoint
         add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
+    }
+
+    /**
+     * AJAX: Test Stripe connection
+     */
+    public function ajax_test_connection(): void {
+        check_ajax_referer( 'clubflow_test_stripe', 'nonce' );
+        
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized' );
+        }
+
+        if ( ! self::is_configured() ) {
+            wp_send_json_error( array( 'message' => __( 'Stripe keys not configured', 'clubflow' ) ) );
+        }
+
+        // Test by fetching account balance
+        $result = self::api_request( '/balance', array(), 'GET' );
+
+        if ( is_wp_error( $result ) ) {
+            wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+        }
+
+        wp_send_json_success( array( 
+            'message' => __( 'Connection successful!', 'clubflow' ),
+            'mode' => isset( $result['livemode'] ) && $result['livemode'] ? 'live' : 'test'
+        ) );
     }
 
     /**

@@ -355,6 +355,46 @@ final class ClubFlow_Payment {
 							</p>
 						</td>
 					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e('Test Connection', 'clubflow'); ?></th>
+						<td>
+							<button type="button" id="clubflow-test-stripe" class="button button-secondary">
+								<?php esc_html_e('Test Stripe Connection', 'clubflow'); ?>
+							</button>
+							<span id="clubflow-stripe-result" style="margin-left: 10px;"></span>
+							<script>
+							document.getElementById('clubflow-test-stripe').addEventListener('click', function() {
+								var btn = this;
+								var result = document.getElementById('clubflow-stripe-result');
+								btn.disabled = true;
+								result.innerHTML = '<?php esc_html_e('Testing...', 'clubflow'); ?>';
+								result.style.color = '#666';
+								
+								fetch(ajaxurl, {
+									method: 'POST',
+									headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+									body: 'action=clubflow_test_stripe&nonce=<?php echo wp_create_nonce('clubflow_test_stripe'); ?>'
+								})
+								.then(r => r.json())
+								.then(data => {
+									btn.disabled = false;
+									if (data.success) {
+										result.innerHTML = '✅ ' + data.data.message + ' (' + data.data.mode + ' mode)';
+										result.style.color = '#2e7d32';
+									} else {
+										result.innerHTML = '❌ ' + (data.data?.message || 'Error');
+										result.style.color = '#c62828';
+									}
+								})
+								.catch(e => {
+									btn.disabled = false;
+									result.innerHTML = '❌ Connection error';
+									result.style.color = '#c62828';
+								});
+							});
+							</script>
+						</td>
+					</tr>
 				</table>
 				
 				<p class="description" style="background: #f3e5f5; padding: 12px; border-left: 4px solid #7b1fa2; margin: 16px 0;">
