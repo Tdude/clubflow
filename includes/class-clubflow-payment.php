@@ -115,39 +115,53 @@ final class ClubFlow_Payment {
 	}
 
 	/**
-	 * Sanitize settings
+	 * Sanitize settings - preserves existing values when not in form submission
 	 */
 	public function sanitize_settings(array $input): array {
+		// Get existing settings to preserve API keys not in this submission
+		$existing = get_option(self::OPTION_KEY, []);
 		$sanitized = [];
 		
+		// General settings
 		$sanitized['enabled'] = !empty($input['enabled']);
-		$sanitized['payment_method'] = sanitize_text_field($input['payment_method'] ?? 'klarna');
+		$sanitized['payment_method'] = sanitize_text_field($input['payment_method'] ?? $existing['payment_method'] ?? 'stripe');
 		$sanitized['require_payment'] = !empty($input['require_payment']);
-		$sanitized['currency'] = sanitize_text_field($input['currency'] ?? 'SEK');
+		$sanitized['currency'] = sanitize_text_field($input['currency'] ?? $existing['currency'] ?? 'SEK');
 		
-		// Klarna settings
-		$sanitized['klarna_test_mode'] = !empty($input['klarna_test_mode']);
-		$sanitized['klarna_merchant_id'] = sanitize_text_field($input['klarna_merchant_id'] ?? '');
-		$sanitized['klarna_api_secret'] = sanitize_text_field($input['klarna_api_secret'] ?? '');
+		// Klarna settings - preserve existing if not in input
+		$sanitized['klarna_test_mode'] = array_key_exists('klarna_test_mode', $input) ? !empty($input['klarna_test_mode']) : ($existing['klarna_test_mode'] ?? false);
+		$sanitized['klarna_merchant_id'] = $this->preserve_or_sanitize($input, $existing, 'klarna_merchant_id');
+		$sanitized['klarna_api_secret'] = $this->preserve_or_sanitize($input, $existing, 'klarna_api_secret');
 		
-		// Swish settings
-		$sanitized['swish_number'] = sanitize_text_field($input['swish_number'] ?? '');
-		$sanitized['swish_payee_alias'] = sanitize_text_field($input['swish_payee_alias'] ?? '');
-		$sanitized['swish_cert_path'] = sanitize_text_field($input['swish_cert_path'] ?? '');
-		$sanitized['swish_cert_pass'] = sanitize_text_field($input['swish_cert_pass'] ?? '');
-		$sanitized['swish_test_mode'] = !empty($input['swish_test_mode']);
+		// Swish settings - preserve existing if not in input
+		$sanitized['swish_number'] = $this->preserve_or_sanitize($input, $existing, 'swish_number');
+		$sanitized['swish_payee_alias'] = $this->preserve_or_sanitize($input, $existing, 'swish_payee_alias');
+		$sanitized['swish_cert_path'] = $this->preserve_or_sanitize($input, $existing, 'swish_cert_path');
+		$sanitized['swish_cert_pass'] = $this->preserve_or_sanitize($input, $existing, 'swish_cert_pass');
+		$sanitized['swish_test_mode'] = array_key_exists('swish_test_mode', $input) ? !empty($input['swish_test_mode']) : ($existing['swish_test_mode'] ?? false);
 		
-		// Stripe settings
-		$sanitized['stripe_publishable'] = sanitize_text_field($input['stripe_publishable'] ?? '');
-		$sanitized['stripe_secret'] = sanitize_text_field($input['stripe_secret'] ?? '');
-		$sanitized['stripe_webhook_secret'] = sanitize_text_field($input['stripe_webhook_secret'] ?? '');
+		// Stripe settings - preserve existing if not in input
+		$sanitized['stripe_publishable'] = $this->preserve_or_sanitize($input, $existing, 'stripe_publishable');
+		$sanitized['stripe_secret'] = $this->preserve_or_sanitize($input, $existing, 'stripe_secret');
+		$sanitized['stripe_webhook_secret'] = $this->preserve_or_sanitize($input, $existing, 'stripe_webhook_secret');
 		
-		// Mailchimp settings
-		$sanitized['mailchimp_api_key'] = sanitize_text_field($input['mailchimp_api_key'] ?? '');
-		$sanitized['mailchimp_list_id'] = sanitize_text_field($input['mailchimp_list_id'] ?? '');
-		$sanitized['mailchimp_enabled'] = !empty($input['mailchimp_enabled']);
+		// Mailchimp settings - preserve existing if not in input
+		$sanitized['mailchimp_api_key'] = $this->preserve_or_sanitize($input, $existing, 'mailchimp_api_key');
+		$sanitized['mailchimp_list_id'] = $this->preserve_or_sanitize($input, $existing, 'mailchimp_list_id');
+		$sanitized['mailchimp_enabled'] = array_key_exists('mailchimp_enabled', $input) ? !empty($input['mailchimp_enabled']) : ($existing['mailchimp_enabled'] ?? false);
 
 		return $sanitized;
+	}
+
+	/**
+	 * Preserve existing value if key not in input, otherwise sanitize the input
+	 * This prevents API keys from being wiped when submitting partial forms
+	 */
+	private function preserve_or_sanitize(array $input, array $existing, string $key): string {
+		if (array_key_exists($key, $input)) {
+			return sanitize_text_field($input[$key]);
+		}
+		return $existing[$key] ?? '';
 	}
 
 	/**
