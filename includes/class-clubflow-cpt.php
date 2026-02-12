@@ -22,9 +22,11 @@ final class ClubFlow_Cpt {
 		$new_columns = [];
 		foreach ($columns as $key => $value) {
 			if ($key === 'date') {
-				// Insert event date before WP date column
+				// Insert our columns before WP date column
 				$new_columns['event_date'] = __('Event Date', 'clubflow');
 				$new_columns['event_time'] = __('Time', 'clubflow');
+				$new_columns['event_category'] = __('Category', 'clubflow');
+				$new_columns['event_price'] = __('Price', 'clubflow');
 			}
 			$new_columns[$key] = $value;
 		}
@@ -66,6 +68,29 @@ final class ClubFlow_Cpt {
 					echo '<span style="color: #666;">' . esc_html__('All day', 'clubflow') . '</span>';
 				} elseif ($start) {
 					echo esc_html(date_i18n('H:i', strtotime($start)));
+				} else {
+					echo '<span style="color: #999;">—</span>';
+				}
+				break;
+				
+			case 'event_category':
+				$terms = get_the_terms($post_id, ClubFlow::TAX_CATEGORY);
+				if ($terms && !is_wp_error($terms)) {
+					$cats = [];
+					foreach ($terms as $term) {
+						$color = get_term_meta($term->term_id, 'clubflow_category_color', true) ?: '#3788d8';
+						$cats[] = '<span style="display:inline-block; padding:2px 8px; background:' . esc_attr($color) . '22; border-left:3px solid ' . esc_attr($color) . '; border-radius:2px;">' . esc_html($term->name) . '</span>';
+					}
+					echo implode(' ', $cats);
+				} else {
+					echo '<span style="color: #999;">—</span>';
+				}
+				break;
+				
+			case 'event_price':
+				$price = get_post_meta($post_id, '_clubflow_price', true);
+				if ($price) {
+					echo '<strong>' . esc_html($price) . '</strong>';
 				} else {
 					echo '<span style="color: #999;">—</span>';
 				}
