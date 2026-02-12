@@ -217,6 +217,10 @@ final class ClubFlow_Booking {
 
 		// Get payment settings and create payment request
 		$payment_info = null;
+		
+		// Debug: log payment settings
+		error_log('ClubFlow: payment_required=' . ($payment_required ? 'yes' : 'no') . ', method=' . ($payment_settings['payment_method'] ?? 'none') . ', amount=' . $amount);
+		
 		if ($payment_required) {
 				$payment_method = $payment_settings['payment_method'] ?? 'manual';
 				
@@ -236,6 +240,9 @@ final class ClubFlow_Booking {
 						$event_title,
 						$return_url
 					);
+					
+					// Debug log
+					error_log('ClubFlow Stripe result: ' . print_r($stripe_result, true));
 					
 					if (!empty($stripe_result['success'])) {
 						$payment_info = [
