@@ -87,8 +87,16 @@ final class ClubFlow_Recurrence {
 	 * Generate recurring events from a parent event
 	 */
 	public function generate_recurring_events(int $parent_id, bool $delete_existing = false): array {
+		// Prevent double-execution
+		static $generating = [];
+		if (isset($generating[$parent_id])) {
+			return ['success' => false, 'error' => 'Already generating'];
+		}
+		$generating[$parent_id] = true;
+
 		$parent = get_post($parent_id);
 		if (!$parent || $parent->post_type !== ClubFlow::POST_TYPE) {
+			unset($generating[$parent_id]);
 			return ['success' => false, 'error' => 'Invalid parent event'];
 		}
 
@@ -97,9 +105,21 @@ final class ClubFlow_Recurrence {
 		$days = get_post_meta($parent_id, '_clubflow_recurrence_days', true) ?: [];
 		$until = get_post_meta($parent_id, '_clubflow_recurrence_until', true);
 
+		// Safety: weekly requires at least one day selected
+		if ($type === 'weekly' && empty($days)) {
+			unset($generating[$parent_id]);
+			return ['success' => false, 'error' => 'No days selected for weekly recurrence'];
+		}
+
 		if (empty($until)) {
 			// Default: 3 months ahead
 			$until = date('Y-m-d', strtotime('+3 months'));
+		}
+
+		// Safety: max 6 months ahead
+		$max_until = date('Y-m-d', strtotime('+6 months'));
+		if ($until > $max_until) {
+			$until = $max_until;
 		}
 
 		// Get parent event time
@@ -121,6 +141,14 @@ final class ClubFlow_Recurrence {
 
 		// Get existing child dates to avoid duplicates
 		$existing_dates = $this->get_existing_child_dates($parent_id);
+		
+		// Safety: check total children - hard cap at 200
+		$existing_count = count($existing_dates);
+		if ($existing_count >= 200) {
+			unset($generating[$parent_id]);
+			return ['success' => false, 'error' => 'Maximum recurring events reached (200)'];
+		}
+		$max_new = 200 - $existing_count;
 
 		// Generate dates
 		$dates = $this->generate_dates($type, $days, $parent_start, $until);
@@ -129,6 +157,11 @@ final class ClubFlow_Recurrence {
 		$skipped = 0;
 
 		foreach ($dates as $date) {
+			// Safety: respect max new events
+			if ($created >= $max_new) {
+				break;
+			}
+			
 			$date_key = $date->format('Y-m-d');
 			
 			// Skip if already exists
@@ -153,6 +186,8 @@ final class ClubFlow_Recurrence {
 			}
 		}
 
+		unset($generating[$parent_id]);
+		
 		return [
 			'success' => true,
 			'created' => $created,
@@ -168,8 +203,8 @@ final class ClubFlow_Recurrence {
 		$current = new DateTime($start_date);
 		$end = new DateTime($until);
 
-		// Don't generate more than 365 events
-		$max_events = 365;
+		// Safety limits
+		$max_events = 100; // Hard cap at 100 events per generation
 		$count = 0;
 
 		while ($current <= $end && $count < $max_events) {
