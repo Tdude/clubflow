@@ -47,9 +47,19 @@ final class ClubFlow_Recurrence {
 	}
 
 	/**
+	 * Flag to completely block save handler during generation
+	 */
+	private static bool $generating_in_progress = false;
+
+	/**
 	 * Handle save of recurring event
 	 */
 	public function handle_recurrence_save(int $post_id, \WP_Post $post): void {
+		// HARD BLOCK: If we're generating children, do nothing
+		if (self::$generating_in_progress) {
+			return;
+		}
+		
 		// ONLY proceed if this is a legitimate form submission with our nonce
 		if (!isset($_POST['clubflow_event_details_nonce'])) {
 			return;
@@ -125,9 +135,13 @@ final class ClubFlow_Recurrence {
 	 * Generate recurring events from a parent event
 	 */
 	public function generate_recurring_events(int $parent_id, bool $delete_existing = false): array {
+		// HARD BLOCK all save handlers while generating
+		self::$generating_in_progress = true;
+		
 		// Prevent double-execution
 		static $generating = [];
 		if (isset($generating[$parent_id])) {
+			self::$generating_in_progress = false;
 			return ['success' => false, 'error' => 'Already generating'];
 		}
 		$generating[$parent_id] = true;
@@ -135,6 +149,7 @@ final class ClubFlow_Recurrence {
 		$parent = get_post($parent_id);
 		if (!$parent || $parent->post_type !== ClubFlow::POST_TYPE) {
 			unset($generating[$parent_id]);
+			self::$generating_in_progress = false;
 			return ['success' => false, 'error' => 'Invalid parent event'];
 		}
 
@@ -146,6 +161,7 @@ final class ClubFlow_Recurrence {
 		// Safety: weekly requires at least one day selected
 		if ($type === 'weekly' && empty($days)) {
 			unset($generating[$parent_id]);
+			self::$generating_in_progress = false;
 			return ['success' => false, 'error' => 'No days selected for weekly recurrence'];
 		}
 
@@ -165,6 +181,7 @@ final class ClubFlow_Recurrence {
 		$parent_end = get_post_meta($parent_id, '_clubflow_end', true);
 		
 		if (empty($parent_start)) {
+			self::$generating_in_progress = false;
 			return ['success' => false, 'error' => 'Parent event has no start date'];
 		}
 
@@ -184,6 +201,7 @@ final class ClubFlow_Recurrence {
 		$existing_count = count($existing_dates);
 		if ($existing_count >= 200) {
 			unset($generating[$parent_id]);
+			self::$generating_in_progress = false;
 			return ['success' => false, 'error' => 'Maximum recurring events reached (200)'];
 		}
 		$max_new = 200 - $existing_count;
@@ -225,6 +243,7 @@ final class ClubFlow_Recurrence {
 		}
 
 		unset($generating[$parent_id]);
+		self::$generating_in_progress = false;
 		
 		return [
 			'success' => true,
