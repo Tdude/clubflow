@@ -50,8 +50,25 @@ final class ClubFlow_Recurrence {
 	 * Handle save of recurring event
 	 */
 	public function handle_recurrence_save(int $post_id, \WP_Post $post): void {
+		// Prevent multiple executions per request
+		static $processed = [];
+		if (isset($processed[$post_id])) {
+			return;
+		}
+		$processed[$post_id] = true;
+		
 		// Skip autosave
 		if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+			return;
+		}
+
+		// Skip AJAX
+		if (wp_doing_ajax()) {
+			return;
+		}
+
+		// Skip revisions
+		if (wp_is_post_revision($post_id)) {
 			return;
 		}
 
