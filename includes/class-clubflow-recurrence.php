@@ -50,6 +50,15 @@ final class ClubFlow_Recurrence {
 	 * Handle save of recurring event
 	 */
 	public function handle_recurrence_save(int $post_id, \WP_Post $post): void {
+		// ONLY proceed if this is a legitimate form submission with our nonce
+		if (!isset($_POST['clubflow_event_details_nonce'])) {
+			return;
+		}
+		
+		if (!wp_verify_nonce($_POST['clubflow_event_details_nonce'], 'clubflow_save_event_details')) {
+			return;
+		}
+		
 		// CRITICAL: Only process the originally submitted post
 		// When we create children via wp_insert_post, $_POST still has parent data
 		$form_post_id = isset($_POST['post_ID']) ? absint($_POST['post_ID']) : 0;
@@ -76,6 +85,11 @@ final class ClubFlow_Recurrence {
 
 		// Skip revisions
 		if (wp_is_post_revision($post_id)) {
+			return;
+		}
+		
+		// Skip trash/delete operations
+		if ($post->post_status === 'trash') {
 			return;
 		}
 
