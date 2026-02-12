@@ -233,6 +233,122 @@ final class ClubFlow_Admin {
 			}
 			echo '</p>';
 		}
+
+		// Recurrence section (only for non-child events)
+		$is_child = get_post_meta($post->ID, '_clubflow_recurrence_parent', true);
+		
+		if ($is_child) {
+			// This is a child event - show link to parent
+			$parent = get_post($is_child);
+			echo '<hr style="margin: 20px 0;" />';
+			echo '<p style="background: #e7f3ff; padding: 10px; border-radius: 4px; border-left: 4px solid #2271b1;">';
+			echo '<strong>' . esc_html__('Recurring event', 'clubflow') . '</strong><br>';
+			echo esc_html__('This event is part of a recurring series.', 'clubflow') . ' ';
+			if ($parent) {
+				echo '<a href="' . esc_url(get_edit_post_link($is_child)) . '">' . esc_html__('Edit parent event', 'clubflow') . ' →</a>';
+			}
+			echo '</p>';
+		} else {
+			// This is a parent or standalone event - show recurrence options
+			$recurrence_enabled = get_post_meta($post->ID, '_clubflow_recurrence_enabled', true) === '1';
+			$recurrence_type = get_post_meta($post->ID, '_clubflow_recurrence_type', true) ?: 'weekly';
+			$recurrence_days = get_post_meta($post->ID, '_clubflow_recurrence_days', true) ?: [];
+			$recurrence_until = get_post_meta($post->ID, '_clubflow_recurrence_until', true) ?: date('Y-m-d', strtotime('+3 months'));
+
+			echo '<hr style="margin: 20px 0;" />';
+			echo '<h4 style="margin-bottom: 10px;">' . esc_html__('Recurring Event', 'clubflow') . '</h4>';
+
+			echo '<p>';
+			echo '<label for="clubflow_recurrence_enabled">';
+			echo '<input type="checkbox" id="clubflow_recurrence_enabled" name="clubflow_recurrence_enabled" value="1" ' . checked($recurrence_enabled, true, false) . ' /> ';
+			echo esc_html__('This is a recurring event', 'clubflow');
+			echo '</label>';
+			echo '</p>';
+
+			echo '<div id="clubflow-recurrence-options" style="' . ($recurrence_enabled ? '' : 'display: none;') . 'margin-left: 20px; padding: 15px; background: #f9f9f9; border-radius: 4px;">';
+
+			// Recurrence type
+			echo '<p>';
+			echo '<label for="clubflow_recurrence_type"><strong>' . esc_html__('Repeat', 'clubflow') . '</strong></label><br>';
+			echo '<select id="clubflow_recurrence_type" name="clubflow_recurrence_type" style="min-width: 150px;">';
+			echo '<option value="daily" ' . selected($recurrence_type, 'daily', false) . '>' . esc_html__('Daily', 'clubflow') . '</option>';
+			echo '<option value="weekly" ' . selected($recurrence_type, 'weekly', false) . '>' . esc_html__('Weekly', 'clubflow') . '</option>';
+			echo '</select>';
+			echo '</p>';
+
+			// Days of week (for weekly)
+			echo '<div id="clubflow-recurrence-days" style="' . ($recurrence_type === 'weekly' ? '' : 'display: none;') . '">';
+			echo '<p><strong>' . esc_html__('On days', 'clubflow') . '</strong></p>';
+			$day_labels = [
+				'mon' => __('Mon', 'clubflow'),
+				'tue' => __('Tue', 'clubflow'),
+				'wed' => __('Wed', 'clubflow'),
+				'thu' => __('Thu', 'clubflow'),
+				'fri' => __('Fri', 'clubflow'),
+				'sat' => __('Sat', 'clubflow'),
+				'sun' => __('Sun', 'clubflow'),
+			];
+			echo '<p style="display: flex; gap: 10px; flex-wrap: wrap;">';
+			foreach ($day_labels as $day_key => $day_label) {
+				$checked = in_array($day_key, (array) $recurrence_days) ? 'checked' : '';
+				echo '<label style="display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; background: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">';
+				echo '<input type="checkbox" name="clubflow_recurrence_days[]" value="' . esc_attr($day_key) . '" ' . $checked . ' /> ';
+				echo esc_html($day_label);
+				echo '</label>';
+			}
+			echo '</p>';
+			echo '</div>';
+
+			// Until date
+			echo '<p>';
+			echo '<label for="clubflow_recurrence_until"><strong>' . esc_html__('Until', 'clubflow') . '</strong></label><br>';
+			echo '<input type="date" id="clubflow_recurrence_until" name="clubflow_recurrence_until" value="' . esc_attr($recurrence_until) . '" style="width: 180px;" />';
+			echo '</p>';
+
+			// Generate button
+			echo '<p style="margin-top: 15px;">';
+			echo '<label style="display: flex; align-items: center; gap: 8px;">';
+			echo '<input type="checkbox" name="clubflow_generate_recurring" value="1" /> ';
+			echo '<span>' . esc_html__('Generate events on save', 'clubflow') . '</span>';
+			echo '</label>';
+			echo '</p>';
+
+			// Show child count if any
+			if ($post->post_status !== 'auto-draft' && class_exists('ClubFlow_Recurrence')) {
+				$child_count = ClubFlow_Recurrence::get_child_count($post->ID);
+				if ($child_count > 0) {
+					echo '<p style="background: #e7f5e9; padding: 10px; border-radius: 4px; margin-top: 10px;">';
+					echo '<strong>' . esc_html($child_count) . '</strong> ' . esc_html__('recurring events generated', 'clubflow');
+					echo '</p>';
+				}
+			}
+
+			echo '</div>'; // #clubflow-recurrence-options
+
+			// JavaScript for toggling
+			?>
+			<script>
+			(function() {
+				var enabledCheckbox = document.getElementById('clubflow_recurrence_enabled');
+				var optionsDiv = document.getElementById('clubflow-recurrence-options');
+				var typeSelect = document.getElementById('clubflow_recurrence_type');
+				var daysDiv = document.getElementById('clubflow-recurrence-days');
+
+				if (enabledCheckbox && optionsDiv) {
+					enabledCheckbox.addEventListener('change', function() {
+						optionsDiv.style.display = this.checked ? '' : 'none';
+					});
+				}
+
+				if (typeSelect && daysDiv) {
+					typeSelect.addEventListener('change', function() {
+						daysDiv.style.display = this.value === 'weekly' ? '' : 'none';
+					});
+				}
+			})();
+			</script>
+			<?php
+		}
 	}
 
 	public function save_meta_boxes(int $post_id): void {

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: ClubFlow
  * Description: Event calendar with bookings and payments for clubs and associations. Lightweight, modern, integrated Stripe payments.
- * Version: 0.1.0
+ * Version: 0.2.0
  * Author: Tibor Berki <https://github.com/Tdude>
  * Text Domain: clubflow
  */
@@ -23,9 +23,10 @@ require_once __DIR__ . '/includes/class-clubflow-mailchimp.php';
 require_once __DIR__ . '/includes/class-clubflow-swish.php';
 require_once __DIR__ . '/includes/class-clubflow-klarna.php';
 require_once __DIR__ . '/includes/class-clubflow-stripe.php';
+require_once __DIR__ . '/includes/class-clubflow-recurrence.php';
 
 final class ClubFlow {
-	public const VERSION = '0.1.0';
+	public const VERSION = '0.2.0';
 	public const POST_TYPE = 'club_event';
 	public const TAX_CATEGORY = 'event_category';
 	public const TAX_TAG = 'event_tag';
@@ -45,6 +46,7 @@ final class ClubFlow {
 	private ClubFlow_Swish $swish;
 	private ClubFlow_Klarna $klarna;
 	private ClubFlow_Stripe $stripe;
+	private ClubFlow_Recurrence $recurrence;
 
 	public function __construct(string $plugin_file) {
 		$this->plugin_file = $plugin_file;
@@ -61,6 +63,7 @@ final class ClubFlow {
 		$this->swish = new ClubFlow_Swish();
 		$this->klarna = new ClubFlow_Klarna();
 		$this->stripe = new ClubFlow_Stripe();
+		$this->recurrence = new ClubFlow_Recurrence();
 	}
 
 	public function plugin_file(): string {
@@ -80,6 +83,7 @@ final class ClubFlow {
 		$this->swish->register();
 		$this->klarna->register();
 		$this->stripe->register();
+		$this->recurrence->register();
 	}
 
 	public function load_textdomain(): void {
