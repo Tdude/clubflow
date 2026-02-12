@@ -196,7 +196,6 @@ final class ClubFlow_Booking {
 		update_post_meta($booking_id, '_clubflow_booking_name', $name);
 		update_post_meta($booking_id, '_clubflow_booking_email', $email);
 		update_post_meta($booking_id, '_clubflow_booking_phone', $phone);
-		update_post_meta($booking_id, '_clubflow_booking_status', 'confirmed'); // or 'pending' if payment required
 		update_post_meta($booking_id, '_clubflow_booking_confirmation_code', $confirmation_code);
 		update_post_meta($booking_id, '_clubflow_booking_created', current_time('mysql'));
 
@@ -205,15 +204,20 @@ final class ClubFlow_Booking {
 		$event_start = get_post_meta($event_id, '_clubflow_start', true);
 		$event_location = get_post_meta($event_id, '_clubflow_location', true);
 
+		// Determine initial booking status based on payment requirements
+		$payment_settings = class_exists('ClubFlow_Payment') ? get_option(ClubFlow_Payment::OPTION_KEY, []) : [];
+		$price = get_post_meta($event_id, '_clubflow_price', true);
+		$amount = $price ? (float) preg_replace('/[^0-9.]/', '', $price) : 0;
+		$payment_enabled = !empty($payment_settings['enabled']);
+		$payment_required = $payment_enabled && $amount > 0;
+		
+		// Set initial status: pending_payment if payment required, confirmed if free
+		$initial_status = $payment_required ? 'pending_payment' : 'confirmed';
+		update_post_meta($booking_id, '_clubflow_booking_status', $initial_status);
+
 		// Get payment settings and create payment request
 		$payment_info = null;
-		if (class_exists('ClubFlow_Payment')) {
-			$payment_settings = get_option(ClubFlow_Payment::OPTION_KEY, []);
-			$price = get_post_meta($event_id, '_clubflow_price', true);
-			
-			if (!empty($payment_settings['enabled']) && $price) {
-				// Extract numeric amount from price string (e.g., "150 kr" -> "150")
-				$amount = (float) preg_replace('/[^0-9.]/', '', $price);
+		if ($payment_required) {
 				$payment_method = $payment_settings['payment_method'] ?? 'manual';
 				
 				if ($payment_method === 'stripe' && $amount > 0 && class_exists('ClubFlow_Stripe')) {
@@ -334,7 +338,6 @@ final class ClubFlow_Booking {
 						'message' => __('Pay at the venue', 'clubflow'),
 					];
 				}
-			}
 		}
 
 		$result = [

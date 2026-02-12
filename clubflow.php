@@ -2,7 +2,7 @@
 /**
  * Plugin Name: ClubFlow
  * Description: Event calendar with bookings and payments for clubs and associations. Lightweight, modern, integrated Stripe payments.
- * Version: 0.2.2
+ * Version: 0.2.3
  * Author: Tibor Berki <https://github.com/Tdude>
  * Text Domain: clubflow
  */
@@ -26,7 +26,7 @@ require_once __DIR__ . '/includes/class-clubflow-stripe.php';
 require_once __DIR__ . '/includes/class-clubflow-recurrence.php';
 
 final class ClubFlow {
-	public const VERSION = '0.2.2';
+	public const VERSION = '0.2.3';
 	public const POST_TYPE = 'club_event';
 	public const TAX_CATEGORY = 'event_category';
 	public const TAX_TAG = 'event_tag';
