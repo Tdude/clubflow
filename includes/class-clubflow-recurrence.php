@@ -50,6 +50,13 @@ final class ClubFlow_Recurrence {
 	 * Handle save of recurring event
 	 */
 	public function handle_recurrence_save(int $post_id, \WP_Post $post): void {
+		// CRITICAL: Only process the originally submitted post
+		// When we create children via wp_insert_post, $_POST still has parent data
+		$form_post_id = isset($_POST['post_ID']) ? absint($_POST['post_ID']) : 0;
+		if ($form_post_id && $form_post_id !== $post_id) {
+			return; // This is a child being created, not the form submission
+		}
+		
 		// Prevent multiple executions per request
 		static $processed = [];
 		if (isset($processed[$post_id])) {
