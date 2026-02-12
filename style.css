@@ -389,12 +389,22 @@ body.is-dark .clubflow-hovercard .fc-list-event td,
 	font-weight: bold;
 	text-decoration: none;
 	color: inherit;
+	text-align: left;
 }
 
 .clubflow-hovercard .clubflow-fc-excerpt,
 .clubflow-calendar .clubflow-fc-excerpt {
 	font-size: inherit;
 	font-weight: normal;
+	text-align: left;
+}
+
+.clubflow-hovercard .fc-list-event-title {
+	text-align: left !important;
+}
+
+.clubflow-hovercard td {
+	text-align: left !important;
 }
 
 .clubflow-hovercard.is-visible {
