@@ -239,6 +239,16 @@ final class ClubFlow_Admin {
 			echo '</p>';
 		}
 
+		// Category reminder
+		$terms = get_the_terms($post->ID, ClubFlow::TAX_CATEGORY);
+		$has_category = $terms && !is_wp_error($terms) && count($terms) > 0;
+		if (!$has_category) {
+			echo '<div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px 12px; margin: 15px 0; border-radius: 4px;">';
+			echo '<strong>⚠️ ' . esc_html__('Remember to set a Category!', 'clubflow') . '</strong><br>';
+			echo '<span style="color: #666;">' . esc_html__('Especially important for recurring events — children inherit the parent\'s category.', 'clubflow') . '</span>';
+			echo '</div>';
+		}
+
 		// Recurrence section (only for non-child events)
 		$is_child = get_post_meta($post->ID, '_clubflow_recurrence_parent', true);
 		
