@@ -173,9 +173,6 @@ class ClubFlow_Stripe {
             'metadata[event_id]'                  => $event_id,
             'metadata[customer_name]'             => $customer_name,
             'locale'                              => 'sv',
-            // Disable slow features
-            'payment_method_options[card][setup_future_usage]' => '',
-            'allow_promotion_codes'               => 'false',
         );
 
         $response = self::api_request( '/checkout/sessions', $session_data );
