@@ -221,6 +221,13 @@ final class ClubFlow_Booking {
 				$payment_method = $payment_settings['payment_method'] ?? 'manual';
 				
 				if ($payment_method === 'stripe' && $amount > 0 && class_exists('ClubFlow_Stripe')) {
+					// Check if Stripe is configured
+					if (!ClubFlow_Stripe::is_configured()) {
+						// Delete the booking - can't proceed without payment
+						wp_delete_post($booking_id, true);
+						return ['success' => false, 'error' => __('Payment system not configured. Please contact the administrator.', 'clubflow')];
+					}
+					
 					// Use Stripe Checkout (redirect)
 					$stripe = new ClubFlow_Stripe();
 					$stripe_result = $stripe->create_checkout_session(
@@ -252,9 +259,11 @@ final class ClubFlow_Booking {
 							'name'       => $name,
 							'notes'      => 'Stripe checkout session created',
 						]);
-
-						// Update booking status
-						update_post_meta($booking_id, '_clubflow_booking_status', 'pending_payment');
+					} else {
+						// Stripe session creation failed - delete booking and return error
+						wp_delete_post($booking_id, true);
+						$error_msg = $stripe_result['error'] ?? __('Could not create payment session.', 'clubflow');
+						return ['success' => false, 'error' => $error_msg];
 					}
 				} elseif ($payment_method === 'klarna' && $amount > 0 && class_exists('ClubFlow_Klarna')) {
 					// Use Klarna checkout
