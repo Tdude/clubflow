@@ -19,8 +19,8 @@ final class ClubFlow_Admin {
 
 	public function register_settings_page(): void {
 		add_options_page(
-			__( 'Club Calendar', 'clubflow' ),
-			__( 'Club Calendar', 'clubflow' ),
+			__( 'ClubFlow', 'clubflow' ),
+			__( 'ClubFlow', 'clubflow' ),
 			'manage_options',
 			'clubflow',
 			[$this, 'render_settings_page']
@@ -35,7 +35,7 @@ final class ClubFlow_Admin {
 		$readme_excerpt = $this->get_readme_help_excerpt();
 		?>
 		<div class="wrap">
-			<h1><?php echo esc_html__( 'Club Calendar', 'clubflow' ); ?></h1>
+			<h1><?php echo esc_html__( 'ClubFlow', 'clubflow' ); ?></h1>
 			<h2 style="margin-top: 18px;"><?php echo esc_html__( 'Shortcode usage', 'clubflow' ); ?></h2>
 			<div style="max-width: 980px; background: #fff; border: 1px solid #dcdcde; padding: 18px; border-radius: 8px; line-height: 1.6;">
 				<?php if ( $readme_excerpt !== '' ) : ?>

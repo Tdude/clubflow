@@ -13,7 +13,7 @@ final class ClubFlow_Cpt {
 		$labels = [
 			'name' => __('Events', 'clubflow'),
 			'singular_name' => __('Event', 'clubflow'),
-			'menu_name' => __('Calendar', 'clubflow'),
+			'menu_name' => 'ClubFlow',
 			'name_admin_bar' => __('Event', 'clubflow'),
 			'add_new' => __('Add New', 'clubflow'),
 			'add_new_item' => __('Add New Event', 'clubflow'),

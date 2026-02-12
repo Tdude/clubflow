@@ -88,7 +88,7 @@ final class ClubFlow_Payment {
 	}
 
 	/**
-	 * Register settings page under Calendar menu
+	 * Register settings page under ClubFlow menu
 	 */
 	public function register_settings_page(): void {
 		add_submenu_page(
