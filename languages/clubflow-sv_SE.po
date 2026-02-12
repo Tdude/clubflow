@@ -1,0 +1,619 @@
+# Swedish translation for ClubFlow
+# Copyright (C) 2025-2026 ClubFlow
+# This file is distributed under the same license as the ClubFlow plugin.
+msgid ""
+msgstr ""
+"Project-Id-Version: ClubFlow 1.3\n"
+"Report-Msgid-Bugs-To: https://github.com/Tdude\n"
+"POT-Creation-Date: 2026-02-12 10:00+0000\n"
+"PO-Revision-Date: 2026-02-12 10:45+0100\n"
+"Last-Translator: Buttler <buttler@idunworks.com>\n"
+"Language-Team: Swedish\n"
+"Language: sv_SE\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: ClubFlow\n"
+
+# ====================
+# Core Plugin Strings
+# ====================
+
+msgid "Events"
+msgstr "Evenemang"
+
+msgid "Event"
+msgstr "Evenemang"
+
+msgid "Calendar"
+msgstr "Kalender"
+
+msgid "Add New"
+msgstr "Lägg till"
+
+msgid "Add New Event"
+msgstr "Lägg till evenemang"
+
+msgid "New Event"
+msgstr "Nytt evenemang"
+
+msgid "Edit Event"
+msgstr "Redigera evenemang"
+
+msgid "View Event"
+msgstr "Visa evenemang"
+
+msgid "All Events"
+msgstr "Alla evenemang"
+
+msgid "Search Events"
+msgstr "Sök evenemang"
+
+msgid "No events found."
+msgstr "Inga evenemang hittades."
+
+msgid "No events found in Trash."
+msgstr "Inga evenemang i papperskorgen."
+
+msgid "Event Categories"
+msgstr "Evenemangskategorier"
+
+msgid "Event Category"
+msgstr "Evenemangskategori"
+
+msgid "Event Tags"
+msgstr "Evenemangstaggar"
+
+msgid "Event Tag"
+msgstr "Evenemangstagg"
+
+msgid "Event Details"
+msgstr "Evenemangsdetaljer"
+
+msgid "Color"
+msgstr "Färg"
+
+msgid "Choose a color for events in this category."
+msgstr "Välj en färg för evenemang i denna kategori."
+
+msgid "Start date/time"
+msgstr "Startdatum/tid"
+
+msgid "End date/time"
+msgstr "Slutdatum/tid"
+
+msgid "optional"
+msgstr "valfritt"
+
+msgid "Leave empty for single-day events."
+msgstr "Lämna tomt för endagsevenemang."
+
+msgid "All day"
+msgstr "Heldag"
+
+msgid "Location"
+msgstr "Plats"
+
+msgid "Open event page"
+msgstr "Öppna evenemangssida"
+
+msgid "No upcoming events."
+msgstr "Inga kommande evenemang."
+
+msgid "F j, Y"
+msgstr "j F Y"
+
+msgid "F j, Y \\a\\t H:i"
+msgstr "j F Y \\k\\l H:i"
+
+msgid "Uncategorized"
+msgstr "Okategoriserad"
+
+msgid "Club Calendar"
+msgstr "Klubbkalender"
+
+msgid "Shortcode usage"
+msgstr "Användning av shortcode"
+
+msgid "No shortcode usage information found in the README files."
+msgstr "Ingen shortcode-information hittades i README-filerna."
+
+# ====================
+# Booking Strings
+# ====================
+
+msgid "Bookings"
+msgstr "Bokningar"
+
+msgid "Booking"
+msgstr "Bokning"
+
+msgid "Add New Booking"
+msgstr "Lägg till bokning"
+
+msgid "Edit Booking"
+msgstr "Redigera bokning"
+
+msgid "View Booking"
+msgstr "Visa bokning"
+
+msgid "All Bookings"
+msgstr "Alla bokningar"
+
+msgid "Search Bookings"
+msgstr "Sök bokningar"
+
+msgid "No bookings found."
+msgstr "Inga bokningar hittades."
+
+msgid "No bookings found in Trash."
+msgstr "Inga bokningar i papperskorgen."
+
+msgid "Booking Details"
+msgstr "Bokningsdetaljer"
+
+msgid "Booking Settings"
+msgstr "Bokningsinställningar"
+
+msgid "Enable booking for this event"
+msgstr "Aktivera bokning för detta evenemang"
+
+msgid "Max spots"
+msgstr "Max platser"
+
+msgid "0 = unlimited"
+msgstr "0 = obegränsat"
+
+msgid "Price"
+msgstr "Pris"
+
+msgid "e.g. 150 kr"
+msgstr "t.ex. 150 kr"
+
+msgid "Current bookings:"
+msgstr "Aktuella bokningar:"
+
+msgid "spots left"
+msgstr "platser kvar"
+
+msgid "spots"
+msgstr "platser"
+
+#, php-format
+msgid "%d booking(s)"
+msgstr "%d bokning(ar)"
+
+#, php-format
+msgid "%d spots left"
+msgstr "%d platser kvar"
+
+msgid "Fully booked"
+msgstr "Fullbokat"
+
+msgid "Book this event"
+msgstr "Boka detta evenemang"
+
+msgid "Price:"
+msgstr "Pris:"
+
+msgid "This event is fully booked. Please check back later or contact us."
+msgstr "Detta evenemang är fullbokat. Kolla tillbaka senare eller kontakta oss."
+
+msgid "Name"
+msgstr "Namn"
+
+msgid "Email"
+msgstr "E-post"
+
+msgid "Phone"
+msgstr "Telefon"
+
+msgid "Book now"
+msgstr "Boka nu"
+
+msgid "Booking..."
+msgstr "Bokar..."
+
+msgid "Booked!"
+msgstr "Bokad!"
+
+msgid "Your booking is confirmed! Confirmation code:"
+msgstr "Din bokning är bekräftad! Bekräftelsekod:"
+
+msgid "Booking failed. Please try again."
+msgstr "Bokningen misslyckades. Försök igen."
+
+msgid "Event not found."
+msgstr "Evenemanget hittades inte."
+
+msgid "This event is fully booked."
+msgstr "Detta evenemang är fullbokat."
+
+msgid "Name and email are required."
+msgstr "Namn och e-post krävs."
+
+msgid "Please enter a valid email address."
+msgstr "Ange en giltig e-postadress."
+
+msgid "You have already booked this event."
+msgstr "Du har redan bokat detta evenemang."
+
+msgid "Could not create booking."
+msgstr "Kunde inte skapa bokning."
+
+msgid "Security check failed."
+msgstr "Säkerhetskontroll misslyckades."
+
+msgid "Invalid event."
+msgstr "Ogiltigt evenemang."
+
+msgid "Code"
+msgstr "Kod"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Date"
+msgstr "Datum"
+
+msgid "Booked"
+msgstr "Bokad"
+
+msgid "Booked at"
+msgstr "Bokad"
+
+msgid "Confirmation Code"
+msgstr "Bekräftelsekod"
+
+msgid "No bookings yet."
+msgstr "Inga bokningar ännu."
+
+msgid "Deleted"
+msgstr "Borttagen"
+
+msgid "Event deleted"
+msgstr "Evenemang borttaget"
+
+# ====================
+# Payment Strings
+# ====================
+
+msgid "Payment"
+msgstr "Betalning"
+
+msgid "Payment Log"
+msgstr "Betalningslogg"
+
+msgid "View Payment"
+msgstr "Visa betalning"
+
+msgid "Search Payments"
+msgstr "Sök betalningar"
+
+msgid "No payments found."
+msgstr "Inga betalningar hittades."
+
+msgid "Payment Settings"
+msgstr "Betalningsinställningar"
+
+msgid "Enable Payments"
+msgstr "Aktivera betalningar"
+
+msgid "Enable payment collection for bookings"
+msgstr "Aktivera betalningsinsamling för bokningar"
+
+msgid "Payment Method"
+msgstr "Betalningsmetod"
+
+msgid "Manual (pay at venue)"
+msgstr "Manuell (betala på plats)"
+
+msgid "Require Payment"
+msgstr "Kräv betalning"
+
+msgid "Require payment confirmation before booking is confirmed"
+msgstr "Kräv betalningsbekräftelse innan bokning bekräftas"
+
+msgid "If unchecked, bookings are confirmed immediately and payment is tracked separately."
+msgstr "Om avmarkerad bekräftas bokningar direkt och betalning spåras separat."
+
+msgid "Swish Settings"
+msgstr "Swish-inställningar"
+
+msgid "Swish Number"
+msgstr "Swishnummer"
+
+msgid "Your Swish number for receiving payments. Displayed to customers."
+msgstr "Ditt Swishnummer för att ta emot betalningar. Visas för kunder."
+
+msgid "Swish Payee Alias"
+msgstr "Swish Betalningsmottagare"
+
+msgid "For Swish Commerce API integration (optional, leave blank for QR/manual flow)."
+msgstr "För Swish Commerce API-integration (valfritt, lämna tomt för QR/manuellt flöde)."
+
+msgid "Stripe Settings"
+msgstr "Stripe-inställningar"
+
+msgid "prepared, not active"
+msgstr "förberett, ej aktivt"
+
+msgid "Publishable Key"
+msgstr "Publik nyckel"
+
+msgid "Secret Key"
+msgstr "Hemlig nyckel"
+
+msgid "Amount"
+msgstr "Belopp"
+
+msgid "Amount:"
+msgstr "Belopp:"
+
+msgid "Method"
+msgstr "Metod"
+
+msgid "Customer"
+msgstr "Kund"
+
+msgid "Manual"
+msgstr "Manuell"
+
+msgid "Pay with Swish:"
+msgstr "Betala med Swish:"
+
+msgid "Message:"
+msgstr "Meddelande:"
+
+msgid "Pay at the venue"
+msgstr "Betala på plats"
+
+msgid "Swish number not configured."
+msgstr "Swishnummer inte konfigurerat."
+
+#, php-format
+msgid "Booking %s"
+msgstr "Bokning %s"
+
+msgid "Confirm this payment as received?"
+msgstr "Bekräfta denna betalning som mottagen?"
+
+msgid "✓ Confirm Payment Received"
+msgstr "✓ Bekräfta betalning mottagen"
+
+#, php-format
+msgid "Payment confirmed manually by %s"
+msgstr "Betalning bekräftad manuellt av %s"
+
+msgid "Unauthorized"
+msgstr "Ej behörig"
+
+# ====================
+# Mailchimp / Email Strings
+# ====================
+
+msgid "Mailchimp Settings"
+msgstr "Mailchimp-inställningar"
+
+msgid "Enable Mailchimp"
+msgstr "Aktivera Mailchimp"
+
+msgid "Send booking confirmations via Mailchimp"
+msgstr "Skicka bokningsbekräftelser via Mailchimp"
+
+msgid "API Key"
+msgstr "API-nyckel"
+
+msgid "Find this in Mailchimp → Account → Extras → API keys"
+msgstr "Hittas i Mailchimp → Konto → Extras → API-nycklar"
+
+msgid "Audience/List ID"
+msgstr "Målgrupps-/List-ID"
+
+msgid "The audience to add subscribers to (optional)."
+msgstr "Målgruppen att lägga till prenumeranter i (valfritt)."
+
+#, php-format
+msgid "Booking Confirmed: %s"
+msgstr "Bokning bekräftad: %s"
+
+#, php-format
+msgid "Hi %s,"
+msgstr "Hej %s,"
+
+msgid "Your booking has been confirmed!"
+msgstr "Din bokning är bekräftad!"
+
+#, php-format
+msgid "Event: %s"
+msgstr "Evenemang: %s"
+
+#, php-format
+msgid "Date: %s"
+msgstr "Datum: %s"
+
+#, php-format
+msgid "Location: %s"
+msgstr "Plats: %s"
+
+#, php-format
+msgid "Confirmation Code: %s"
+msgstr "Bekräftelsekod: %s"
+
+msgid "See you there!"
+msgstr "Vi ses där!"
+
+# ====================
+# Swish Payment Strings
+# ====================
+
+msgid "Open Swish"
+msgstr "Öppna Swish"
+
+msgid "Scan the QR code with the Swish app:"
+msgstr "Skanna QR-koden med Swish-appen:"
+
+msgid "Or pay manually to:"
+msgstr "Eller betala manuellt till:"
+
+msgid "Pay to:"
+msgstr "Betala till:"
+
+msgid "Awaiting payment..."
+msgstr "Väntar på betalning..."
+
+msgid "Payment confirmed!"
+msgstr "Betalning bekräftad!"
+
+msgid "Payment failed"
+msgstr "Betalning misslyckades"
+
+msgid "Payment could not be confirmed. Contact us if you have paid."
+msgstr "Betalningen kunde inte bekräftas. Kontakta oss om du har betalat."
+
+msgid "Test Mode"
+msgstr "Testläge"
+
+msgid "Use Swish test/sandbox environment"
+msgstr "Använd Swish test-/sandlådemiljö"
+
+msgid "Merchant Swish number (10 digits). Required for API integration."
+msgstr "Swishnummer för företag (10 siffror). Krävs för API-integration."
+
+msgid "Certificate Path"
+msgstr "Certifikatsökväg"
+
+msgid "Full server path to your Swish merchant certificate (.p12 file)."
+msgstr "Fullständig serversökväg till ditt Swish-företagscertifikat (.p12-fil)."
+
+msgid "Certificate Password"
+msgstr "Certifikatlösenord"
+
+msgid "Password for the certificate file."
+msgstr "Lösenord för certifikatfilen."
+
+msgid "Note:"
+msgstr "Obs:"
+
+msgid "Without API credentials, the plugin will show QR code and Swish number for manual payment. You can confirm payments manually in the admin."
+msgstr "Utan API-uppgifter visar pluginet QR-kod och Swishnummer för manuell betalning. Du kan bekräfta betalningar manuellt i admin."
+
+msgid "For automatic payment confirmation, you need a Swish for Merchants agreement with your bank and the merchant certificate."
+msgstr "För automatisk betalningsbekräftelse behöver du ett Swish för företag-avtal med din bank och företagscertifikatet."
+
+msgid "Invalid booking."
+msgstr "Ogiltig bokning."
+
+msgid "Invalid amount."
+msgstr "Ogiltigt belopp."
+
+msgid "Invalid request."
+msgstr "Ogiltig förfrågan."
+
+msgid "Payment not found."
+msgstr "Betalning hittades inte."
+
+# ====================
+# Klarna Strings
+# ====================
+
+msgid "Klarna Settings"
+msgstr "Klarna-inställningar"
+
+msgid "Use Klarna Playground (test environment)"
+msgstr "Använd Klarna Playground (testmiljö)"
+
+msgid "Merchant ID (UID)"
+msgstr "Handlar-ID (UID)"
+
+msgid "Your Klarna API username/UID from the Merchant Portal."
+msgstr "Ditt Klarna API-användarnamn/UID från Merchant Portal."
+
+msgid "API Secret"
+msgstr "API-hemlighet"
+
+msgid "Your Klarna API password/secret."
+msgstr "Ditt Klarna API-lösenord/hemlighet."
+
+msgid "Get Klarna credentials:"
+msgstr "Hämta Klarna-uppgifter:"
+
+msgid "Go to"
+msgstr "Gå till"
+
+msgid "Create account or sign in"
+msgstr "Skapa konto eller logga in"
+
+msgid "Go to Settings → API Credentials"
+msgstr "Gå till Inställningar → API-uppgifter"
+
+msgid "Generate new API credentials"
+msgstr "Generera nya API-uppgifter"
+
+msgid "Klarna is recommended - easy setup, supports cards and direct bank payment."
+msgstr "Klarna rekommenderas - enkel setup, stödjer kort och direktbetalning från bank."
+
+msgid "Klarna not configured."
+msgstr "Klarna inte konfigurerat."
+
+msgid "Invalid Klarna response."
+msgstr "Ogiltigt Klarna-svar."
+
+msgid "Could not load payment form."
+msgstr "Kunde inte ladda betalningsformulär."
+
+msgid "Payment not available."
+msgstr "Betalning ej tillgänglig."
+
+msgid "Booking Confirmed!"
+msgstr "Bokning bekräftad!"
+
+msgid "A confirmation email has been sent to you."
+msgstr "Ett bekräftelsemail har skickats till dig."
+
+# ====================
+# Stripe Strings
+# ====================
+
+msgid "Webhook Secret"
+msgstr "Webhook-hemlighet"
+
+msgid "From Stripe Dashboard → Developers → Webhooks"
+msgstr "Från Stripe Dashboard → Developers → Webhooks"
+
+msgid "Webhook URL:"
+msgstr "Webhook-URL:"
+
+msgid "Setup steps:"
+msgstr "Installationssteg:"
+
+msgid "Get API keys from"
+msgstr "Hämta API-nycklar från"
+
+msgid "Create webhook at"
+msgstr "Skapa webhook på"
+
+msgid "Add endpoint:"
+msgstr "Lägg till endpoint:"
+
+msgid "Select event:"
+msgstr "Välj event:"
+
+msgid "Starts with pk_test_ (test) or pk_live_ (production)"
+msgstr "Börjar med pk_test_ (test) eller pk_live_ (produktion)"
+
+msgid "Starts with sk_test_ (test) or sk_live_ (production)"
+msgstr "Börjar med sk_test_ (test) eller sk_live_ (produktion)"
+
+msgid "Stripe not configured."
+msgstr "Stripe inte konfigurerat."
+
+msgid "Invalid Stripe response."
+msgstr "Ogiltigt Stripe-svar."
+
+msgid "Redirecting to payment..."
+msgstr "Omdirigerar till betalning..."
+
+msgid "Proceed to Payment"
+msgstr "Fortsätt till betalning"

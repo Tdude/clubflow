@@ -1,0 +1,450 @@
+# Translation template for ClubFlow
+# Copyright (C) 2025-2026 ClubFlow
+# This file is distributed under the same license as the ClubFlow plugin.
+#
+# Translators:
+# For a new translation, copy this file to clubflow-LOCALE.po
+# (e.g., clubflow-de_DE.po for German)
+# Then translate all msgstr values and compile to .mo
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: ClubFlow 1.3\n"
+"Report-Msgid-Bugs-To: https://github.com/Tdude\n"
+"POT-Creation-Date: 2026-02-12 10:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+# ====================
+# Core Plugin Strings
+# ====================
+
+msgid "Events"
+msgstr ""
+
+msgid "Event"
+msgstr ""
+
+msgid "Calendar"
+msgstr ""
+
+msgid "Add New"
+msgstr ""
+
+msgid "Add New Event"
+msgstr ""
+
+msgid "New Event"
+msgstr ""
+
+msgid "Edit Event"
+msgstr ""
+
+msgid "View Event"
+msgstr ""
+
+msgid "All Events"
+msgstr ""
+
+msgid "Search Events"
+msgstr ""
+
+msgid "No events found."
+msgstr ""
+
+msgid "No events found in Trash."
+msgstr ""
+
+msgid "Event Categories"
+msgstr ""
+
+msgid "Event Category"
+msgstr ""
+
+msgid "Event Tags"
+msgstr ""
+
+msgid "Event Tag"
+msgstr ""
+
+msgid "Event Details"
+msgstr ""
+
+msgid "Color"
+msgstr ""
+
+msgid "Choose a color for events in this category."
+msgstr ""
+
+msgid "Start date/time"
+msgstr ""
+
+msgid "End date/time"
+msgstr ""
+
+msgid "optional"
+msgstr ""
+
+msgid "Leave empty for single-day events."
+msgstr ""
+
+msgid "All day"
+msgstr ""
+
+msgid "Location"
+msgstr ""
+
+msgid "Open event page"
+msgstr ""
+
+msgid "No upcoming events."
+msgstr ""
+
+msgid "F j, Y"
+msgstr ""
+
+msgid "F j, Y \\a\\t H:i"
+msgstr ""
+
+msgid "Uncategorized"
+msgstr ""
+
+msgid "Club Calendar"
+msgstr ""
+
+msgid "Shortcode usage"
+msgstr ""
+
+msgid "No shortcode usage information found in the README files."
+msgstr ""
+
+# ====================
+# Booking Strings
+# ====================
+
+msgid "Bookings"
+msgstr ""
+
+msgid "Booking"
+msgstr ""
+
+msgid "Add New Booking"
+msgstr ""
+
+msgid "Edit Booking"
+msgstr ""
+
+msgid "View Booking"
+msgstr ""
+
+msgid "All Bookings"
+msgstr ""
+
+msgid "Search Bookings"
+msgstr ""
+
+msgid "No bookings found."
+msgstr ""
+
+msgid "No bookings found in Trash."
+msgstr ""
+
+msgid "Booking Details"
+msgstr ""
+
+msgid "Booking Settings"
+msgstr ""
+
+msgid "Enable booking for this event"
+msgstr ""
+
+msgid "Max spots"
+msgstr ""
+
+msgid "0 = unlimited"
+msgstr ""
+
+msgid "Price"
+msgstr ""
+
+msgid "e.g. 150 kr"
+msgstr ""
+
+msgid "Current bookings:"
+msgstr ""
+
+msgid "spots left"
+msgstr ""
+
+msgid "spots"
+msgstr ""
+
+#, php-format
+msgid "%d booking(s)"
+msgstr ""
+
+#, php-format
+msgid "%d spots left"
+msgstr ""
+
+msgid "Fully booked"
+msgstr ""
+
+msgid "Book this event"
+msgstr ""
+
+msgid "Price:"
+msgstr ""
+
+msgid "This event is fully booked. Please check back later or contact us."
+msgstr ""
+
+msgid "Name"
+msgstr ""
+
+msgid "Email"
+msgstr ""
+
+msgid "Phone"
+msgstr ""
+
+msgid "Book now"
+msgstr ""
+
+msgid "Booking..."
+msgstr ""
+
+msgid "Booked!"
+msgstr ""
+
+msgid "Your booking is confirmed! Confirmation code:"
+msgstr ""
+
+msgid "Booking failed. Please try again."
+msgstr ""
+
+msgid "Event not found."
+msgstr ""
+
+msgid "This event is fully booked."
+msgstr ""
+
+msgid "Name and email are required."
+msgstr ""
+
+msgid "Please enter a valid email address."
+msgstr ""
+
+msgid "You have already booked this event."
+msgstr ""
+
+msgid "Could not create booking."
+msgstr ""
+
+msgid "Security check failed."
+msgstr ""
+
+msgid "Invalid event."
+msgstr ""
+
+msgid "Code"
+msgstr ""
+
+msgid "Status"
+msgstr ""
+
+msgid "Date"
+msgstr ""
+
+msgid "Booked"
+msgstr ""
+
+msgid "Booked at"
+msgstr ""
+
+msgid "Confirmation Code"
+msgstr ""
+
+msgid "No bookings yet."
+msgstr ""
+
+msgid "Deleted"
+msgstr ""
+
+msgid "Event deleted"
+msgstr ""
+
+# ====================
+# Payment Strings
+# ====================
+
+msgid "Payment"
+msgstr ""
+
+msgid "Payment Log"
+msgstr ""
+
+msgid "View Payment"
+msgstr ""
+
+msgid "Search Payments"
+msgstr ""
+
+msgid "No payments found."
+msgstr ""
+
+msgid "Payment Settings"
+msgstr ""
+
+msgid "Enable Payments"
+msgstr ""
+
+msgid "Enable payment collection for bookings"
+msgstr ""
+
+msgid "Payment Method"
+msgstr ""
+
+msgid "Manual (pay at venue)"
+msgstr ""
+
+msgid "Require Payment"
+msgstr ""
+
+msgid "Require payment confirmation before booking is confirmed"
+msgstr ""
+
+msgid "If unchecked, bookings are confirmed immediately and payment is tracked separately."
+msgstr ""
+
+msgid "Swish Settings"
+msgstr ""
+
+msgid "Swish Number"
+msgstr ""
+
+msgid "Your Swish number for receiving payments. Displayed to customers."
+msgstr ""
+
+msgid "Swish Payee Alias"
+msgstr ""
+
+msgid "For Swish Commerce API integration (optional, leave blank for QR/manual flow)."
+msgstr ""
+
+msgid "Stripe Settings"
+msgstr ""
+
+msgid "prepared, not active"
+msgstr ""
+
+msgid "Publishable Key"
+msgstr ""
+
+msgid "Secret Key"
+msgstr ""
+
+msgid "Amount"
+msgstr ""
+
+msgid "Amount:"
+msgstr ""
+
+msgid "Method"
+msgstr ""
+
+msgid "Customer"
+msgstr ""
+
+msgid "Manual"
+msgstr ""
+
+msgid "Pay with Swish:"
+msgstr ""
+
+msgid "Message:"
+msgstr ""
+
+msgid "Pay at the venue"
+msgstr ""
+
+msgid "Swish number not configured."
+msgstr ""
+
+#, php-format
+msgid "Booking %s"
+msgstr ""
+
+msgid "Confirm this payment as received?"
+msgstr ""
+
+msgid "✓ Confirm Payment Received"
+msgstr ""
+
+#, php-format
+msgid "Payment confirmed manually by %s"
+msgstr ""
+
+msgid "Unauthorized"
+msgstr ""
+
+# ====================
+# Mailchimp / Email Strings
+# ====================
+
+msgid "Mailchimp Settings"
+msgstr ""
+
+msgid "Enable Mailchimp"
+msgstr ""
+
+msgid "Send booking confirmations via Mailchimp"
+msgstr ""
+
+msgid "API Key"
+msgstr ""
+
+msgid "Find this in Mailchimp → Account → Extras → API keys"
+msgstr ""
+
+msgid "Audience/List ID"
+msgstr ""
+
+msgid "The audience to add subscribers to (optional)."
+msgstr ""
+
+#, php-format
+msgid "Booking Confirmed: %s"
+msgstr ""
+
+#, php-format
+msgid "Hi %s,"
+msgstr ""
+
+msgid "Your booking has been confirmed!"
+msgstr ""
+
+#, php-format
+msgid "Event: %s"
+msgstr ""
+
+#, php-format
+msgid "Date: %s"
+msgstr ""
+
+#, php-format
+msgid "Location: %s"
+msgstr ""
+
+#, php-format
+msgid "Confirmation Code: %s"
+msgstr ""
+
+msgid "See you there!"
+msgstr ""

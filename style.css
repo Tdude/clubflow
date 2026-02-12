@@ -1,0 +1,1297 @@
+/*
+ClubCal Lite plugin styles
+*/
+
+.clubflow-calendar {
+	max-width: 1100px;
+	margin: 0 auto;
+}
+
+@media (max-width: 640px) {
+	.clubflow-calendar .fc .fc-scroller,
+	.clubflow-calendar .fc .fc-scroller-harness {
+		height: auto !important;
+		max-height: none !important;
+		overflow: visible !important;
+	}
+
+	.clubflow-calendar .fc .fc-view-harness {
+		height: auto !important;
+	}
+}
+
+.clubflow-modal {
+	position: fixed;
+	inset: 0;
+	width: 100vw;
+	height: 100vh;
+	z-index: 9999;
+}
+
+.clubflow-modal__backdrop {
+	position: fixed;
+	inset: 0;
+	width: 100vw;
+	height: 100vh;
+	background: rgba(0, 0, 0, 0.55);
+}
+
+.clubflow-modal__dialog {
+	position: relative;
+	margin: 6vh auto;
+	width: min(720px, calc(100% - 32px));
+	max-height: 88vh;
+	overflow: auto;
+	background: #fff;
+	border-radius: 12px;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+	padding: 20px;
+}
+
+.clubflow-modal__close {
+	position: absolute;
+	top: 10px;
+	right: 12px;
+	border: 0;
+	background: transparent;
+	font-size: 28px;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.clubflow-event__title {
+	margin: 0 32px 8px 0;
+	color: var(--clubflow-text);
+}
+
+.clubflow-event__badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 8px;
+	margin-left: 1em;
+	border-radius: 999px;
+	border: 1px solid var(--clubflow-badge-color, currentColor);
+	color: var(--clubflow-badge-color, currentColor);
+	background: transparent;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.3;
+	vertical-align: top;
+	white-space: nowrap;
+}
+
+.clubflow-event__badge-row {
+	margin: 0 0 8px 0;
+}
+
+.clubflow-event__datetime,
+.clubflow-event__location {
+	margin: 0 0 8px 0;
+	opacity: 0.95;
+}
+
+.clubflow-event__content > :first-child {
+	margin-top: 0;
+}
+
+.clubflow-event__content > :last-child {
+	margin-bottom: 0;
+}
+
+.clubflow-icon {
+	display: inline-block;
+	vertical-align: text-bottom;
+}
+
+.clubflow-event__link a {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+@media (prefers-color-scheme: dark) {
+	.clubflow-calendar,
+	.clubflow-modal {
+		--clubflow-bg: #0f1115;
+		--clubflow-surface: #151a22;
+		--clubflow-text: #e6eaf2;
+		--clubflow-muted: rgba(230, 234, 242, 0.75);
+		--clubflow-border: rgba(230, 234, 242, 0.12);
+		--clubflow-accent: #4da3ff;
+		--clubflow-backdrop: rgba(0, 0, 0, 0.7);
+	}
+}
+
+body.dark .clubflow-calendar,
+body.dark-mode .clubflow-calendar,
+body.is-dark .clubflow-calendar,
+[data-theme="dark"] .clubflow-calendar,
+body.dark .clubflow-modal,
+body.dark-mode .clubflow-modal,
+body.is-dark .clubflow-modal,
+[data-theme="dark"] .clubflow-modal {
+	--clubflow-bg: #0f1115;
+	--clubflow-surface: #151a22;
+	--clubflow-text: #e6eaf2;
+	--clubflow-muted: rgba(230, 234, 242, 0.75);
+	--clubflow-border: rgba(230, 234, 242, 0.12);
+	--clubflow-accent: #4da3ff;
+	--clubflow-backdrop: rgba(0, 0, 0, 0.7);
+}
+
+/* Hovercard dark mode - class based */
+body.dark .clubflow-hovercard,
+body.dark-mode .clubflow-hovercard,
+body.is-dark .clubflow-hovercard,
+[data-theme="dark"] .clubflow-hovercard {
+	background-color: #151a22;
+}
+
+body.dark .clubflow-hovercard .fc-list-event,
+body.dark .clubflow-hovercard .fc-list-event td,
+body.dark-mode .clubflow-hovercard .fc-list-event,
+body.dark-mode .clubflow-hovercard .fc-list-event td,
+body.is-dark .clubflow-hovercard .fc-list-event,
+body.is-dark .clubflow-hovercard .fc-list-event td,
+[data-theme="dark"] .clubflow-hovercard .fc-list-event,
+[data-theme="dark"] .clubflow-hovercard .fc-list-event td {
+	background-color: #151a22;
+	border: none;
+}
+
+@media (prefers-color-scheme: dark) {
+	.clubflow-calendar .fc,
+	.clubflow-calendar .fc a {
+		color: var(--clubflow-text);
+	}
+
+	.clubflow-calendar .fc .fc-scrollgrid,
+	.clubflow-calendar .fc .fc-scrollgrid td,
+	.clubflow-calendar .fc .fc-scrollgrid th,
+	.clubflow-calendar .fc .fc-col-header-cell,
+	.clubflow-calendar .fc .fc-daygrid-day {
+		border-color: var(--clubflow-border);
+	}
+
+	.clubflow-calendar .fc .fc-toolbar-title {
+		color: var(--clubflow-text);
+	}
+
+	.clubflow-calendar .fc .fc-button {
+		background: var(--clubflow-surface);
+		border-color: var(--clubflow-border);
+		color: var(--clubflow-text);
+	}
+
+	.clubflow-calendar .fc .fc-button:hover {
+		background: rgba(230, 234, 242, 0.08);
+	}
+
+	.clubflow-calendar .fc .fc-button-primary:not(:disabled).fc-button-active,
+	.clubflow-calendar .fc .fc-button-primary:not(:disabled):active {
+		background: var(--clubflow-accent);
+		border-color: var(--clubflow-accent);
+		color: #0b0d10;
+	}
+
+	.clubflow-calendar .fc .fc-daygrid-day-number,
+	.clubflow-calendar .fc .fc-col-header-cell-cushion {
+		color: var(--clubflow-muted);
+	}
+
+	.clubflow-calendar .fc .fc-list,
+	.clubflow-calendar .fc .fc-list-day-cushion {
+		background: var(--clubflow-bg);
+	}
+
+	.clubflow-calendar .fc .fc-list-event:hover td {
+		background-color: #1e242e;
+	}
+
+	.clubflow-calendar .fc .fc-list-event td,
+	.clubflow-calendar .fc .fc-list-day-text,
+	.clubflow-calendar .fc .fc-list-day-side-text {
+		color: var(--clubflow-text);
+	}
+
+	.clubflow-calendar .fc-theme-standard .fc-list {
+		border-color: var(--clubflow-border);
+	}
+
+	.clubflow-calendar .fc-theme-standard .fc-list-day-cushion {
+		background: var(--clubflow-surface);
+	}
+
+	.clubflow-modal__backdrop {
+		background: var(--clubflow-backdrop);
+	}
+
+	.clubflow-modal__dialog {
+		background: var(--clubflow-surface);
+		color: var(--clubflow-text);
+	}
+
+	.clubflow-modal__close {
+		color: var(--clubflow-text);
+	}
+
+	.clubflow-event__datetime,
+	.clubflow-event__location {
+		opacity: 0.9;
+		color: var(--clubflow-muted);
+	}
+
+	.clubflow-event__link a {
+		color: var(--clubflow-accent);
+	}
+
+	/* Hovercard dark mode - opaque background */
+	.clubflow-hovercard {
+		background-color: var(--clubflow-surface);
+	}
+
+	.clubflow-hovercard .fc-list-event,
+	.clubflow-hovercard .fc-list-event td {
+		background-color: var(--clubflow-surface);
+		border: none;
+	}
+}
+
+.clubflow-calendar .fc .fc-daygrid-day-frame,
+.clubflow-calendar .fc .fc-daygrid-day-events,
+.clubflow-calendar .fc .fc-daygrid-event-harness {
+	overflow: visible;
+}
+
+.clubflow-calendar .fc .fc-scroller,
+.clubflow-calendar .fc .fc-scroller-harness,
+.clubflow-calendar .fc .fc-daygrid-body,
+.clubflow-calendar .fc .fc-daygrid-body-natural {
+	overflow: visible !important;
+}
+
+.clubflow-calendar .fc .fc-daygrid-event-harness {
+	position: relative;
+}
+
+/* FullCalendar list view hover - fully opaque background */
+.clubflow-calendar .fc .fc-list-event:hover td {
+	background-color: #f5f5f5;
+}
+
+/* FullCalendar list view: keep td padding consistent on hover (avoid alignment jump) */
+
+.clubflow-calendar .fc .fc-list-table td {
+	box-sizing: border-box;
+	padding: 10px 12px;
+}
+
+.clubflow-calendar .fc .fc-list-event:hover td {
+	padding: 10px 12px;
+}
+
+.clubflow-calendar .fc .fc-list-event-graphic {
+	padding: 10px 10px;
+}
+
+.clubflow-calendar .fc .fc-list-event-time {
+	white-space: nowrap;
+}
+
+/* FullCalendar list view: override any hover-specific td padding resets */
+.clubflow-calendar .fc .fc-list-event td,
+.clubflow-calendar .fc .fc-list-event:hover td {
+	padding: 10px 12px !important;
+	vertical-align: top !important;
+}
+
+.clubflow-calendar .fc td.fc-list-event-graphic,
+.clubflow-calendar .fc .fc-list-event:hover td.fc-list-event-graphic {
+	padding: 10px 10px !important;
+	vertical-align: top !important;
+}
+
+.fc-h-event .fc-event-title,
+.clubflow-hovercard .fc-event-title {
+	white-space: normal;
+	padding: 0.5em;
+}
+
+
+.clubflow-hovercard {
+	pointer-events: none;
+	opacity: 0;
+	transform: translateY(2px) scale(1.01);
+	transform-origin: center;
+	box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+	border-radius: 8px;
+	overflow: hidden;
+	transition: transform 320ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 320ms ease;
+	background-color: #fff;
+}
+
+/* Hovercard in list view */
+.clubflow-hovercard .fc-list-table {
+	width: 100%;
+	border-collapse: collapse;
+	background-color: transparent;
+}
+
+.clubflow-hovercard .fc-list-event td {
+	border: none !important;
+	box-shadow: none !important;
+}
+
+.clubflow-hovercard .fc-list-table td {
+	box-sizing: border-box;
+	padding: 10px 12px !important;
+	vertical-align: top !important;
+	background-color: transparent;
+}
+
+.clubflow-hovercard .fc-list-table td.fc-list-event-graphic {
+	padding: 10px 10px !important;
+	vertical-align: top !important;
+}
+
+/* FullCalendar list view dot spacing */
+.clubflow-calendar .fc .fc-list-event-graphic {
+	padding: 10px 10px;
+}
+
+.clubflow-calendar .fc .fc-list-event-dot {
+	display: inline-block;
+	width: 0;
+	height: 0;
+	border-width: 5px;
+	border-style: solid;
+	border-radius: 50%;
+}
+
+.clubflow-hovercard .fc-list-event-dot {
+	display: inline-block;
+	width: 0;
+	height: 0;
+	border-width: 5px;
+	border-style: solid;
+	border-radius: 50%;
+}
+
+.clubflow-hovercard .fc-list-event-title,
+.clubflow-hovercard .fc-list-event-title a {
+	color: inherit;
+	text-decoration: none;
+}
+
+.clubflow-hovercard .clubflow-fc-title,
+.clubflow-calendar .clubflow-fc-title {
+	font-size: large;
+	font-weight: bold;
+	text-decoration: none;
+	color: inherit;
+}
+
+.clubflow-hovercard .clubflow-fc-excerpt,
+.clubflow-calendar .clubflow-fc-excerpt {
+	font-size: inherit;
+	font-weight: normal;
+}
+
+.clubflow-hovercard.is-visible {
+	opacity: 1;
+	transform: translateY(0) scale(1.06);
+}
+
+.clubflow-hovercard.is-leaving {
+	opacity: 0;
+	transform: translateY(2px) scale(1.03);
+}
+
+
+.clubflow-legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px 16px;
+	align-items: center;
+	margin: 10px 0 12px 12px;
+	font-size: 0.9rem;
+	color: #444;
+}
+
+.clubflow-legend__item {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.clubflow-legend__dot {
+	display: inline-block;
+	width: 0;
+	height: 0;
+	border-width: 5px;
+	border-style: solid;
+	border-radius: 50%;
+}
+
+.clubflow-legend__label {
+	line-height: 1;
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+	.clubflow-hovercard {
+		transition: none;
+	}
+}
+
+/* ===========================
+   Events List View Styles
+   =========================== */
+
+.clubflow-list {
+	max-width: 800px;
+	margin: 0 auto;
+}
+
+.clubflow-list__empty {
+	text-align: center;
+	padding: 2rem;
+	color: #666;
+	font-style: italic;
+}
+
+.clubflow-list__item {
+	margin-bottom: 1rem;
+	border-radius: 8px;
+	background: #fff;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+	overflow: hidden;
+	transition: box-shadow 200ms ease;
+}
+
+.clubflow-list__item:hover {
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.clubflow-list__header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	padding: 1rem 1.25rem;
+	cursor: pointer;
+	border-left: 4px solid #3788d8;
+	transition: background-color 150ms ease;
+}
+
+.clubflow-list__header:hover {
+	background-color: #f5f5f5;
+}
+
+.clubflow-list__info {
+	flex: 1;
+	min-width: 0;
+}
+
+.clubflow-list__title {
+	margin: 0 0 0.5rem 0;
+	font-size: 1.125rem;
+	font-weight: 600;
+	line-height: 1.3;
+}
+
+.clubflow-list__meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 1rem;
+	margin-bottom: 0.5rem;
+	font-size: 0.875rem;
+	color: #666;
+}
+
+.clubflow-list__date::before {
+	content: "📅 ";
+}
+
+.clubflow-list__location::before {
+	content: "📍 ";
+}
+
+.clubflow-list__excerpt {
+	color: #555;
+	font-size: 0.9375rem;
+	line-height: 1.5;
+}
+
+.clubflow-list__chevron {
+	flex-shrink: 0;
+	width: 24px;
+	height: 24px;
+	margin-left: 1rem;
+	margin-top: 0.25rem;
+	color: #999;
+	transition: transform 300ms ease, color 150ms ease;
+}
+
+.clubflow-list__item:hover .clubflow-list__chevron {
+	color: #666;
+}
+
+.clubflow-list__item.is-expanded .clubflow-list__chevron {
+	transform: rotate(180deg);
+	color: #3788d8;
+}
+
+.clubflow-list__content {
+	max-height: 0;
+	overflow: hidden;
+	transition: max-height 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.clubflow-list__item.is-expanded .clubflow-list__content {
+	max-height: 2000px;
+}
+
+.clubflow-list__content-inner {
+	padding: 0 1.25rem 1rem 1.25rem;
+	border-top: 1px solid rgba(0, 0, 0, 0.06);
+	margin-top: 0;
+	padding-top: 1rem;
+}
+
+.clubflow-list__content-inner > :first-child {
+	margin-top: 0;
+}
+
+.clubflow-list__content-inner > :last-child {
+	margin-bottom: 0;
+}
+
+.clubflow-list__link {
+	padding: 0 1.25rem 1rem;
+	margin: 0;
+}
+
+.clubflow-list__link a {
+	color: #3788d8;
+	text-decoration: none;
+	font-weight: 500;
+}
+
+.clubflow-list__link a:hover {
+	text-decoration: underline;
+}
+
+/* Dark mode support for list */
+@media (prefers-color-scheme: dark) {
+	.clubflow-list {
+		--clubflow-list-bg: #151a22;
+		--clubflow-list-text: #e6eaf2;
+		--clubflow-list-muted: rgba(230, 234, 242, 0.65);
+		--clubflow-list-border: rgba(230, 234, 242, 0.1);
+	}
+}
+
+body.dark .clubflow-list,
+body.dark-mode .clubflow-list,
+body.is-dark .clubflow-list,
+[data-theme="dark"] .clubflow-list {
+	--clubflow-list-bg: #151a22;
+	--clubflow-list-text: #e6eaf2;
+	--clubflow-list-muted: rgba(230, 234, 242, 0.65);
+	--clubflow-list-border: rgba(230, 234, 242, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+	.clubflow-list__item {
+		background: var(--clubflow-list-bg);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+	}
+
+	.clubflow-list__item:hover {
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+	}
+
+	.clubflow-list__header:hover {
+		background-color: #1e242e;
+	}
+
+	.clubflow-list__title {
+		color: var(--clubflow-list-text);
+	}
+
+	.clubflow-list__meta {
+		color: var(--clubflow-list-muted);
+	}
+
+	.clubflow-list__excerpt {
+		color: var(--clubflow-list-muted);
+	}
+
+	.clubflow-list__chevron {
+		color: var(--clubflow-list-muted);
+	}
+
+	.clubflow-list__item:hover .clubflow-list__chevron {
+		color: var(--clubflow-list-text);
+	}
+
+	.clubflow-list__item.is-expanded .clubflow-list__chevron {
+		color: #4da3ff;
+	}
+
+	.clubflow-list__content-inner {
+		border-top-color: var(--clubflow-list-border);
+		color: var(--clubflow-list-text);
+	}
+
+	.clubflow-list__link a {
+		color: #4da3ff;
+	}
+
+	.clubflow-list__empty {
+		color: var(--clubflow-list-muted);
+	}
+}
+
+/* Class-based dark mode for list */
+body.dark .clubflow-list__item,
+body.dark-mode .clubflow-list__item,
+body.is-dark .clubflow-list__item,
+[data-theme="dark"] .clubflow-list__item {
+	background: var(--clubflow-list-bg);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+body.dark .clubflow-list__title,
+body.dark-mode .clubflow-list__title,
+body.is-dark .clubflow-list__title,
+[data-theme="dark"] .clubflow-list__title {
+	color: var(--clubflow-list-text);
+}
+
+body.dark .clubflow-list__meta,
+body.dark-mode .clubflow-list__meta,
+body.is-dark .clubflow-list__meta,
+[data-theme="dark"] .clubflow-list__meta,
+body.dark .clubflow-list__excerpt,
+body.dark-mode .clubflow-list__excerpt,
+body.is-dark .clubflow-list__excerpt,
+[data-theme="dark"] .clubflow-list__excerpt {
+	color: var(--clubflow-list-muted);
+}
+
+body.dark .clubflow-list__content-inner,
+body.dark-mode .clubflow-list__content-inner,
+body.is-dark .clubflow-list__content-inner,
+[data-theme="dark"] .clubflow-list__content-inner {
+	border-top-color: var(--clubflow-list-border);
+	color: var(--clubflow-list-text);
+}
+
+body.dark .clubflow-list__link a,
+body.dark-mode .clubflow-list__link a,
+body.is-dark .clubflow-list__link a,
+[data-theme="dark"] .clubflow-list__link a {
+	color: #4da3ff;
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+	.clubflow-list__header {
+		padding: 0.875rem 1rem;
+	}
+
+	.clubflow-list__title {
+		font-size: 1rem;
+	}
+
+	.clubflow-list__meta {
+		font-size: 0.8125rem;
+	}
+
+	.clubflow-list__excerpt {
+		font-size: 0.875rem;
+	}
+
+	.clubflow-list__content-inner,
+	.clubflow-list__link {
+		padding-left: 1rem;
+		padding-right: 1rem;
+	}
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+	.clubflow-list__chevron,
+	.clubflow-list__content,
+	.clubflow-list__item {
+		transition: none;
+	}
+}
+
+/* ===========================
+   Booking Form Styles
+   =========================== */
+
+.clubflow-booking {
+	margin-top: 1rem;
+}
+
+.clubflow-booking__title {
+	margin: 0 0 0.75rem 0;
+	font-size: 1.125rem;
+	font-weight: 600;
+}
+
+.clubflow-booking__meta {
+	margin: 0 0 1rem 0;
+	font-size: 0.9375rem;
+	color: #555;
+}
+
+.clubflow-booking__price {
+	color: #222;
+}
+
+.clubflow-booking__spots {
+	color: #2e7d32;
+}
+
+.clubflow-booking__spots--full {
+	color: #c62828;
+	font-weight: 600;
+}
+
+.clubflow-booking__full {
+	padding: 1rem;
+	background: #fff3e0;
+	border-radius: 6px;
+	color: #e65100;
+	font-weight: 500;
+}
+
+.clubflow-booking__form {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.clubflow-booking__field {
+	margin: 0;
+}
+
+.clubflow-booking__field label {
+	display: block;
+	margin-bottom: 0.25rem;
+	font-weight: 500;
+	font-size: 0.9375rem;
+}
+
+.clubflow-booking__field label .required {
+	color: #c62828;
+}
+
+.clubflow-booking__field label .optional {
+	font-weight: 400;
+	color: #888;
+	font-size: 0.875rem;
+}
+
+.clubflow-booking__field input {
+	width: 100%;
+	padding: 0.625rem 0.75rem;
+	font-size: 1rem;
+	border: 1px solid #ccc;
+	border-radius: 6px;
+	transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.clubflow-booking__field input:focus {
+	outline: none;
+	border-color: var(--clubflow-accent, #3788d8);
+	box-shadow: 0 0 0 3px rgba(55, 136, 216, 0.15);
+}
+
+.clubflow-booking__submit {
+	margin: 0.5rem 0 0 0;
+}
+
+.clubflow-booking__button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.75rem 1.5rem;
+	font-size: 1rem;
+	font-weight: 600;
+	color: #fff;
+	background: var(--clubflow-accent, #3788d8);
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: background-color 150ms ease, transform 100ms ease;
+}
+
+.clubflow-booking__button:hover:not(:disabled) {
+	background: #2a6bb5;
+}
+
+.clubflow-booking__button:active:not(:disabled) {
+	transform: scale(0.98);
+}
+
+.clubflow-booking__button:disabled {
+	opacity: 0.7;
+	cursor: not-allowed;
+}
+
+.clubflow-booking__message {
+	padding: 1rem;
+	border-radius: 6px;
+	font-size: 0.9375rem;
+	line-height: 1.5;
+}
+
+.clubflow-booking__message--success {
+	background: #e8f5e9;
+	color: #1b5e20;
+	border: 1px solid #a5d6a7;
+}
+
+.clubflow-booking__message--error {
+	background: #ffebee;
+	color: #b71c1c;
+	border: 1px solid #ef9a9a;
+}
+
+/* Dark mode for booking form */
+@media (prefers-color-scheme: dark) {
+	.clubflow-booking__meta {
+		color: var(--clubflow-muted, #aaa);
+	}
+
+	.clubflow-booking__price {
+		color: var(--clubflow-text, #e6eaf2);
+	}
+
+	.clubflow-booking__spots {
+		color: #81c784;
+	}
+
+	.clubflow-booking__spots--full {
+		color: #ef5350;
+	}
+
+	.clubflow-booking__full {
+		background: rgba(230, 81, 0, 0.15);
+		color: #ffb74d;
+	}
+
+	.clubflow-booking__field label {
+		color: var(--clubflow-text, #e6eaf2);
+	}
+
+	.clubflow-booking__field label .optional {
+		color: var(--clubflow-muted, #aaa);
+	}
+
+	.clubflow-booking__field input {
+		background: var(--clubflow-bg, #0f1115);
+		border-color: var(--clubflow-border, rgba(230, 234, 242, 0.12));
+		color: var(--clubflow-text, #e6eaf2);
+	}
+
+	.clubflow-booking__field input:focus {
+		border-color: var(--clubflow-accent, #4da3ff);
+		box-shadow: 0 0 0 3px rgba(77, 163, 255, 0.2);
+	}
+
+	.clubflow-booking__button {
+		background: var(--clubflow-accent, #4da3ff);
+		color: #0b0d10;
+	}
+
+	.clubflow-booking__button:hover:not(:disabled) {
+		background: #7ab8ff;
+	}
+
+	.clubflow-booking__message--success {
+		background: rgba(27, 94, 32, 0.2);
+		color: #81c784;
+		border-color: rgba(129, 199, 132, 0.3);
+	}
+
+	.clubflow-booking__message--error {
+		background: rgba(183, 28, 28, 0.2);
+		color: #ef5350;
+		border-color: rgba(239, 83, 80, 0.3);
+	}
+}
+
+/* Mobile responsive for booking */
+@media (max-width: 640px) {
+	.clubflow-booking__button {
+		width: 100%;
+	}
+}
+
+/* ===========================
+   Swish Payment Styles
+   =========================== */
+
+.clubflow-payment-info {
+	margin-top: 20px;
+	padding-top: 20px;
+	border-top: 1px solid rgba(0, 0, 0, 0.1);
+	text-align: center;
+}
+
+.clubflow-swish-header {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	margin-bottom: 16px;
+}
+
+.clubflow-swish-logo {
+	height: 32px;
+	width: auto;
+}
+
+.clubflow-swish-amount {
+	font-size: 1.5rem;
+	font-weight: 700;
+	color: #222;
+}
+
+.clubflow-swish-qr {
+	margin: 16px 0;
+}
+
+.clubflow-swish-qr p {
+	margin: 0 0 12px 0;
+	font-size: 0.9375rem;
+	color: #555;
+}
+
+.clubflow-qr-image {
+	max-width: 200px;
+	height: auto;
+	border-radius: 8px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.clubflow-swish-button {
+	display: inline-block;
+	padding: 14px 32px;
+	margin: 16px 0;
+	font-size: 1.125rem;
+	font-weight: 600;
+	color: #fff;
+	background: linear-gradient(135deg, #47B14B 0%, #3B9E3F 100%);
+	border-radius: 50px;
+	text-decoration: none;
+	box-shadow: 0 4px 12px rgba(71, 177, 75, 0.3);
+	transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.clubflow-swish-button:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 16px rgba(71, 177, 75, 0.4);
+	color: #fff;
+}
+
+.clubflow-swish-button:active {
+	transform: translateY(0);
+}
+
+.clubflow-swish-manual {
+	margin: 12px 0;
+	font-size: 0.875rem;
+	color: #666;
+}
+
+.clubflow-swish-ref {
+	margin: 8px 0;
+	font-size: 0.8125rem;
+	color: #888;
+}
+
+.clubflow-swish-ref code {
+	background: #f5f5f5;
+	padding: 2px 6px;
+	border-radius: 4px;
+	font-family: monospace;
+}
+
+/* Payment status indicator */
+.clubflow-payment-status {
+	margin-top: 16px;
+	padding: 12px 16px;
+	border-radius: 8px;
+	font-size: 0.9375rem;
+	font-weight: 500;
+	background: #fff3e0;
+	color: #e65100;
+}
+
+.clubflow-payment-status[data-status="pending"] {
+	background: #fff3e0;
+	color: #e65100;
+}
+
+.clubflow-payment-status--success {
+	background: #e8f5e9 !important;
+	color: #1b5e20 !important;
+}
+
+.clubflow-payment-status--error {
+	background: #ffebee !important;
+	color: #b71c1c !important;
+}
+
+.clubflow-payment-status--warning {
+	background: #fff8e1 !important;
+	color: #f57f17 !important;
+}
+
+/* Spinner animation */
+.clubflow-status-spinner {
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	border: 2px solid currentColor;
+	border-top-color: transparent;
+	border-radius: 50%;
+	animation: clubflow-spin 0.8s linear infinite;
+	vertical-align: middle;
+	margin-right: 8px;
+}
+
+@keyframes clubflow-spin {
+	to { transform: rotate(360deg); }
+}
+
+/* Dark mode for Swish */
+@media (prefers-color-scheme: dark) {
+	.clubflow-swish-amount {
+		color: var(--clubflow-text, #e6eaf2);
+	}
+
+	.clubflow-swish-qr p,
+	.clubflow-swish-manual {
+		color: var(--clubflow-muted, #aaa);
+	}
+
+	.clubflow-swish-ref {
+		color: var(--clubflow-muted, #888);
+	}
+
+	.clubflow-swish-ref code {
+		background: rgba(255, 255, 255, 0.1);
+	}
+
+	.clubflow-qr-image {
+		background: #fff;
+		padding: 8px;
+	}
+}
+
+/* Mobile responsive for Swish */
+@media (max-width: 640px) {
+	.clubflow-swish-header {
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.clubflow-swish-button {
+		display: block;
+		width: 100%;
+		text-align: center;
+	}
+
+	.clubflow-qr-image {
+		max-width: 180px;
+	}
+}
+
+/* ===========================
+   Klarna Checkout Styles
+   =========================== */
+
+.clubflow-klarna-checkout {
+	margin-top: 20px;
+	padding-top: 20px;
+	border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.clubflow-klarna-header {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 16px;
+}
+
+.clubflow-klarna-amount {
+	font-size: 1.25rem;
+	font-weight: 600;
+	color: #222;
+}
+
+#klarna-checkout-container {
+	min-height: 300px;
+}
+
+#klarna-checkout-container iframe {
+	width: 100% !important;
+	border: none !important;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+	.clubflow-klarna-amount {
+		color: var(--clubflow-text, #e6eaf2);
+	}
+}
+
+/* ===========================
+   Stripe Checkout Styles
+   =========================== */
+
+.clubflow-stripe-checkout {
+	margin-top: 20px;
+	padding: 24px;
+	text-align: center;
+	background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+	border-radius: 12px;
+}
+
+.clubflow-stripe-checkout p {
+	margin: 0 0 16px 0;
+	font-size: 1rem;
+	color: #555;
+}
+
+.clubflow-stripe-button {
+	display: inline-block;
+	padding: 14px 32px;
+	font-size: 1.125rem;
+	font-weight: 600;
+	color: #fff;
+	background: linear-gradient(135deg, #635bff 0%, #5851ea 100%);
+	border-radius: 8px;
+	text-decoration: none;
+	box-shadow: 0 4px 12px rgba(99, 91, 255, 0.3);
+	transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.clubflow-stripe-button:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 16px rgba(99, 91, 255, 0.4);
+	color: #fff;
+}
+
+/* Dark mode for Stripe */
+@media (prefers-color-scheme: dark) {
+	.clubflow-stripe-checkout {
+		background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+	}
+
+	.clubflow-stripe-checkout p {
+		color: var(--clubflow-muted, #aaa);
+	}
+}
+
+/* Confirmation Toast */
+.clubflow-confirmation-toast {
+	position: fixed;
+	top: 20px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 100001;
+	animation: clubflow-toast-in 0.3s ease;
+}
+
+@keyframes clubflow-toast-in {
+	from {
+		opacity: 0;
+		transform: translateX(-50%) translateY(-20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(-50%) translateY(0);
+	}
+}
+
+.clubflow-toast-hiding {
+	animation: clubflow-toast-out 0.3s ease forwards;
+}
+
+@keyframes clubflow-toast-out {
+	to {
+		opacity: 0;
+		transform: translateX(-50%) translateY(-20px);
+	}
+}
+
+.clubflow-toast-content {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 16px 20px;
+	background: #fff;
+	border-radius: 12px;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+	border-left: 4px solid #2e7d32;
+}
+
+.clubflow-toast-icon {
+	font-size: 24px;
+	color: #2e7d32;
+}
+
+.clubflow-toast-text {
+	font-size: 14px;
+	line-height: 1.4;
+}
+
+.clubflow-toast-text code {
+	display: inline-block;
+	padding: 2px 8px;
+	background: #f5f5f5;
+	border-radius: 4px;
+	font-family: monospace;
+	font-weight: 600;
+}
+
+.clubflow-toast-close {
+	background: none;
+	border: none;
+	font-size: 24px;
+	cursor: pointer;
+	color: #999;
+	padding: 0 4px;
+	line-height: 1;
+}
+
+.clubflow-toast-close:hover {
+	color: #333;
+}
+
+/* Stripe Embedded Checkout */
+.clubflow-stripe-header {
+	text-align: center;
+	margin-bottom: 16px;
+}
+
+.clubflow-stripe-amount {
+	font-size: 1.5rem;
+	font-weight: 700;
+	color: #635bff;
+}
+
+#stripe-checkout-container {
+	min-height: 300px;
+	border-radius: 8px;
+	overflow: hidden;
+}
