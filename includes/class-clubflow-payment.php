@@ -28,6 +28,7 @@ final class ClubFlow_Payment {
 		// Payment log admin columns
 		add_filter('manage_' . self::LOG_POST_TYPE . '_posts_columns', [$this, 'payment_log_columns']);
 		add_action('manage_' . self::LOG_POST_TYPE . '_posts_custom_column', [$this, 'render_payment_log_column'], 10, 2);
+		add_action('admin_notices', [$this, 'payment_log_admin_notice']);
 	}
 
 	/**
@@ -51,6 +52,41 @@ final class ClubFlow_Payment {
 
 		$saved = get_option(self::OPTION_KEY, []);
 		return wp_parse_args($saved, $defaults);
+	}
+
+	/**
+	 * Show explanatory notice on payment log page
+	 */
+	public function payment_log_admin_notice(): void {
+		$screen = get_current_screen();
+		if (!$screen || $screen->post_type !== self::LOG_POST_TYPE) {
+			return;
+		}
+		?>
+		<div class="notice notice-info" style="border-left-color: #7b1fa2;">
+			<details style="padding: 8px 0;">
+				<summary style="cursor: pointer; font-weight: 600; color: #1d2327;">
+					ℹ️ <?php esc_html_e('About Payment Log', 'clubflow'); ?>
+				</summary>
+				<div style="margin-top: 10px; color: #50575e;">
+					<p style="margin: 0 0 8px 0;">
+						<?php esc_html_e('This is a complete log of all payment transactions — successful, pending, and failed.', 'clubflow'); ?>
+					</p>
+					<p style="margin: 0 0 8px 0;">
+						<strong><?php esc_html_e('Status meanings:', 'clubflow'); ?></strong>
+					</p>
+					<ul style="margin: 0 0 0 20px; list-style: disc;">
+						<li><span style="color: #2e7d32;">●</span> <strong>Completed</strong> — <?php esc_html_e('Payment received and confirmed', 'clubflow'); ?></li>
+						<li><span style="color: #ff9800;">●</span> <strong>Pending</strong> — <?php esc_html_e('Awaiting payment (user may have abandoned checkout)', 'clubflow'); ?></li>
+						<li><span style="color: #c62828;">●</span> <strong>Failed</strong> — <?php esc_html_e('Payment was declined or errored', 'clubflow'); ?></li>
+					</ul>
+					<p style="margin: 10px 0 0 0; font-style: italic;">
+						<?php esc_html_e('Tip: Old pending entries can often be safely ignored — they represent abandoned checkouts.', 'clubflow'); ?>
+					</p>
+				</div>
+			</details>
+		</div>
+		<?php
 	}
 
 	/**
