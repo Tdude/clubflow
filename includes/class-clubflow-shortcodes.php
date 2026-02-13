@@ -17,6 +17,7 @@ final class ClubFlow_Shortcodes {
 	public function register(): void {
 		add_shortcode('club_calendar', [$this, 'shortcode_club_calendar']);
 		add_shortcode('club_events_list', [$this, 'shortcode_club_events_list']);
+		add_shortcode('club_booking', [$this, 'shortcode_club_booking']);
 	}
 
 	public function shortcode_club_calendar(array $atts = []): string {
@@ -90,9 +91,22 @@ final class ClubFlow_Shortcodes {
 			'meta_key'       => '_clubflow_start',
 			'order'          => strtoupper($atts['order']) === 'DESC' ? 'DESC' : 'ASC',
 			'meta_query'     => [
+				'relation' => 'AND',
 				[
 					'key'     => '_clubflow_start',
 					'compare' => 'EXISTS',
+				],
+				// Only show calendar mode events (exclude products and packages)
+				[
+					'relation' => 'OR',
+					[
+						'key' => '_clubflow_event_mode',
+						'value' => 'calendar',
+					],
+					[
+						'key' => '_clubflow_event_mode',
+						'compare' => 'NOT EXISTS',
+					],
 				],
 			],
 		];
@@ -206,6 +220,141 @@ final class ClubFlow_Shortcodes {
 
 		wp_reset_postdata();
 		$html .= '</div>';
+		return $html;
+	}
+
+	/**
+	 * Shortcode: [club_booking id="123"]
+	 * Renders a booking form for any event (calendar, product, or package)
+	 */
+	public function shortcode_club_booking(array $atts = []): string {
+		$atts = shortcode_atts(
+			[
+				'id'           => 0,
+				'show_price'   => 'true',
+				'show_spots'   => 'true',
+				'show_includes'=> 'true',
+				'button_text'  => '',
+			],
+			$atts,
+			'club_booking'
+		);
+
+		$event_id = absint($atts['id']);
+		if ($event_id <= 0) {
+			return '<p class="clubflow-booking-error">' . esc_html__('Invalid event ID.', 'clubflow') . '</p>';
+		}
+
+		$post = get_post($event_id);
+		if (!$post || $post->post_type !== ClubFlow::POST_TYPE) {
+			return '<p class="clubflow-booking-error">' . esc_html__('Event not found.', 'clubflow') . '</p>';
+		}
+
+		// Enqueue assets
+		$this->assets->maybe_enqueue_frontend_assets();
+
+		$event_mode = get_post_meta($event_id, '_clubflow_event_mode', true) ?: 'calendar';
+		$price = get_post_meta($event_id, '_clubflow_price', true);
+		$max_spots = (int) get_post_meta($event_id, '_clubflow_max_spots', true);
+		$linked_events = get_post_meta($event_id, '_clubflow_linked_events', true) ?: [];
+
+		$spots_remaining = null;
+		$is_fully_booked = false;
+
+		if (class_exists('ClubFlow_Booking')) {
+			$spots_remaining = ClubFlow_Booking::get_spots_remaining($event_id);
+			$is_fully_booked = ClubFlow_Booking::is_fully_booked($event_id);
+		}
+
+		$show_price = filter_var($atts['show_price'], FILTER_VALIDATE_BOOLEAN);
+		$show_spots = filter_var($atts['show_spots'], FILTER_VALIDATE_BOOLEAN);
+		$show_includes = filter_var($atts['show_includes'], FILTER_VALIDATE_BOOLEAN);
+		$button_text = $atts['button_text'] ?: __('Book now', 'clubflow');
+
+		$html = '<div class="clubflow-booking-widget" data-event-id="' . esc_attr($event_id) . '">';
+
+		// Header
+		$html .= '<div class="clubflow-booking-widget__header">';
+		$html .= '<h3 class="clubflow-booking-widget__title">' . esc_html(get_the_title($event_id)) . '</h3>';
+
+		// Meta line (price + spots)
+		if (($show_price && $price) || ($show_spots && $spots_remaining !== null)) {
+			$html .= '<p class="clubflow-booking-widget__meta">';
+			if ($show_price && $price) {
+				$html .= '<span class="clubflow-booking-widget__price">' . esc_html($price) . '</span>';
+			}
+			if ($show_spots && $spots_remaining !== null) {
+				if ($show_price && $price) {
+					$html .= ' <span class="clubflow-booking-widget__sep">•</span> ';
+				}
+				$spots_text = $is_fully_booked
+					? __('Fully booked', 'clubflow')
+					: sprintf(__('%d spots left', 'clubflow'), $spots_remaining);
+				$spots_class = $is_fully_booked ? ' clubflow-booking-widget__spots--full' : '';
+				$html .= '<span class="clubflow-booking-widget__spots' . $spots_class . '">' . esc_html($spots_text) . '</span>';
+			}
+			$html .= '</p>';
+		}
+		$html .= '</div>';
+
+		// For packages: show included events
+		if ($event_mode === 'package' && $show_includes && !empty($linked_events)) {
+			$html .= '<div class="clubflow-booking-widget__includes">';
+			$html .= '<p class="clubflow-booking-widget__includes-label"><strong>' . esc_html__('Includes:', 'clubflow') . '</strong></p>';
+			$html .= '<ul class="clubflow-booking-widget__includes-list">';
+			foreach ($linked_events as $linked_id) {
+				$linked_post = get_post($linked_id);
+				if (!$linked_post) continue;
+				$linked_start = get_post_meta($linked_id, '_clubflow_start', true);
+				$linked_date = $linked_start ? wp_date('D j M H:i', strtotime($linked_start)) : '';
+				$html .= '<li>' . esc_html($linked_post->post_title);
+				if ($linked_date) {
+					$html .= ' <span class="clubflow-booking-widget__includes-date">— ' . esc_html($linked_date) . '</span>';
+				}
+				$html .= '</li>';
+			}
+			$html .= '</ul>';
+			$html .= '</div>';
+		}
+
+		// Fully booked message
+		if ($is_fully_booked) {
+			$html .= '<div class="clubflow-booking-widget__full">';
+			$html .= '<p>' . esc_html__('This event is fully booked. Please check back later or contact us.', 'clubflow') . '</p>';
+			$html .= '</div>';
+		} else {
+			// Booking form
+			$html .= '<form class="clubflow-booking-widget__form" data-clubflow-booking-form>';
+			$html .= '<input type="hidden" name="event_id" value="' . esc_attr($event_id) . '" />';
+			$html .= '<input type="hidden" name="return_url" value="' . esc_attr(home_url($_SERVER['REQUEST_URI'] ?? '')) . '" />';
+
+			$html .= '<div class="clubflow-booking-widget__field">';
+			$html .= '<label for="clubflow_widget_name_' . $event_id . '">' . esc_html__('Name', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<input type="text" id="clubflow_widget_name_' . $event_id . '" name="name" required />';
+			$html .= '</div>';
+
+			$html .= '<div class="clubflow-booking-widget__field">';
+			$html .= '<label for="clubflow_widget_email_' . $event_id . '">' . esc_html__('Email', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<input type="email" id="clubflow_widget_email_' . $event_id . '" name="email" required />';
+			$html .= '</div>';
+
+			$html .= '<div class="clubflow-booking-widget__field">';
+			$html .= '<label for="clubflow_widget_phone_' . $event_id . '">' . esc_html__('Phone', 'clubflow') . ' <span class="optional">(' . esc_html__('optional', 'clubflow') . ')</span></label>';
+			$html .= '<input type="tel" id="clubflow_widget_phone_' . $event_id . '" name="phone" />';
+			$html .= '</div>';
+
+			// TODO: Clip card field will go here in Phase 3
+
+			$html .= '<div class="clubflow-booking-widget__submit">';
+			$html .= '<button type="submit" class="clubflow-booking-widget__button">' . esc_html($button_text) . '</button>';
+			$html .= '</div>';
+
+			$html .= '<div class="clubflow-booking-widget__message" data-clubflow-booking-message style="display: none;"></div>';
+			$html .= '</form>';
+		}
+
+		$html .= '</div>';
+
 		return $html;
 	}
 }

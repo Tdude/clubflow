@@ -23,6 +23,7 @@ final class ClubFlow_Cpt {
 		foreach ($columns as $key => $value) {
 			if ($key === 'date') {
 				// Insert our columns before WP date column
+				$new_columns['event_mode'] = __('Mode', 'clubflow');
 				$new_columns['event_date'] = __('Event Date', 'clubflow');
 				$new_columns['event_time'] = __('Time', 'clubflow');
 				$new_columns['event_category'] = __('Category', 'clubflow');
@@ -40,6 +41,25 @@ final class ClubFlow_Cpt {
 	 */
 	public function render_admin_columns(string $column, int $post_id): void {
 		switch ($column) {
+			case 'event_mode':
+				$mode = get_post_meta($post_id, '_clubflow_event_mode', true) ?: 'calendar';
+				$mode_labels = [
+					'calendar' => ['📅', __('Calendar', 'clubflow')],
+					'product'  => ['🛒', __('Product', 'clubflow')],
+					'package'  => ['📦', __('Package', 'clubflow')],
+				];
+				$label = $mode_labels[$mode] ?? $mode_labels['calendar'];
+				echo '<span title="' . esc_attr($label[1]) . '">' . esc_html($label[0]) . '</span>';
+				
+				// Show linked events count for packages
+				if ($mode === 'package') {
+					$linked = get_post_meta($post_id, '_clubflow_linked_events', true) ?: [];
+					if (!empty($linked)) {
+						echo ' <small style="color:#666;">(' . count($linked) . ')</small>';
+					}
+				}
+				break;
+
 			case 'event_date':
 				$start = get_post_meta($post_id, '_clubflow_start', true);
 				if ($start) {

@@ -45,9 +45,22 @@ final class ClubFlow_Ajax {
 			'meta_key' => '_clubflow_start',
 			'order' => 'ASC',
 			'meta_query' => [
+				'relation' => 'AND',
 				[
 					'key' => '_clubflow_start',
 					'compare' => 'EXISTS',
+				],
+				// Only show calendar mode events (exclude products and packages)
+				[
+					'relation' => 'OR',
+					[
+						'key' => '_clubflow_event_mode',
+						'value' => 'calendar',
+					],
+					[
+						'key' => '_clubflow_event_mode',
+						'compare' => 'NOT EXISTS',
+					],
 				],
 			],
 		];

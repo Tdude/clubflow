@@ -1305,3 +1305,179 @@ body.is-dark .clubflow-list__link a,
 	border-radius: 8px;
 	overflow: hidden;
 }
+
+/* ================================
+   Booking Widget (shortcode)
+   ================================ */
+.clubflow-booking-widget {
+	max-width: 480px;
+	background: #fff;
+	border: 1px solid #e0e0e0;
+	border-radius: 12px;
+	padding: 24px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.clubflow-booking-widget__header {
+	margin-bottom: 16px;
+}
+
+.clubflow-booking-widget__title {
+	font-size: 1.25rem;
+	font-weight: 600;
+	margin: 0 0 8px;
+	color: #1a1a1a;
+}
+
+.clubflow-booking-widget__meta {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.95rem;
+	color: #666;
+	margin: 0;
+}
+
+.clubflow-booking-widget__price {
+	font-weight: 600;
+	color: #1a1a1a;
+}
+
+.clubflow-booking-widget__sep {
+	color: #ccc;
+}
+
+.clubflow-booking-widget__spots--full {
+	color: #c62828;
+	font-weight: 500;
+}
+
+.clubflow-booking-widget__includes {
+	background: #f8f9fa;
+	border-radius: 8px;
+	padding: 12px 16px;
+	margin-bottom: 16px;
+}
+
+.clubflow-booking-widget__includes-label {
+	margin: 0 0 8px;
+	font-size: 0.9rem;
+}
+
+.clubflow-booking-widget__includes-list {
+	margin: 0;
+	padding-left: 20px;
+	font-size: 0.9rem;
+}
+
+.clubflow-booking-widget__includes-list li {
+	margin-bottom: 4px;
+}
+
+.clubflow-booking-widget__includes-date {
+	color: #666;
+}
+
+.clubflow-booking-widget__full {
+	background: #fff3cd;
+	border: 1px solid #ffc107;
+	border-radius: 8px;
+	padding: 12px 16px;
+	color: #856404;
+}
+
+.clubflow-booking-widget__form {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.clubflow-booking-widget__field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.clubflow-booking-widget__field label {
+	font-size: 0.9rem;
+	font-weight: 500;
+	color: #333;
+}
+
+.clubflow-booking-widget__field label .required {
+	color: #c62828;
+}
+
+.clubflow-booking-widget__field label .optional {
+	color: #999;
+	font-weight: 400;
+}
+
+.clubflow-booking-widget__field input {
+	padding: 10px 12px;
+	border: 1px solid #ddd;
+	border-radius: 8px;
+	font-size: 1rem;
+	transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.clubflow-booking-widget__field input:focus {
+	outline: none;
+	border-color: #3788d8;
+	box-shadow: 0 0 0 3px rgba(55, 136, 216, 0.15);
+}
+
+.clubflow-booking-widget__submit {
+	margin-top: 8px;
+}
+
+.clubflow-booking-widget__button {
+	width: 100%;
+	padding: 12px 24px;
+	background: #3788d8;
+	color: #fff;
+	border: none;
+	border-radius: 8px;
+	font-size: 1rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.2s, transform 0.1s;
+}
+
+.clubflow-booking-widget__button:hover {
+	background: #2a6cb8;
+}
+
+.clubflow-booking-widget__button:active {
+	transform: scale(0.98);
+}
+
+.clubflow-booking-widget__button:disabled {
+	background: #ccc;
+	cursor: not-allowed;
+}
+
+.clubflow-booking-widget__message {
+	padding: 12px;
+	border-radius: 8px;
+	font-size: 0.9rem;
+}
+
+.clubflow-booking-widget__message--success {
+	background: #e8f5e9;
+	color: #2e7d32;
+	border: 1px solid #a5d6a7;
+}
+
+.clubflow-booking-widget__message--error {
+	background: #ffebee;
+	color: #c62828;
+	border: 1px solid #ef9a9a;
+}
+
+.clubflow-booking-error {
+	color: #c62828;
+	padding: 12px;
+	background: #ffebee;
+	border-radius: 8px;
+}

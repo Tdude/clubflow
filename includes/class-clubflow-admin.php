@@ -196,6 +196,93 @@ final class ClubFlow_Admin {
 		echo '<input type="text" id="clubflow_location" name="clubflow_location" value="' . esc_attr((string) $location) . '" style="width: 100%;" />';
 		echo '</p>';
 
+		// Event Mode (calendar, product, package)
+		$event_mode = get_post_meta($post->ID, '_clubflow_event_mode', true) ?: 'calendar';
+		$linked_events = get_post_meta($post->ID, '_clubflow_linked_events', true) ?: [];
+
+		echo '<hr style="margin: 20px 0;" />';
+		echo '<h4 style="margin-bottom: 10px;">' . esc_html__('Event Mode', 'clubflow') . '</h4>';
+
+		echo '<p>';
+		echo '<select id="clubflow_event_mode" name="clubflow_event_mode" style="min-width: 200px;">';
+		echo '<option value="calendar" ' . selected($event_mode, 'calendar', false) . '>' . esc_html__('📅 Calendar — Shows in calendar', 'clubflow') . '</option>';
+		echo '<option value="product" ' . selected($event_mode, 'product', false) . '>' . esc_html__('🛒 Product — Hidden, embeddable via shortcode', 'clubflow') . '</option>';
+		echo '<option value="package" ' . selected($event_mode, 'package', false) . '>' . esc_html__('📦 Package — Links to multiple events', 'clubflow') . '</option>';
+		echo '</select>';
+		echo '</p>';
+
+		// Shortcode helper (shown for product and package modes)
+		echo '<div id="clubflow-shortcode-helper" style="' . ($event_mode !== 'calendar' ? '' : 'display: none;') . 'background: #e7f3ff; padding: 10px 12px; border-radius: 4px; margin: 10px 0;">';
+		echo '<strong>' . esc_html__('Shortcode:', 'clubflow') . '</strong> ';
+		echo '<code id="clubflow-shortcode-code">[club_booking id="' . esc_attr($post->ID) . '"]</code>';
+		echo '<button type="button" class="button button-small" style="margin-left: 8px;" onclick="navigator.clipboard.writeText(document.getElementById(\'clubflow-shortcode-code\').textContent); this.textContent=\'✓\';">' . esc_html__('Copy', 'clubflow') . '</button>';
+		echo '</div>';
+
+		// Linked events selector (shown only for package mode)
+		echo '<div id="clubflow-linked-events" style="' . ($event_mode === 'package' ? '' : 'display: none;') . 'margin-top: 10px;">';
+		echo '<p><strong>' . esc_html__('Linked Events:', 'clubflow') . '</strong></p>';
+		
+		// Get all calendar events for the selector
+		$calendar_events = get_posts([
+			'post_type' => ClubFlow::POST_TYPE,
+			'post_status' => ['publish', 'future'],
+			'posts_per_page' => 200,
+			'orderby' => 'meta_value',
+			'meta_key' => '_clubflow_start',
+			'order' => 'ASC',
+			'meta_query' => [
+				'relation' => 'OR',
+				[
+					'key' => '_clubflow_event_mode',
+					'value' => 'calendar',
+				],
+				[
+					'key' => '_clubflow_event_mode',
+					'compare' => 'NOT EXISTS',
+				],
+			],
+			'exclude' => [$post->ID],
+		]);
+
+		if (!empty($calendar_events)) {
+			echo '<div style="max-height: 250px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 8px; background: #fff;">';
+			foreach ($calendar_events as $event) {
+				$event_start = get_post_meta($event->ID, '_clubflow_start', true);
+				$event_date = $event_start ? wp_date('Y-m-d H:i', strtotime($event_start)) : '';
+				$checked = in_array($event->ID, (array) $linked_events) ? 'checked' : '';
+				echo '<label style="display: block; padding: 6px 8px; cursor: pointer; border-radius: 4px;" onmouseover="this.style.background=\'#f0f0f1\'" onmouseout="this.style.background=\'\'">';
+				echo '<input type="checkbox" name="clubflow_linked_events[]" value="' . esc_attr($event->ID) . '" ' . $checked . ' style="margin-right: 8px;" />';
+				echo esc_html($event->post_title);
+				if ($event_date) {
+					echo ' <span style="color: #666;">— ' . esc_html($event_date) . '</span>';
+				}
+				echo '</label>';
+			}
+			echo '</div>';
+		} else {
+			echo '<p style="color: #666;">' . esc_html__('No calendar events available to link.', 'clubflow') . '</p>';
+		}
+		echo '<p class="description">' . esc_html__('Booking this package will book the customer into all linked events.', 'clubflow') . '</p>';
+		echo '</div>';
+
+		// JavaScript for event mode toggle
+		?>
+		<script>
+		(function() {
+			var modeSelect = document.getElementById('clubflow_event_mode');
+			var shortcodeHelper = document.getElementById('clubflow-shortcode-helper');
+			var linkedEvents = document.getElementById('clubflow-linked-events');
+
+			if (modeSelect) {
+				modeSelect.addEventListener('change', function() {
+					shortcodeHelper.style.display = this.value !== 'calendar' ? '' : 'none';
+					linkedEvents.style.display = this.value === 'package' ? '' : 'none';
+				});
+			}
+		})();
+		</script>
+		<?php
+
 		// Booking fields
 		$max_spots = get_post_meta($post->ID, '_clubflow_max_spots', true);
 		$price = get_post_meta($post->ID, '_clubflow_price', true);
@@ -423,6 +510,22 @@ final class ClubFlow_Admin {
 			update_post_meta($post_id, '_clubflow_price', $price);
 		} else {
 			delete_post_meta($post_id, '_clubflow_price');
+		}
+
+		// Save event mode
+		$event_mode = isset($_POST['clubflow_event_mode']) ? sanitize_text_field(wp_unslash($_POST['clubflow_event_mode'])) : 'calendar';
+		if (!in_array($event_mode, ['calendar', 'product', 'package'], true)) {
+			$event_mode = 'calendar';
+		}
+		update_post_meta($post_id, '_clubflow_event_mode', $event_mode);
+
+		// Save linked events (for package mode)
+		$linked_events = isset($_POST['clubflow_linked_events']) ? array_map('absint', (array) $_POST['clubflow_linked_events']) : [];
+		$linked_events = array_filter($linked_events);
+		if (!empty($linked_events)) {
+			update_post_meta($post_id, '_clubflow_linked_events', $linked_events);
+		} else {
+			delete_post_meta($post_id, '_clubflow_linked_events');
 		}
 	}
 }
