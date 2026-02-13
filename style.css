@@ -38,9 +38,9 @@ ClubCal Lite plugin styles
 
 .clubflow-modal__dialog {
 	position: relative;
-	margin: 6vh auto;
+	margin: calc(6vh + 2rem) auto 6vh;
 	width: min(720px, calc(100% - 32px));
-	max-height: 88vh;
+	max-height: calc(88vh - 2rem);
 	overflow: auto;
 	background: #fff;
 	border-radius: 12px;
@@ -1403,9 +1403,26 @@ body.is-dark .clubflow-list__link a,
 	font-weight: 400;
 }
 
-/* Inputs inherit theme styling, just ensure full width */
-.clubflow-booking-widget__field input {
+/* Form inputs - basic styling that works with theme */
+.clubflow-booking-widget__field input[type="text"],
+.clubflow-booking-widget__field input[type="email"],
+.clubflow-booking-widget__field input[type="tel"] {
 	width: 100%;
+	padding: 14px 16px;
+	border: 1px solid rgba(45, 30, 18, 0.18);
+	border-radius: 14px;
+	font-size: 1.05rem;
+	font-family: inherit;
+	background: rgba(255, 255, 255, 0.85);
+	color: var(--text-dark, inherit);
+	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.clubflow-booking-widget__field input:focus {
+	outline: none;
+	border-color: var(--accent-red, rgba(155, 45, 48, 0.65));
+	box-shadow: 0 14px 40px rgba(155, 45, 48, 0.16);
 }
 
 .clubflow-booking-widget__submit {

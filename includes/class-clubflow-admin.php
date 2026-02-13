@@ -103,13 +103,54 @@ final class ClubFlow_Admin {
 	}
 
 	public function register_meta_boxes(): void {
+		// Date & Time - side column
 		add_meta_box(
-			'clubflow_event_details',
-			__('Event Details', 'clubflow'),
-			[$this, 'render_event_details_meta_box'],
+			'clubflow_datetime',
+			__('Date & Time', 'clubflow'),
+			[$this, 'render_datetime_meta_box'],
+			ClubFlow::POST_TYPE,
+			'side',
+			'high'
+		);
+
+		// Event Mode - side column  
+		add_meta_box(
+			'clubflow_event_mode',
+			__('Event Mode', 'clubflow'),
+			[$this, 'render_event_mode_meta_box'],
+			ClubFlow::POST_TYPE,
+			'side',
+			'high'
+		);
+
+		// Booking Settings - side column
+		add_meta_box(
+			'clubflow_booking_settings',
+			__('Booking', 'clubflow'),
+			[$this, 'render_booking_meta_box'],
+			ClubFlow::POST_TYPE,
+			'side',
+			'default'
+		);
+
+		// Location - normal column
+		add_meta_box(
+			'clubflow_location',
+			__('Location', 'clubflow'),
+			[$this, 'render_location_meta_box'],
 			ClubFlow::POST_TYPE,
 			'normal',
 			'high'
+		);
+
+		// Recurrence - normal column (only for non-child events)
+		add_meta_box(
+			'clubflow_recurrence',
+			__('Recurring Event', 'clubflow'),
+			[$this, 'render_recurrence_meta_box'],
+			ClubFlow::POST_TYPE,
+			'normal',
+			'default'
 		);
 
 		add_action(ClubFlow::TAX_CATEGORY . '_add_form_fields', [$this, 'render_category_color_field_add']);
@@ -163,116 +204,96 @@ final class ClubFlow_Admin {
 		}
 	}
 
-	public function render_event_details_meta_box(\WP_Post $post): void {
+	/**
+	 * Date & Time meta box (side)
+	 */
+	public function render_datetime_meta_box(\WP_Post $post): void {
 		wp_nonce_field('clubflow_save_event_details', 'clubflow_event_details_nonce');
 
 		$start = $this->utils->format_datetime_for_input((string) get_post_meta($post->ID, '_clubflow_start', true));
 		$end = $this->utils->format_datetime_for_input((string) get_post_meta($post->ID, '_clubflow_end', true));
 		$all_day = get_post_meta($post->ID, '_clubflow_all_day', true);
-		$location = get_post_meta($post->ID, '_clubflow_location', true);
-
 		$all_day_checked = (($all_day === '1') || ($all_day === '' && $post->post_status === 'auto-draft')) ? 'checked' : '';
 
 		echo '<p>';
-		echo '<label for="clubflow_start"><strong>' . esc_html__('Start date/time', 'clubflow') . '</strong></label><br />';
-		echo '<input type="datetime-local" id="clubflow_start" name="clubflow_start" value="' . esc_attr($start) . '" style="width: 100%; max-width: 320px;" />';
+		echo '<label for="clubflow_start"><strong>' . esc_html__('Start', 'clubflow') . '</strong></label><br />';
+		echo '<input type="datetime-local" id="clubflow_start" name="clubflow_start" value="' . esc_attr($start) . '" style="width: 100%;" />';
 		echo '</p>';
 
 		echo '<p>';
-		echo '<label for="clubflow_end"><strong>' . esc_html__('End date/time', 'clubflow') . '</strong> <span style="font-weight: normal; color: #666;">(' . esc_html__('optional', 'clubflow') . ')</span></label><br />';
-		echo '<input type="datetime-local" id="clubflow_end" name="clubflow_end" value="' . esc_attr($end) . '" style="width: 100%; max-width: 320px;" />';
-		echo '<p class="description" style="margin-top: 4px;">' . esc_html__('Leave empty for single-day events.', 'clubflow') . '</p>';
+		echo '<label for="clubflow_end"><strong>' . esc_html__('End', 'clubflow') . '</strong> <span style="color: #666; font-weight: normal;">(' . esc_html__('optional', 'clubflow') . ')</span></label><br />';
+		echo '<input type="datetime-local" id="clubflow_end" name="clubflow_end" value="' . esc_attr($end) . '" style="width: 100%;" />';
 		echo '</p>';
 
 		echo '<p>';
-		echo '<label for="clubflow_all_day">';
-		echo '<input type="checkbox" id="clubflow_all_day" name="clubflow_all_day" value="1" ' . esc_attr($all_day_checked) . ' /> ';
-		echo esc_html__('All day', 'clubflow');
-		echo '</label>';
+		echo '<label><input type="checkbox" id="clubflow_all_day" name="clubflow_all_day" value="1" ' . esc_attr($all_day_checked) . ' /> ';
+		echo esc_html__('All day', 'clubflow') . '</label>';
 		echo '</p>';
+	}
 
-		echo '<p>';
-		echo '<label for="clubflow_location"><strong>' . esc_html__('Location', 'clubflow') . '</strong></label><br />';
-		echo '<input type="text" id="clubflow_location" name="clubflow_location" value="' . esc_attr((string) $location) . '" style="width: 100%;" />';
-		echo '</p>';
-
-		// Event Mode (calendar, product, package)
+	/**
+	 * Event Mode meta box (side)
+	 */
+	public function render_event_mode_meta_box(\WP_Post $post): void {
 		$event_mode = get_post_meta($post->ID, '_clubflow_event_mode', true) ?: 'calendar';
 		$linked_events = get_post_meta($post->ID, '_clubflow_linked_events', true) ?: [];
 
-		echo '<hr style="margin: 20px 0;" />';
-		echo '<h4 style="margin-bottom: 10px;">' . esc_html__('Event Mode', 'clubflow') . '</h4>';
-
-		echo '<p>';
-		echo '<select id="clubflow_event_mode" name="clubflow_event_mode" style="min-width: 200px;">';
-		echo '<option value="calendar" ' . selected($event_mode, 'calendar', false) . '>' . esc_html__('📅 Calendar — Shows in calendar', 'clubflow') . '</option>';
-		echo '<option value="product" ' . selected($event_mode, 'product', false) . '>' . esc_html__('🛒 Product — Hidden, embeddable via shortcode', 'clubflow') . '</option>';
-		echo '<option value="package" ' . selected($event_mode, 'package', false) . '>' . esc_html__('📦 Package — Links to multiple events', 'clubflow') . '</option>';
+		echo '<select id="clubflow_event_mode" name="clubflow_event_mode" style="width: 100%;">';
+		echo '<option value="calendar" ' . selected($event_mode, 'calendar', false) . '>📅 ' . esc_html__('Calendar', 'clubflow') . '</option>';
+		echo '<option value="product" ' . selected($event_mode, 'product', false) . '>🛒 ' . esc_html__('Product', 'clubflow') . '</option>';
+		echo '<option value="package" ' . selected($event_mode, 'package', false) . '>📦 ' . esc_html__('Package', 'clubflow') . '</option>';
 		echo '</select>';
+		echo '<p class="description" style="margin-top: 6px;">';
+		echo esc_html__('Calendar = shows in calendar. Product/Package = hidden, use shortcode.', 'clubflow');
 		echo '</p>';
 
-		// Shortcode helper (shown for product and package modes)
-		echo '<div id="clubflow-shortcode-helper" style="' . ($event_mode !== 'calendar' ? '' : 'display: none;') . 'background: #e7f3ff; padding: 10px 12px; border-radius: 4px; margin: 10px 0;">';
-		echo '<strong>' . esc_html__('Shortcode:', 'clubflow') . '</strong> ';
-		echo '<code id="clubflow-shortcode-code">[club_booking id="' . esc_attr($post->ID) . '"]</code>';
-		echo '<button type="button" class="button button-small" style="margin-left: 8px;" onclick="navigator.clipboard.writeText(document.getElementById(\'clubflow-shortcode-code\').textContent); this.textContent=\'✓\';">' . esc_html__('Copy', 'clubflow') . '</button>';
+		// Shortcode helper
+		echo '<div id="clubflow-shortcode-helper" style="' . ($event_mode !== 'calendar' ? '' : 'display: none;') . 'background: #e7f3ff; padding: 8px; border-radius: 4px; margin-top: 10px; font-size: 12px;">';
+		echo '<code id="clubflow-shortcode-code" style="font-size: 11px;">[club_booking id="' . esc_attr($post->ID) . '"]</code>';
+		echo '<button type="button" class="button button-small" style="margin-left: 6px; font-size: 11px;" onclick="navigator.clipboard.writeText(document.getElementById(\'clubflow-shortcode-code\').textContent); this.textContent=\'✓\';">' . esc_html__('Copy', 'clubflow') . '</button>';
 		echo '</div>';
 
-		// Linked events selector (shown only for package mode)
+		// Linked events (package mode only)
 		echo '<div id="clubflow-linked-events" style="' . ($event_mode === 'package' ? '' : 'display: none;') . 'margin-top: 10px;">';
 		echo '<p><strong>' . esc_html__('Linked Events:', 'clubflow') . '</strong></p>';
 		
-		// Get all calendar events for the selector
 		$calendar_events = get_posts([
 			'post_type' => ClubFlow::POST_TYPE,
 			'post_status' => ['publish', 'future'],
-			'posts_per_page' => 200,
+			'posts_per_page' => 100,
 			'orderby' => 'meta_value',
 			'meta_key' => '_clubflow_start',
 			'order' => 'ASC',
 			'meta_query' => [
 				'relation' => 'OR',
-				[
-					'key' => '_clubflow_event_mode',
-					'value' => 'calendar',
-				],
-				[
-					'key' => '_clubflow_event_mode',
-					'compare' => 'NOT EXISTS',
-				],
+				['key' => '_clubflow_event_mode', 'value' => 'calendar'],
+				['key' => '_clubflow_event_mode', 'compare' => 'NOT EXISTS'],
 			],
 			'exclude' => [$post->ID],
 		]);
 
 		if (!empty($calendar_events)) {
-			echo '<div style="max-height: 250px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 8px; background: #fff;">';
+			echo '<div style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 6px; background: #fff; font-size: 12px;">';
 			foreach ($calendar_events as $event) {
 				$event_start = get_post_meta($event->ID, '_clubflow_start', true);
-				$event_date = $event_start ? wp_date('Y-m-d H:i', strtotime($event_start)) : '';
+				$event_date = $event_start ? wp_date('m/d H:i', strtotime($event_start)) : '';
 				$checked = in_array($event->ID, (array) $linked_events) ? 'checked' : '';
-				echo '<label style="display: block; padding: 6px 8px; cursor: pointer; border-radius: 4px;" onmouseover="this.style.background=\'#f0f0f1\'" onmouseout="this.style.background=\'\'">';
-				echo '<input type="checkbox" name="clubflow_linked_events[]" value="' . esc_attr($event->ID) . '" ' . $checked . ' style="margin-right: 8px;" />';
-				echo esc_html($event->post_title);
-				if ($event_date) {
-					echo ' <span style="color: #666;">— ' . esc_html($event_date) . '</span>';
-				}
+				echo '<label style="display: block; padding: 4px; cursor: pointer;">';
+				echo '<input type="checkbox" name="clubflow_linked_events[]" value="' . esc_attr($event->ID) . '" ' . $checked . ' /> ';
+				echo esc_html(wp_trim_words($event->post_title, 4));
+				if ($event_date) echo ' <span style="color: #666;">(' . esc_html($event_date) . ')</span>';
 				echo '</label>';
 			}
 			echo '</div>';
-		} else {
-			echo '<p style="color: #666;">' . esc_html__('No calendar events available to link.', 'clubflow') . '</p>';
 		}
-		echo '<p class="description">' . esc_html__('Booking this package will book the customer into all linked events.', 'clubflow') . '</p>';
 		echo '</div>';
 
-		// JavaScript for event mode toggle
 		?>
 		<script>
 		(function() {
 			var modeSelect = document.getElementById('clubflow_event_mode');
 			var shortcodeHelper = document.getElementById('clubflow-shortcode-helper');
 			var linkedEvents = document.getElementById('clubflow-linked-events');
-
 			if (modeSelect) {
 				modeSelect.addEventListener('change', function() {
 					shortcodeHelper.style.display = this.value !== 'calendar' ? '' : 'none';
@@ -282,175 +303,158 @@ final class ClubFlow_Admin {
 		})();
 		</script>
 		<?php
+	}
 
-		// Booking fields
+	/**
+	 * Booking meta box (side)
+	 */
+	public function render_booking_meta_box(\WP_Post $post): void {
+		$booking_enabled = get_post_meta($post->ID, '_clubflow_booking_enabled', true);
 		$max_spots = get_post_meta($post->ID, '_clubflow_max_spots', true);
 		$price = get_post_meta($post->ID, '_clubflow_price', true);
-		$booking_enabled = get_post_meta($post->ID, '_clubflow_booking_enabled', true);
 		
-		// Default booking enabled for new events
 		if ($post->post_status === 'auto-draft' && $booking_enabled === '') {
 			$booking_enabled = '1';
 		}
 
-		echo '<hr style="margin: 20px 0;" />';
-		echo '<h4 style="margin-bottom: 10px;">' . esc_html__('Booking Settings', 'clubflow') . '</h4>';
-
 		echo '<p>';
-		echo '<label for="clubflow_booking_enabled">';
-		echo '<input type="checkbox" id="clubflow_booking_enabled" name="clubflow_booking_enabled" value="1" ' . checked($booking_enabled, '1', false) . ' /> ';
-		echo esc_html__('Enable booking for this event', 'clubflow');
-		echo '</label>';
+		echo '<label><input type="checkbox" id="clubflow_booking_enabled" name="clubflow_booking_enabled" value="1" ' . checked($booking_enabled, '1', false) . ' /> ';
+		echo esc_html__('Enable booking', 'clubflow') . '</label>';
 		echo '</p>';
 
 		echo '<p>';
-		echo '<label for="clubflow_max_spots"><strong>' . esc_html__('Max spots', 'clubflow') . '</strong> <span style="font-weight: normal; color: #666;">(' . esc_html__('0 = unlimited', 'clubflow') . ')</span></label><br />';
-		echo '<input type="number" id="clubflow_max_spots" name="clubflow_max_spots" value="' . esc_attr((string) $max_spots) . '" min="0" style="width: 100px;" />';
+		echo '<label for="clubflow_max_spots">' . esc_html__('Max spots', 'clubflow') . ' <span style="color: #666;">(0 = ∞)</span></label><br />';
+		echo '<input type="number" id="clubflow_max_spots" name="clubflow_max_spots" value="' . esc_attr((string) $max_spots) . '" min="0" style="width: 80px;" />';
 		echo '</p>';
 
 		echo '<p>';
-		echo '<label for="clubflow_price"><strong>' . esc_html__('Price', 'clubflow') . '</strong> <span style="font-weight: normal; color: #666;">(' . esc_html__('e.g. 150 kr', 'clubflow') . ')</span></label><br />';
-		echo '<input type="text" id="clubflow_price" name="clubflow_price" value="' . esc_attr((string) $price) . '" style="width: 150px;" />';
+		echo '<label for="clubflow_price">' . esc_html__('Price', 'clubflow') . '</label><br />';
+		echo '<input type="text" id="clubflow_price" name="clubflow_price" value="' . esc_attr((string) $price) . '" placeholder="150 kr" style="width: 100px;" />';
 		echo '</p>';
 
-		// Show current bookings count
+		// Current bookings
 		if (class_exists('ClubFlow_Booking') && $post->post_status !== 'auto-draft') {
 			$booking_count = ClubFlow_Booking::get_booking_count($post->ID);
 			$spots_remaining = ClubFlow_Booking::get_spots_remaining($post->ID);
 			
-			echo '<p style="background: #f0f0f1; padding: 10px; border-radius: 4px;">';
-			echo '<strong>' . esc_html__('Current bookings:', 'clubflow') . '</strong> ' . esc_html($booking_count);
+			echo '<p style="background: #f0f0f1; padding: 8px; border-radius: 4px; margin-top: 10px;">';
+			echo '<strong>' . esc_html($booking_count) . '</strong> ' . esc_html__('booked', 'clubflow');
 			if ($spots_remaining !== null) {
-				echo ' / ' . esc_html($max_spots) . ' (' . esc_html($spots_remaining) . ' ' . esc_html__('spots left', 'clubflow') . ')';
+				echo ' <span style="color: #666;">(' . esc_html($spots_remaining) . ' ' . esc_html__('left', 'clubflow') . ')</span>';
 			}
 			echo '</p>';
 		}
+	}
+
+	/**
+	 * Location meta box (normal)
+	 */
+	public function render_location_meta_box(\WP_Post $post): void {
+		$location = get_post_meta($post->ID, '_clubflow_location', true);
+		echo '<input type="text" id="clubflow_location" name="clubflow_location" value="' . esc_attr((string) $location) . '" style="width: 100%;" placeholder="' . esc_attr__('e.g. Studio A, Main Building', 'clubflow') . '" />';
 
 		// Category reminder
 		$terms = get_the_terms($post->ID, ClubFlow::TAX_CATEGORY);
 		$has_category = $terms && !is_wp_error($terms) && count($terms) > 0;
 		if (!$has_category) {
-			echo '<div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px 12px; margin: 15px 0; border-radius: 4px;">';
-			echo '<strong>⚠️ ' . esc_html__('Remember to set a Category!', 'clubflow') . '</strong><br>';
-			echo '<span style="color: #666;">' . esc_html__('Especially important for recurring events — children inherit the parent\'s category.', 'clubflow') . '</span>';
+			echo '<div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px 12px; margin-top: 12px; border-radius: 4px;">';
+			echo '<strong>⚠️ ' . esc_html__('Remember to set a Category!', 'clubflow') . '</strong>';
 			echo '</div>';
 		}
+	}
 
-		// Recurrence section (only for non-child events)
+	/**
+	 * Recurrence meta box (normal)
+	 */
+	public function render_recurrence_meta_box(\WP_Post $post): void {
 		$is_child = get_post_meta($post->ID, '_clubflow_recurrence_parent', true);
 		
 		if ($is_child) {
-			// This is a child event - show link to parent
 			$parent = get_post($is_child);
-			echo '<hr style="margin: 20px 0;" />';
 			echo '<p style="background: #e7f3ff; padding: 10px; border-radius: 4px; border-left: 4px solid #2271b1;">';
-			echo '<strong>' . esc_html__('Recurring event', 'clubflow') . '</strong><br>';
-			echo esc_html__('This event is part of a recurring series.', 'clubflow') . ' ';
+			echo '<strong>' . esc_html__('Part of a recurring series', 'clubflow') . '</strong><br>';
 			if ($parent) {
 				echo '<a href="' . esc_url(get_edit_post_link($is_child)) . '">' . esc_html__('Edit parent event', 'clubflow') . ' →</a>';
 			}
 			echo '</p>';
-		} else {
-			// This is a parent or standalone event - show recurrence options
-			$recurrence_enabled = get_post_meta($post->ID, '_clubflow_recurrence_enabled', true) === '1';
-			$recurrence_type = get_post_meta($post->ID, '_clubflow_recurrence_type', true) ?: 'weekly';
-			$recurrence_days = get_post_meta($post->ID, '_clubflow_recurrence_days', true) ?: [];
-			$recurrence_until = get_post_meta($post->ID, '_clubflow_recurrence_until', true) ?: date('Y-m-d', strtotime('+3 months'));
-
-			echo '<hr style="margin: 20px 0;" />';
-			echo '<h4 style="margin-bottom: 10px;">' . esc_html__('Recurring Event', 'clubflow') . '</h4>';
-
-			echo '<p>';
-			echo '<label for="clubflow_recurrence_enabled">';
-			echo '<input type="checkbox" id="clubflow_recurrence_enabled" name="clubflow_recurrence_enabled" value="1" ' . checked($recurrence_enabled, true, false) . ' /> ';
-			echo esc_html__('This is a recurring event', 'clubflow');
-			echo '</label>';
-			echo '</p>';
-
-			echo '<div id="clubflow-recurrence-options" style="' . ($recurrence_enabled ? '' : 'display: none;') . 'margin-left: 20px; padding: 15px; background: #f9f9f9; border-radius: 4px;">';
-
-			// Recurrence type
-			echo '<p>';
-			echo '<label for="clubflow_recurrence_type"><strong>' . esc_html__('Repeat', 'clubflow') . '</strong></label><br>';
-			echo '<select id="clubflow_recurrence_type" name="clubflow_recurrence_type" style="min-width: 150px;">';
-			echo '<option value="daily" ' . selected($recurrence_type, 'daily', false) . '>' . esc_html__('Daily', 'clubflow') . '</option>';
-			echo '<option value="weekly" ' . selected($recurrence_type, 'weekly', false) . '>' . esc_html__('Weekly', 'clubflow') . '</option>';
-			echo '</select>';
-			echo '</p>';
-
-			// Days of week (for weekly)
-			echo '<div id="clubflow-recurrence-days" style="' . ($recurrence_type === 'weekly' ? '' : 'display: none;') . '">';
-			echo '<p><strong>' . esc_html__('On days', 'clubflow') . '</strong></p>';
-			$day_labels = [
-				'mon' => __('Mon', 'clubflow'),
-				'tue' => __('Tue', 'clubflow'),
-				'wed' => __('Wed', 'clubflow'),
-				'thu' => __('Thu', 'clubflow'),
-				'fri' => __('Fri', 'clubflow'),
-				'sat' => __('Sat', 'clubflow'),
-				'sun' => __('Sun', 'clubflow'),
-			];
-			echo '<p style="display: flex; gap: 10px; flex-wrap: wrap;">';
-			foreach ($day_labels as $day_key => $day_label) {
-				$checked = in_array($day_key, (array) $recurrence_days) ? 'checked' : '';
-				echo '<label style="display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; background: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">';
-				echo '<input type="checkbox" name="clubflow_recurrence_days[]" value="' . esc_attr($day_key) . '" ' . $checked . ' /> ';
-				echo esc_html($day_label);
-				echo '</label>';
-			}
-			echo '</p>';
-			echo '</div>';
-
-			// Until date
-			echo '<p>';
-			echo '<label for="clubflow_recurrence_until"><strong>' . esc_html__('Until', 'clubflow') . '</strong></label><br>';
-			echo '<input type="date" id="clubflow_recurrence_until" name="clubflow_recurrence_until" value="' . esc_attr($recurrence_until) . '" style="width: 180px;" />';
-			echo '</p>';
-
-			// Generate button
-			echo '<p style="margin-top: 15px;">';
-			echo '<label style="display: flex; align-items: center; gap: 8px;">';
-			echo '<input type="checkbox" name="clubflow_generate_recurring" value="1" /> ';
-			echo '<span>' . esc_html__('Generate events on save', 'clubflow') . '</span>';
-			echo '</label>';
-			echo '</p>';
-
-			// Show child count if any
-			if ($post->post_status !== 'auto-draft' && class_exists('ClubFlow_Recurrence')) {
-				$child_count = ClubFlow_Recurrence::get_child_count($post->ID);
-				if ($child_count > 0) {
-					echo '<p style="background: #e7f5e9; padding: 10px; border-radius: 4px; margin-top: 10px;">';
-					echo '<strong>' . esc_html($child_count) . '</strong> ' . esc_html__('recurring events generated', 'clubflow');
-					echo '</p>';
-				}
-			}
-
-			echo '</div>'; // #clubflow-recurrence-options
-
-			// JavaScript for toggling
-			?>
-			<script>
-			(function() {
-				var enabledCheckbox = document.getElementById('clubflow_recurrence_enabled');
-				var optionsDiv = document.getElementById('clubflow-recurrence-options');
-				var typeSelect = document.getElementById('clubflow_recurrence_type');
-				var daysDiv = document.getElementById('clubflow-recurrence-days');
-
-				if (enabledCheckbox && optionsDiv) {
-					enabledCheckbox.addEventListener('change', function() {
-						optionsDiv.style.display = this.checked ? '' : 'none';
-					});
-				}
-
-				if (typeSelect && daysDiv) {
-					typeSelect.addEventListener('change', function() {
-						daysDiv.style.display = this.value === 'weekly' ? '' : 'none';
-					});
-				}
-			})();
-			</script>
-			<?php
+			return;
 		}
+
+		$recurrence_enabled = get_post_meta($post->ID, '_clubflow_recurrence_enabled', true) === '1';
+		$recurrence_type = get_post_meta($post->ID, '_clubflow_recurrence_type', true) ?: 'weekly';
+		$recurrence_days = get_post_meta($post->ID, '_clubflow_recurrence_days', true) ?: [];
+		$recurrence_until = get_post_meta($post->ID, '_clubflow_recurrence_until', true) ?: date('Y-m-d', strtotime('+3 months'));
+
+		echo '<p>';
+		echo '<label><input type="checkbox" id="clubflow_recurrence_enabled" name="clubflow_recurrence_enabled" value="1" ' . checked($recurrence_enabled, true, false) . ' /> ';
+		echo esc_html__('This is a recurring event', 'clubflow') . '</label>';
+		echo '</p>';
+
+		echo '<div id="clubflow-recurrence-options" style="' . ($recurrence_enabled ? '' : 'display: none;') . 'padding: 15px; background: #f9f9f9; border-radius: 4px;">';
+
+		// Recurrence type
+		echo '<p>';
+		echo '<label for="clubflow_recurrence_type"><strong>' . esc_html__('Repeat', 'clubflow') . '</strong></label><br>';
+		echo '<select id="clubflow_recurrence_type" name="clubflow_recurrence_type" style="width: 100%;">';
+		echo '<option value="daily" ' . selected($recurrence_type, 'daily', false) . '>' . esc_html__('Daily', 'clubflow') . '</option>';
+		echo '<option value="weekly" ' . selected($recurrence_type, 'weekly', false) . '>' . esc_html__('Weekly', 'clubflow') . '</option>';
+		echo '</select>';
+		echo '</p>';
+
+		// Days of week
+		echo '<div id="clubflow-recurrence-days" style="' . ($recurrence_type === 'weekly' ? '' : 'display: none;') . '">';
+		echo '<p><strong>' . esc_html__('On days', 'clubflow') . '</strong></p>';
+		$day_labels = [
+			'mon' => __('Mon', 'clubflow'), 'tue' => __('Tue', 'clubflow'),
+			'wed' => __('Wed', 'clubflow'), 'thu' => __('Thu', 'clubflow'),
+			'fri' => __('Fri', 'clubflow'), 'sat' => __('Sat', 'clubflow'),
+			'sun' => __('Sun', 'clubflow'),
+		];
+		echo '<div style="display: flex; gap: 6px; flex-wrap: wrap;">';
+		foreach ($day_labels as $day_key => $day_label) {
+			$checked = in_array($day_key, (array) $recurrence_days) ? 'checked' : '';
+			echo '<label style="padding: 4px 8px; background: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px;">';
+			echo '<input type="checkbox" name="clubflow_recurrence_days[]" value="' . esc_attr($day_key) . '" ' . $checked . ' /> ' . esc_html($day_label);
+			echo '</label>';
+		}
+		echo '</div></div>';
+
+		// Until date
+		echo '<p>';
+		echo '<label for="clubflow_recurrence_until"><strong>' . esc_html__('Until', 'clubflow') . '</strong></label><br>';
+		echo '<input type="date" id="clubflow_recurrence_until" name="clubflow_recurrence_until" value="' . esc_attr($recurrence_until) . '" style="width: 100%;" />';
+		echo '</p>';
+
+		// Generate button
+		echo '<p><label>';
+		echo '<input type="checkbox" name="clubflow_generate_recurring" value="1" /> ';
+		echo esc_html__('Generate events on save', 'clubflow');
+		echo '</label></p>';
+
+		// Child count
+		if ($post->post_status !== 'auto-draft' && class_exists('ClubFlow_Recurrence')) {
+			$child_count = ClubFlow_Recurrence::get_child_count($post->ID);
+			if ($child_count > 0) {
+				echo '<p style="background: #e7f5e9; padding: 8px; border-radius: 4px;">';
+				echo '<strong>' . esc_html($child_count) . '</strong> ' . esc_html__('events generated', 'clubflow');
+				echo '</p>';
+			}
+		}
+
+		echo '</div>';
+
+		?>
+		<script>
+		(function() {
+			var cb = document.getElementById('clubflow_recurrence_enabled');
+			var opts = document.getElementById('clubflow-recurrence-options');
+			var sel = document.getElementById('clubflow_recurrence_type');
+			var days = document.getElementById('clubflow-recurrence-days');
+			if (cb && opts) cb.addEventListener('change', function() { opts.style.display = this.checked ? '' : 'none'; });
+			if (sel && days) sel.addEventListener('change', function() { days.style.display = this.value === 'weekly' ? '' : 'none'; });
+		})();
+		</script>
+		<?php
 	}
 
 	public function save_meta_boxes(int $post_id): void {
