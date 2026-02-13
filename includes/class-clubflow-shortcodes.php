@@ -250,8 +250,8 @@ final class ClubFlow_Shortcodes {
 			return '<p class="clubflow-booking-error">' . esc_html__('Event not found.', 'clubflow') . '</p>';
 		}
 
-		// Enqueue assets
-		$this->assets->maybe_enqueue_frontend_assets();
+		// Enqueue assets (force because shortcode may be on non-singular pages)
+		$this->assets->force_enqueue_frontend_assets();
 
 		$event_mode = get_post_meta($event_id, '_clubflow_event_mode', true) ?: 'calendar';
 		$price = get_post_meta($event_id, '_clubflow_price', true);
@@ -349,7 +349,7 @@ final class ClubFlow_Shortcodes {
 			$html .= '<button type="submit" class="clubflow-booking-widget__button">' . esc_html($button_text) . '</button>';
 			$html .= '</div>';
 
-			$html .= '<div class="clubflow-booking-widget__message" data-clubflow-booking-message style="display: none;"></div>';
+			$html .= '<div class="clubflow-booking__message clubflow-booking-widget__message" data-clubflow-booking-message style="display: none;"></div>';
 			$html .= '</form>';
 		}
 

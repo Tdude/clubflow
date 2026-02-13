@@ -1,5 +1,5 @@
 # ClubFlow - Absolutely No Bloat, No SPAM, No Phone Home
-ClubFlow is a small WordPress calendar plugin for clubs and communities. You can do whatever you want with it.
+ClubFlow is a small WordPress calendar plugin for clubs and communities. You can do whatever you want with it. Please credit me if you use it.
 
 It adds an **Events** custom post type and renders your events in a fast, modern calendar powered by **FullCalendar** (loaded only on pages where you use the shortcode).
 

@@ -779,9 +779,28 @@
   // Toast is handled by PHP (ClubFlow_Booking::maybe_show_confirmation_toast)
   // which is more reliable and works without JS
 
+  // Handle booking forms outside of modal (shortcode embedded)
+  function initStandaloneBookingForms() {
+    document.addEventListener('submit', function (e) {
+      // Skip if inside modal (modal has its own handler)
+      if (e.target.closest('.clubflow-modal')) {
+        return;
+      }
+      
+      var form = e.target.closest('[data-clubflow-booking-form]');
+      if (!form) {
+        return;
+      }
+      
+      e.preventDefault();
+      handleBookingSubmit(form);
+    });
+  }
+
   function init() {
     ensureSvLocale();
     initModal();
+    initStandaloneBookingForms();
     qsa('.clubflow-calendar').forEach(initOne);
   }
 

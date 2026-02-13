@@ -44,6 +44,17 @@ final class ClubFlow_Assets {
 		);
 	}
 
+	/**
+	 * Force enqueue frontend assets (called from shortcodes)
+	 */
+	public function force_enqueue_frontend_assets(): void {
+		if ($this->frontend_assets_enqueued) {
+			return;
+		}
+		$this->frontend_assets_enqueued = true;
+		$this->enqueue_frontend_assets_internal();
+	}
+
 	public function maybe_enqueue_frontend_assets(): void {
 		if ($this->frontend_assets_enqueued) {
 			return;
@@ -53,7 +64,8 @@ final class ClubFlow_Assets {
 		if (is_singular()) {
 			$post = get_post();
 			if ($post instanceof \WP_Post) {
-				$should_enqueue = has_shortcode($post->post_content, 'club_calendar');
+				$should_enqueue = has_shortcode($post->post_content, 'club_calendar') 
+					|| has_shortcode($post->post_content, 'club_booking');
 			}
 		}
 
@@ -62,7 +74,10 @@ final class ClubFlow_Assets {
 		}
 
 		$this->frontend_assets_enqueued = true;
+		$this->enqueue_frontend_assets_internal();
+	}
 
+	private function enqueue_frontend_assets_internal(): void {
 		wp_enqueue_style(
 			'clubflow',
 			plugins_url('style.css', $this->plugin->plugin_file()),
@@ -77,7 +92,7 @@ final class ClubFlow_Assets {
 		$text = sanitize_hex_color( $text ) ?: '#2d1e12';
 		$bg = sanitize_hex_color( $bg ) ?: '#f5f0e6';
 
-		$inline_css = ".clubflow-calendar,.clubflow-modal{--clubflow-bg:{$bg};--clubflow-surface:rgba(255,255,255,.90);--clubflow-text:{$text};--clubflow-muted:rgba(45,30,18,.65);--clubflow-border:rgba(45,30,18,.12);--clubflow-accent:{$accent};--clubflow-backdrop:rgba(0,0,0,.55);} .clubflow-event__link a{color:var(--clubflow-accent);}";
+		$inline_css = ".clubflow-calendar,.clubflow-modal,.clubflow-booking-widget{--clubflow-bg:{$bg};--clubflow-surface:rgba(255,255,255,.90);--clubflow-text:{$text};--clubflow-muted:rgba(45,30,18,.65);--clubflow-border:rgba(45,30,18,.12);--clubflow-accent:{$accent};--clubflow-backdrop:rgba(0,0,0,.55);--accent-red:{$accent};--text-dark:{$text};--text-light:rgba(45,30,18,.65);--bg-primary:{$bg};} .clubflow-event__link a{color:var(--clubflow-accent);}";
 		wp_add_inline_style( 'clubflow', $inline_css );
 
 		wp_enqueue_style(
