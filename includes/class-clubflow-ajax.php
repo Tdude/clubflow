@@ -226,6 +226,7 @@ final class ClubFlow_Ajax {
 		$title = get_the_title($post);
 		$permalink = get_permalink($post);
 		$content_html = apply_filters('the_content', $post->post_content);
+		$thumbnail_url = get_the_post_thumbnail_url($post->ID, 'medium');
 
 		$cat = $this->utils->get_category_display_data($post->ID);
 		$badge_name = (string) ($cat['name'] ?? '');
@@ -233,6 +234,10 @@ final class ClubFlow_Ajax {
 
 		$html = '';
 		$html .= '<div class="clubflow-event">';
+		
+		// Header with title and optional thumbnail
+		$html .= '<div class="clubflow-event__header">';
+		$html .= '<div class="clubflow-event__header-content">';
 		$html .= '<h3 class="clubflow-event__title">' . esc_html($title) . '</h3>';
 
 		if ($date_text !== '') {
@@ -240,16 +245,24 @@ final class ClubFlow_Ajax {
 			if ($badge_name !== '' && $badge_color !== '') {
 				$html .= '<span class="clubflow-event__badge" style="--clubflow-badge-color:' . esc_attr($badge_color) . '">' . esc_html($badge_name) . '</span>';
 			}
+			$html .= '</p>';
 		} else {
 			if ($badge_name !== '' && $badge_color !== '') {
-				$html .= '<span class="clubflow-event__badge" style="--clubflow-badge-color:' . esc_attr($badge_color) . '">' . esc_html($badge_name) . '</span>';
+				$html .= '<p class="clubflow-event__badge-row"><span class="clubflow-event__badge" style="--clubflow-badge-color:' . esc_attr($badge_color) . '">' . esc_html($badge_name) . '</span></p>';
 			}
-			$html .= '</p>';
 		}
 
 		if ($location !== '') {
 			$html .= '<p class="clubflow-event__location">' . esc_html($location) . '</p>';
 		}
+		
+		$html .= '</div>'; // .clubflow-event__header-content
+		
+		if ($thumbnail_url) {
+			$html .= '<img class="clubflow-event__thumbnail" src="' . esc_url($thumbnail_url) . '" alt="" loading="lazy" />';
+		}
+		
+		$html .= '</div>'; // .clubflow-event__header
 
 		$html .= '<div class="clubflow-event__content">' . wp_kses_post($content_html) . '</div>';
 		$html .= '<p class="clubflow-event__link"><a href="' . esc_url($permalink) . '">'
@@ -275,7 +288,9 @@ final class ClubFlow_Ajax {
 		}
 
 		$price = get_post_meta($event_id, '_clubflow_price', true);
+		$member_price = get_post_meta($event_id, '_clubflow_member_price', true);
 		$max_spots = (int) get_post_meta($event_id, '_clubflow_max_spots', true);
+		$has_member_pricing = ($member_price !== '' && $price !== '');
 		
 		$spots_remaining = null;
 		$is_fully_booked = false;
@@ -290,22 +305,26 @@ final class ClubFlow_Ajax {
 		$html .= '<h4 class="clubflow-booking__title">' . esc_html__('Book this event', 'clubflow') . '</h4>';
 
 		// Show price and spots
-		if ($price || $spots_remaining !== null) {
-			$html .= '<p class="clubflow-booking__meta">';
-			if ($price) {
-				$html .= '<span class="clubflow-booking__price">' . esc_html__('Price:', 'clubflow') . ' <strong>' . esc_html($price) . '</strong></span>';
-			}
-			if ($spots_remaining !== null) {
-				if ($price) {
-					$html .= ' &bull; ';
-				}
-				$spots_text = $is_fully_booked
-					? __('Fully booked', 'clubflow')
-					: sprintf(__('%d spots left', 'clubflow'), $spots_remaining);
-				$html .= '<span class="clubflow-booking__spots' . ($is_fully_booked ? ' clubflow-booking__spots--full' : '') . '">' . esc_html($spots_text) . '</span>';
-			}
-			$html .= '</p>';
+		$html .= '<p class="clubflow-booking__meta">';
+		if ($has_member_pricing) {
+			$html .= '<span class="clubflow-booking__price">';
+			$html .= esc_html__('Member:', 'clubflow') . ' <strong>' . esc_html($member_price) . '</strong>';
+			$html .= ' &bull; ';
+			$html .= esc_html__('Non-member:', 'clubflow') . ' <strong>' . esc_html($price) . '</strong>';
+			$html .= '</span>';
+		} elseif ($price) {
+			$html .= '<span class="clubflow-booking__price">' . esc_html__('Price:', 'clubflow') . ' <strong>' . esc_html($price) . '</strong></span>';
 		}
+		if ($spots_remaining !== null) {
+			if ($price || $has_member_pricing) {
+				$html .= ' &bull; ';
+			}
+			$spots_text = $is_fully_booked
+				? __('Fully booked', 'clubflow')
+				: sprintf(__('%d spots left', 'clubflow'), $spots_remaining);
+			$html .= '<span class="clubflow-booking__spots' . ($is_fully_booked ? ' clubflow-booking__spots--full' : '') . '">' . esc_html($spots_text) . '</span>';
+		}
+		$html .= '</p>';
 
 		if ($is_fully_booked) {
 			$html .= '<p class="clubflow-booking__full">' . esc_html__('This event is fully booked. Please check back later or contact us.', 'clubflow') . '</p>';
@@ -328,6 +347,17 @@ final class ClubFlow_Ajax {
 			$html .= '<label for="clubflow_book_phone">' . esc_html__('Phone', 'clubflow') . ' <span class="optional">(' . esc_html__('optional', 'clubflow') . ')</span></label>';
 			$html .= '<input type="tel" id="clubflow_book_phone" name="phone" />';
 			$html .= '</p>';
+
+			// Member selection if both prices exist
+			if ($has_member_pricing) {
+				$html .= '<p class="clubflow-booking__field clubflow-booking__field--member">';
+				$html .= '<label>' . esc_html__('I am a', 'clubflow') . '</label>';
+				$html .= '<span class="clubflow-booking__radio-group">';
+				$html .= '<label class="clubflow-booking__radio"><input type="radio" name="is_member" value="1" /> ' . esc_html__('Member', 'clubflow') . ' <span class="clubflow-booking__radio-price">(' . esc_html($member_price) . ')</span></label>';
+				$html .= '<label class="clubflow-booking__radio"><input type="radio" name="is_member" value="0" checked /> ' . esc_html__('Non-member', 'clubflow') . ' <span class="clubflow-booking__radio-price">(' . esc_html($price) . ')</span></label>';
+				$html .= '</span>';
+				$html .= '</p>';
+			}
 
 			$html .= '<p class="clubflow-booking__submit">';
 			$html .= '<button type="submit" class="clubflow-booking__button">' . esc_html__('Book now', 'clubflow') . '</button>';

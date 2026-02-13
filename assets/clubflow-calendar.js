@@ -268,6 +268,7 @@
 
     modal.style.display = 'none';
     modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('clubflow-modal-open');
 
     var content = qs('[data-clubflow-modal-content]', modal);
     if (content) {
@@ -280,6 +281,14 @@
     if (!modal) {
       return;
     }
+
+    // Blur any focused element (prevents clicked event from staying on top)
+    if (document.activeElement && document.activeElement.blur) {
+      document.activeElement.blur();
+    }
+
+    // Add body class for CSS targeting
+    document.body.classList.add('clubflow-modal-open');
 
     var content = qs('[data-clubflow-modal-content]', modal);
     if (content) {
@@ -654,8 +663,12 @@
     var listDuration = { months: listMonths };
     var listButtonText = listMonths === 1 ? '1 månad' : listMonths + ' månader';
 
+    var isMobile = window.innerWidth <= 640;
+    var mobileToolbar = { left: 'prev,next', center: 'title', right: 'today' };
+    var desktopToolbar = { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listRange' };
     var calendar = new FullCalendar.Calendar(el, {
-      headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listRange' },
+      headerToolbar: isMobile ? mobileToolbar : desktopToolbar,
+      titleFormat: isMobile ? { month: 'long' } : { year: 'numeric', month: 'long' },
       locale: 'sv',
       firstDay: 1,
       views: {
@@ -663,12 +676,24 @@
           type: 'list',
           duration: listDuration,
           buttonText: listButtonText
+        },
+        listTwoWeeks: {
+          type: 'list',
+          duration: { weeks: 2 },
+          buttonText: '2 veckor'
         }
       },
       buttonText: { today: 'Idag', month: 'Månad', week: 'Vecka', day: 'Dag', list: 'Lista', dayGridMonth: 'Månad' },
       height: 'auto',
       expandRows: true,
-      initialView: initialView === 'listWeek' ? 'listRange' : initialView,
+      initialView: (function() {
+        var view = initialView === 'listWeek' ? 'listRange' : initialView;
+        // Mobile: override month grid to 2-week list
+        if (isMobile && view === 'dayGridMonth') {
+          return 'listTwoWeeks';
+        }
+        return view;
+      })(),
       initialDate: initialDate || undefined,
       datesSet: function () {
         window.setTimeout(function () {

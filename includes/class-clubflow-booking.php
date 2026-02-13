@@ -144,6 +144,7 @@ final class ClubFlow_Booking {
 		$name  = sanitize_text_field($data['name'] ?? '');
 		$email = sanitize_email($data['email'] ?? '');
 		$phone = sanitize_text_field($data['phone'] ?? '');
+		$is_member = !empty($data['is_member']);
 		$return_url = esc_url_raw($data['return_url'] ?? '');
 
 		if (empty($name) || empty($email)) {
@@ -196,6 +197,7 @@ final class ClubFlow_Booking {
 		update_post_meta($booking_id, '_clubflow_booking_name', $name);
 		update_post_meta($booking_id, '_clubflow_booking_email', $email);
 		update_post_meta($booking_id, '_clubflow_booking_phone', $phone);
+		update_post_meta($booking_id, '_clubflow_booking_is_member', $is_member ? '1' : '0');
 		update_post_meta($booking_id, '_clubflow_booking_confirmation_code', $confirmation_code);
 		update_post_meta($booking_id, '_clubflow_booking_created', current_time('mysql'));
 
@@ -207,7 +209,14 @@ final class ClubFlow_Booking {
 		// Determine initial booking status based on payment requirements
 		$payment_settings = class_exists('ClubFlow_Payment') ? get_option(ClubFlow_Payment::OPTION_KEY, []) : [];
 		$price = get_post_meta($event_id, '_clubflow_price', true);
-		$amount = $price ? (float) preg_replace('/[^0-9.]/', '', $price) : 0;
+		$member_price = get_post_meta($event_id, '_clubflow_member_price', true);
+		
+		// Use member price if applicable
+		$applicable_price = ($is_member && $member_price !== '') ? $member_price : $price;
+		$amount = $applicable_price ? (float) preg_replace('/[^0-9.]/', '', $applicable_price) : 0;
+		
+		// Store the price used for this booking
+		update_post_meta($booking_id, '_clubflow_booking_price', $applicable_price);
 		$payment_enabled = !empty($payment_settings['enabled']);
 		$payment_required = $payment_enabled && $amount > 0;
 		
@@ -395,6 +404,7 @@ final class ClubFlow_Booking {
 			'name'       => $_POST['name'] ?? '',
 			'email'      => $_POST['email'] ?? '',
 			'phone'      => $_POST['phone'] ?? '',
+			'is_member'  => isset($_POST['is_member']) ? $_POST['is_member'] === '1' : false,
 			'return_url' => $_POST['return_url'] ?? '',
 		]);
 
@@ -641,6 +651,18 @@ final class ClubFlow_Booking {
 		echo '<tr><th>' . esc_html__('Name', 'clubflow') . '</th><td>' . esc_html($name) . '</td></tr>';
 		echo '<tr><th>' . esc_html__('Email', 'clubflow') . '</th><td><a href="mailto:' . esc_attr($email) . '">' . esc_html($email) . '</a></td></tr>';
 		echo '<tr><th>' . esc_html__('Phone', 'clubflow') . '</th><td>' . esc_html($phone ?: '—') . '</td></tr>';
+		
+		$is_member = get_post_meta($post->ID, '_clubflow_booking_is_member', true);
+		$booking_price = get_post_meta($post->ID, '_clubflow_booking_price', true);
+		if ($is_member !== '') {
+			$member_label = $is_member === '1' ? __('Member', 'clubflow') : __('Non-member', 'clubflow');
+			echo '<tr><th>' . esc_html__('Type', 'clubflow') . '</th><td>' . esc_html($member_label);
+			if ($booking_price) {
+				echo ' <span style="color: #666;">(' . esc_html($booking_price) . ')</span>';
+			}
+			echo '</td></tr>';
+		}
+		
 		echo '<tr><th>' . esc_html__('Confirmation Code', 'clubflow') . '</th><td><code style="font-size: 1.1em;">' . esc_html($code) . '</code></td></tr>';
 		echo '<tr><th>' . esc_html__('Status', 'clubflow') . '</th><td><strong>' . esc_html(ucfirst(str_replace('_', ' ', $status))) . '</strong></td></tr>';
 		echo '<tr><th>' . esc_html__('Booked at', 'clubflow') . '</th><td>' . esc_html($created ? wp_date('Y-m-d H:i:s', strtotime($created)) : '—') . '</td></tr>';

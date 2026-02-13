@@ -18,6 +18,29 @@ ClubCal Lite plugin styles
 	.clubflow-calendar .fc .fc-view-harness {
 		height: auto !important;
 	}
+
+	/* Mobile calendar header fixes */
+	.clubflow-calendar .fc .fc-toolbar {
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+
+	.clubflow-calendar .fc .fc-toolbar-title {
+		font-size: 1.1rem !important;
+		width: 100%;
+		text-align: center;
+		order: -1;
+	}
+
+	.clubflow-calendar .fc .fc-toolbar-chunk {
+		display: flex;
+		justify-content: center;
+	}
+
+	.clubflow-calendar .fc .fc-button {
+		padding: 6px 10px;
+		font-size: 0.875rem;
+	}
 }
 
 .clubflow-modal {
@@ -25,7 +48,38 @@ ClubCal Lite plugin styles
 	inset: 0;
 	width: 100vw;
 	height: 100vh;
-	z-index: 9999;
+	z-index: 999999;
+	isolation: isolate;
+}
+
+/* Ensure modal is above any FullCalendar popovers/events */
+.clubflow-calendar .fc-event,
+.clubflow-calendar .fc-event:focus,
+.clubflow-calendar .fc-event:active,
+.clubflow-calendar .fc-event-selected,
+.clubflow-calendar .fc-daygrid-event-harness,
+.clubflow-calendar .fc-list-event,
+.clubflow-calendar .fc-list-event:focus,
+.clubflow-calendar .fc-list-event.fc-event-selected,
+.clubflow-calendar .fc-timegrid-event-harness {
+	z-index: 1 !important;
+}
+
+/* Reset any stacking context issues */
+.clubflow-calendar .fc-scroller,
+.clubflow-calendar .fc-view,
+.clubflow-calendar .fc-view-harness {
+	z-index: auto !important;
+}
+
+/* When modal is open, ensure calendar is completely behind it */
+body.clubflow-modal-open .clubflow-calendar {
+	z-index: 0 !important;
+	position: relative;
+}
+
+body.clubflow-modal-open .clubflow-calendar * {
+	z-index: auto !important;
 }
 
 .clubflow-modal__backdrop {
@@ -34,12 +88,17 @@ ClubCal Lite plugin styles
 	width: 100vw;
 	height: 100vh;
 	background: rgba(0, 0, 0, 0.55);
+	z-index: 1;
+}
+
+.clubflow-modal__dialog-wrapper {
+	position: relative;
+	z-index: 2;
+	margin: calc(6vh + 2rem) auto 6vh;
+	width: min(720px, calc(100% - 32px));
 }
 
 .clubflow-modal__dialog {
-	position: relative;
-	margin: calc(6vh + 2rem) auto 6vh;
-	width: min(720px, calc(100% - 32px));
 	max-height: calc(88vh - 2rem);
 	overflow: auto;
 	background: #fff;
@@ -50,17 +109,54 @@ ClubCal Lite plugin styles
 
 .clubflow-modal__close {
 	position: absolute;
-	top: 10px;
-	right: 12px;
+	top: -12px;
+	right: -12px;
+	width: 36px;
+	height: 36px;
 	border: 0;
-	background: transparent;
-	font-size: 28px;
-	line-height: 1;
+	background: #fff;
+	border-radius: 50%;
+	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+	font-size: 20px;
+	line-height: 36px;
+	text-align: center;
 	cursor: pointer;
+	z-index: 10;
+}
+
+.clubflow-modal__close:hover {
+	background: #f5f5f5;
+	transform: scale(1.1);
+}
+
+.clubflow-event__header {
+	display: flex;
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+.clubflow-event__header-content {
+	flex: 1;
+	min-width: 0;
+}
+
+.clubflow-event__thumbnail {
+	width: 100px;
+	height: 100px;
+	object-fit: cover;
+	border-radius: 8px;
+	flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+	.clubflow-event__thumbnail {
+		width: 72px;
+		height: 72px;
+	}
 }
 
 .clubflow-event__title {
-	margin: 0 32px 8px 0;
+	margin: 0 0 8px 0;
 	color: var(--clubflow-text);
 }
 
@@ -232,7 +328,12 @@ body.is-dark .clubflow-hovercard .fc-list-event td,
 	}
 
 	.clubflow-modal__close {
+		background: var(--clubflow-surface);
 		color: var(--clubflow-text);
+	}
+	
+	.clubflow-modal__close:hover {
+		background: var(--clubflow-bg);
 	}
 
 	.clubflow-event__datetime,
@@ -820,6 +921,38 @@ body.is-dark .clubflow-list__link a,
 	outline: none;
 	border-color: var(--clubflow-accent, #3788d8);
 	box-shadow: 0 0 0 3px rgba(55, 136, 216, 0.15);
+}
+
+.clubflow-booking__field--member {
+	background: rgba(0, 0, 0, 0.03);
+	padding: 12px;
+	border-radius: 8px;
+	margin-top: 0.75rem;
+}
+
+.clubflow-booking__radio-group {
+	display: flex;
+	gap: 16px;
+	margin-top: 6px;
+}
+
+.clubflow-booking__radio {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	font-weight: 500;
+}
+
+.clubflow-booking__radio input[type="radio"] {
+	width: auto;
+	margin: 0;
+	cursor: pointer;
+}
+
+.clubflow-booking__radio-price {
+	font-weight: 400;
+	opacity: 0.7;
 }
 
 .clubflow-booking__submit {

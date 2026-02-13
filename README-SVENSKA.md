@@ -1,140 +1,173 @@
-# ClubFlow - Svenska översättningen
+# ClubFlow - Användarguide
 
-## Installation av svenska språket
+ClubFlow är ett boknings- och kalenderplugin för WordPress, byggt för föreningar och klubbar.
 
-### Automatisk installation (rekommenderad)
+---
 
-1. Ladda upp alla filer till din WordPress-installation:
-   - `clubflow.php` → `/wp-content/plugins/clubflow/`
-   - `languages/clubflow-sv_SE.mo` → `/wp-content/plugins/clubflow/languages/`
-   - `languages/clubflow-sv_SE.po` → `/wp-content/plugins/clubflow/languages/`
+## Funktioner
 
-2. Se till att din WordPress-installation är inställd på svenska:
-   - Gå till **Inställningar → Allmänt**
-   - Välj **Svenska** under "Webbplatsens språk"
-   - Spara ändringar
+### 📅 Kalender & Evenemang
 
-3. Aktivera pluginet - det kommer automatiskt att använda svenska texter!
+- **Fullständig kalendervy** med månadsvy (desktop) och 2-veckorslista (mobil)
+- **Kategorier med färgkodning** — varje kategori kan ha egen färg
+- **Evenemangsdetaljer** — datum, tid, plats, beskrivning, utvald bild
+- **Popup-modal** — klicka på ett evenemang för att se detaljer och boka
+- **Shortcode:** `[club_calendar]`
 
-### Översatta delar
+### 🎟️ Bokningssystem
 
-Alla följande delar är översatta till svenska:
+- **Enkel bokning** — namn, e-post, telefon (valfritt)
+- **Bekräftelsekod** genereras automatiskt
+- **Begränsat antal platser** — visa "X platser kvar" eller "Fullbokat"
+- **Dubblettskydd** — samma e-post kan inte boka samma evenemang två gånger
 
-#### Admin-gränssnittet
-- "Events" → "Evenemang"
-- "Add New Event" → "Lägg till evenemang"
-- "Edit Event" → "Redigera evenemang"
-- "Event Categories" → "Evenemangskategorier"
-- "Event Tags" → "Evenemangstaggar"
-- "Event Details" → "Evenemangsdetaljer"
-- "Start date/time" → "Startdatum/tid"
-- "End date/time" → "Slutdatum/tid"
-- "All day" → "Heldag"
-- "Location" → "Plats"
-- "Color" → "Färg"
-- "Choose a color for events in this category" → "Välj en färg för evenemang i denna kategori"
+### 💰 Prissättning
 
-#### Frontend
-- "Open event page" → "Öppna evenemangssida"
+- **Standardpris** — visas för alla
+- **Medlemspris** (valfritt) — om både pris och medlemspris anges, får besökaren välja:
+  - "Jag är: ○ Medlem (150 kr) ○ Icke-medlem (200 kr)"
+- Priset sparas på varje bokning
 
-#### Kalendern
-Kalendervyn använder redan svenska texter via FullCalendar (konfigurerat i pluginet):
-- Månadsnamn, veckodagar, etc. visas på svenska
-- "Idag", "Månad", "Veckolista" osv.
+### 💳 Betalning (valfritt)
 
-## Redigera översättningar
+Stöd för flera betalmetoder:
 
-Om du vill ändra någon översättning:
+- **Manuell** — "Betala på plats"
+- **Swish** — QR-kod och Swishnummer visas
+- **Klarna** — Checkout-integration
+- **Stripe** — Kortbetalning via Stripe Checkout
 
-1. Öppna filen `languages/clubflow-sv_SE.po` i en texteditor eller använd ett verktyg som [Poedit](https://poedit.net/)
+Betalningsstatus visas i admin och kan bekräftas manuellt.
 
-2. Hitta den text du vill ändra, till exempel:
+### 📧 E-postbekräftelse
+
+- **Mailchimp-integration** (valfritt) — skickar bokningsbekräftelse via Mailchimp
+- Inkluderar: evenemang, datum, plats, bekräftelsekod
+
+---
+
+## Shortcodes
+
+### Kalender
 ```
-msgid "Event"
-msgstr "Evenemang"
+[club_calendar]
+[club_calendar category="yoga"]
+[club_calendar view="listRange" list_months="2"]
 ```
 
-3. Ändra översättningen (texten efter `msgstr`)
+**Attribut:**
+- `category` — filtrera på kategori-slug
+- `view` — `dayGridMonth` (standard) eller `listRange`
+- `list_months` — antal månader i listvy (1-12)
 
-4. Kompilera PO-filen till MO-format:
-   - Med Poedit: Spara filen (kompilerar automatiskt)
-   - Manuellt: Använd `msgfmt` kommandot:
-     ```bash
-     msgfmt clubflow-sv_SE.po -o clubflow-sv_SE.mo
-     ```
-   - Eller använd det medföljande Python-skriptet:
-     ```bash
-     python3 compile_po.py
-     ```
-
-5. Ladda upp den nya `.mo` filen till servern
-
-6. Rensa WordPress-cache om du använder ett cache-plugin
-
-## Lägga till fler språk
-
-För att skapa översättningar för andra språk:
-
-1. Kopiera `clubflow-sv_SE.po` och döp om den till ditt språk, t.ex.:
-   - `clubflow-da_DK.po` (Danska)
-   - `clubflow-nb_NO.po` (Norska Bokmål)
-   - `clubflow-fi.po` (Finska)
-
-2. Översätt alla `msgstr` värden till ditt språk
-
-3. Kompilera till `.mo` format
-
-4. Ladda upp båda filerna till `languages/` mappen
-
-## Filstruktur
-
+### Evenemangslista
 ```
-clubflow/
-├── clubflow.php          (huvudfilen)
-├── style.css                  (CSS, om du har en)
-└── languages/
-    ├── clubflow.pot       (mall för översättningar)
-    ├── clubflow-sv_SE.po  (svensk översättning - läsbar text)
-    ├── clubflow-sv_SE.mo  (svensk översättning - kompilerad)
-    └── compile_po.py          (verktyg för att kompilera .po till .mo)
+[club_events_list]
+[club_events_list limit="5" category="dans"]
 ```
+
+### Bokningswidget (fristående)
+```
+[club_booking id="123"]
+```
+Visar bokningsformulär för ett specifikt evenemang (t.ex. på en produktsida).
+
+---
+
+## Evenemangslägen
+
+Varje evenemang har ett **läge**:
+
+| Läge | Beskrivning |
+|------|-------------|
+| **Kalender** | Visas i kalendern. Standardläge. |
+| **Produkt** | Visas INTE i kalendern. Används för fristående bokningsprodukter. |
+| **Paket** | Visas INTE i kalendern. Kan länka till flera andra evenemang. |
+
+---
+
+## Admin
+
+### Skapa evenemang
+
+1. Gå till **Evenemang → Lägg till**
+2. Fyll i titel och beskrivning
+3. Ställ in **Datum & tid** (start, slut, heldag)
+4. Ange **Plats** (valfritt)
+5. Välj **Kategori** (med färg)
+6. Under **Bokning**:
+   - ✅ Aktivera bokning
+   - Ange max platser (0 = obegränsat)
+   - Ange pris och/eller medlemspris
+7. Publicera
+
+### Hantera bokningar
+
+- **Evenemang → [evenemang] → Bokningar** — se alla bokningar för ett evenemang
+- **Bokningar** — lista alla bokningar
+- Varje bokning visar: namn, e-post, telefon, medlemstyp, pris, bekräftelsekod, status
+
+### Betalningsinställningar
+
+Under **Evenemang → Inställningar**:
+
+- Aktivera betalning
+- Välj metod (Manuell / Swish / Klarna / Stripe)
+- Konfigurera nycklar/certifikat
+
+---
+
+## Mobil
+
+Kalendern anpassar sig automatiskt för mobiler:
+
+- **Vy:** 2-veckorslista istället för månadsgrid
+- **Titel:** Bara månad (utan år)
+- **Navigation:** Förenklad (prev/next + idag)
+- **Popup:** Fullskärm med scrollning
+
+---
+
+## Språk
+
+Pluginet är helt översatt till svenska. Kalendern visar svenska månadsnamn, veckodagar etc.
+
+### Filer
+```
+languages/
+├── clubflow.pot          (mall)
+├── clubflow-sv_SE.po     (svensk översättning)
+└── clubflow-sv_SE.mo     (kompilerad)
+```
+
+### Ändra översättning
+
+1. Redigera `clubflow-sv_SE.po` (med Poedit eller texteditor)
+2. Kompilera: `msgfmt clubflow-sv_SE.po -o clubflow-sv_SE.mo`
+3. Ladda upp `.mo`-filen
+
+---
+
+## Installation
+
+1. Ladda upp `clubflow/` till `/wp-content/plugins/`
+2. Aktivera pluginet
+3. Ställ in WordPress på svenska (Inställningar → Allmänt)
+4. Skapa evenemang och lägg in `[club_calendar]` på en sida
+
+---
 
 ## Felsökning
 
-### Översättningen visas inte
+| Problem | Lösning |
+|---------|---------|
+| Översättning visas inte | Kontrollera att WordPress är inställt på Svenska |
+| Evenemang syns inte | Kontrollera att evenemangsläget är "Kalender" |
+| Bokning fungerar inte | Kontrollera att "Aktivera bokning" är ikryssad |
+| Betalning misslyckas | Kontrollera API-nycklar under Inställningar |
 
-1. **Kontrollera WordPress språkinställning**:
-   - Gå till Inställningar → Allmänt
-   - Kontrollera att "Webbplatsens språk" är inställt på Svenska
+---
 
-2. **Kontrollera filnamn**:
-   - Filen måste heta exakt `clubflow-sv_SE.mo` (inte `clubflow-sv.mo`)
-
-3. **Kontrollera sökväg**:
-   - Filen måste ligga i `/wp-content/plugins/clubflow/languages/`
-
-4. **Kontrollera filrättigheter**:
-   - `.mo` filen måste vara läsbar av webbservern (chmod 644)
-
-5. **Rensa cache**:
-   - Rensa WordPress object cache
-   - Rensa eventuella cache-plugins
-   - Prova i inkognitoläge
-
-6. **Aktivera debugging**:
-   I `wp-config.php`, lägg till:
-   ```php
-   define('WP_DEBUG', true);
-   define('WP_DEBUG_LOG', true);
-   ```
-   Kontrollera sedan `/wp-content/debug.log` för felmeddelanden
-
-### Vissa texter är fortfarande på engelska
-
-Kalendervyn (FullCalendar) är redan konfigurerad för svenska i plugin-koden. Om du ser engelska texter i kalendern kan det bero på:
-- Cache-problem (rensa cache)
-- JavaScript-fel (öppna webbläsarens konsol för att se felmeddelanden)
-
-## Support
-
-För frågor eller problem, öppna ett issue på GitHub eller kontakta plugin-utvecklaren.
+**Version:** 0.3.x  
+**Utvecklare:** Tibor Berki  
+**Licens:** GPL v2+

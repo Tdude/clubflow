@@ -55,9 +55,11 @@ final class ClubFlow_Shortcodes {
 		$modal = '';
 		$modal .= '<div class="clubflow-modal" aria-hidden="true" style="display:none">';
 		$modal .= '<div class="clubflow-modal__backdrop" data-clubflow-modal-close></div>';
-		$modal .= '<div class="clubflow-modal__dialog" role="dialog" aria-modal="true" aria-label="Event">';
+		$modal .= '<div class="clubflow-modal__dialog-wrapper">';
 		$modal .= '<button type="button" class="clubflow-modal__close" data-clubflow-modal-close aria-label="Close">&times;</button>';
+		$modal .= '<div class="clubflow-modal__dialog" role="dialog" aria-modal="true" aria-label="Event">';
 		$modal .= '<div class="clubflow-modal__content" data-clubflow-modal-content></div>';
+		$modal .= '</div>';
 		$modal .= '</div>';
 		$modal .= '</div>';
 

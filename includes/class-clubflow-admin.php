@@ -312,6 +312,7 @@ final class ClubFlow_Admin {
 		$booking_enabled = get_post_meta($post->ID, '_clubflow_booking_enabled', true);
 		$max_spots = get_post_meta($post->ID, '_clubflow_max_spots', true);
 		$price = get_post_meta($post->ID, '_clubflow_price', true);
+		$member_price = get_post_meta($post->ID, '_clubflow_member_price', true);
 		
 		if ($post->post_status === 'auto-draft' && $booking_enabled === '') {
 			$booking_enabled = '1';
@@ -328,8 +329,13 @@ final class ClubFlow_Admin {
 		echo '</p>';
 
 		echo '<p>';
-		echo '<label for="clubflow_price">' . esc_html__('Price', 'clubflow') . '</label><br />';
-		echo '<input type="text" id="clubflow_price" name="clubflow_price" value="' . esc_attr((string) $price) . '" placeholder="150 kr" style="width: 100px;" />';
+		echo '<label for="clubflow_price">' . esc_html__('Price', 'clubflow') . ' <span style="color: #666;">(' . esc_html__('non-member', 'clubflow') . ')</span></label><br />';
+		echo '<input type="text" id="clubflow_price" name="clubflow_price" value="' . esc_attr((string) $price) . '" placeholder="200 kr" style="width: 100px;" />';
+		echo '</p>';
+
+		echo '<p>';
+		echo '<label for="clubflow_member_price">' . esc_html__('Member price', 'clubflow') . ' <span style="color: #666;">(' . esc_html__('optional', 'clubflow') . ')</span></label><br />';
+		echo '<input type="text" id="clubflow_member_price" name="clubflow_member_price" value="' . esc_attr((string) $member_price) . '" placeholder="150 kr" style="width: 100px;" />';
 		echo '</p>';
 
 		// Current bookings
@@ -514,6 +520,13 @@ final class ClubFlow_Admin {
 			update_post_meta($post_id, '_clubflow_price', $price);
 		} else {
 			delete_post_meta($post_id, '_clubflow_price');
+		}
+
+		$member_price = isset($_POST['clubflow_member_price']) ? sanitize_text_field(wp_unslash($_POST['clubflow_member_price'])) : '';
+		if ($member_price !== '') {
+			update_post_meta($post_id, '_clubflow_member_price', $member_price);
+		} else {
+			delete_post_meta($post_id, '_clubflow_member_price');
 		}
 
 		// Save event mode

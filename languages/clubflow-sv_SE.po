@@ -19,7 +19,6 @@ msgstr ""
 # ====================
 # Core Plugin Strings
 # ====================
-
 msgid "Events"
 msgstr "Evenemang"
 
@@ -122,7 +121,6 @@ msgstr "Ingen shortcode-information hittades i README-filerna."
 # ====================
 # Booking Strings
 # ====================
-
 msgid "Bookings"
 msgstr "Bokningar"
 
@@ -198,7 +196,8 @@ msgid "Price:"
 msgstr "Pris:"
 
 msgid "This event is fully booked. Please check back later or contact us."
-msgstr "Detta evenemang är fullbokat. Kolla tillbaka senare eller kontakta oss."
+msgstr ""
+"Detta evenemang är fullbokat. Kolla tillbaka senare eller kontakta oss."
 
 msgid "Name"
 msgstr "Namn"
@@ -278,7 +277,6 @@ msgstr "Evenemang borttaget"
 # ====================
 # Payment Strings
 # ====================
-
 msgid "Payment"
 msgstr "Betalning"
 
@@ -315,7 +313,9 @@ msgstr "Kräv betalning"
 msgid "Require payment confirmation before booking is confirmed"
 msgstr "Kräv betalningsbekräftelse innan bokning bekräftas"
 
-msgid "If unchecked, bookings are confirmed immediately and payment is tracked separately."
+msgid ""
+"If unchecked, bookings are confirmed immediately and payment is tracked "
+"separately."
 msgstr "Om avmarkerad bekräftas bokningar direkt och betalning spåras separat."
 
 msgid "Swish Settings"
@@ -330,8 +330,12 @@ msgstr "Ditt Swishnummer för att ta emot betalningar. Visas för kunder."
 msgid "Swish Payee Alias"
 msgstr "Swish Betalningsmottagare"
 
-msgid "For Swish Commerce API integration (optional, leave blank for QR/manual flow)."
-msgstr "För Swish Commerce API-integration (valfritt, lämna tomt för QR/manuellt flöde)."
+msgid ""
+"For Swish Commerce API integration (optional, leave blank for QR/manual "
+"flow)."
+msgstr ""
+"För Swish Commerce API-integration (valfritt, lämna tomt för QR/manuellt "
+"flöde)."
 
 msgid "Stripe Settings"
 msgstr "Stripe-inställningar"
@@ -392,7 +396,6 @@ msgstr "Ej behörig"
 # ====================
 # Mailchimp / Email Strings
 # ====================
-
 msgid "Mailchimp Settings"
 msgstr "Mailchimp-inställningar"
 
@@ -447,7 +450,6 @@ msgstr "Vi ses där!"
 # ====================
 # Swish Payment Strings
 # ====================
-
 msgid "Open Swish"
 msgstr "Öppna Swish"
 
@@ -485,7 +487,8 @@ msgid "Certificate Path"
 msgstr "Certifikatsökväg"
 
 msgid "Full server path to your Swish merchant certificate (.p12 file)."
-msgstr "Fullständig serversökväg till ditt Swish-företagscertifikat (.p12-fil)."
+msgstr ""
+"Fullständig serversökväg till ditt Swish-företagscertifikat (.p12-fil)."
 
 msgid "Certificate Password"
 msgstr "Certifikatlösenord"
@@ -496,11 +499,19 @@ msgstr "Lösenord för certifikatfilen."
 msgid "Note:"
 msgstr "Obs:"
 
-msgid "Without API credentials, the plugin will show QR code and Swish number for manual payment. You can confirm payments manually in the admin."
-msgstr "Utan API-uppgifter visar pluginet QR-kod och Swishnummer för manuell betalning. Du kan bekräfta betalningar manuellt i admin."
+msgid ""
+"Without API credentials, the plugin will show QR code and Swish number for "
+"manual payment. You can confirm payments manually in the admin."
+msgstr ""
+"Utan API-uppgifter visar pluginet QR-kod och Swishnummer för manuell "
+"betalning. Du kan bekräfta betalningar manuellt i admin."
 
-msgid "For automatic payment confirmation, you need a Swish for Merchants agreement with your bank and the merchant certificate."
-msgstr "För automatisk betalningsbekräftelse behöver du ett Swish för företag-avtal med din bank och företagscertifikatet."
+msgid ""
+"For automatic payment confirmation, you need a Swish for Merchants agreement "
+"with your bank and the merchant certificate."
+msgstr ""
+"För automatisk betalningsbekräftelse behöver du ett Swish för företag-avtal "
+"med din bank och företagscertifikatet."
 
 msgid "Invalid booking."
 msgstr "Ogiltig bokning."
@@ -517,7 +528,6 @@ msgstr "Betalning hittades inte."
 # ====================
 # Klarna Strings
 # ====================
-
 msgid "Klarna Settings"
 msgstr "Klarna-inställningar"
 
@@ -551,8 +561,11 @@ msgstr "Gå till Inställningar → API-uppgifter"
 msgid "Generate new API credentials"
 msgstr "Generera nya API-uppgifter"
 
-msgid "Klarna is recommended - easy setup, supports cards and direct bank payment."
-msgstr "Klarna rekommenderas - enkel setup, stödjer kort och direktbetalning från bank."
+msgid ""
+"Klarna is recommended - easy setup, supports cards and direct bank payment."
+msgstr ""
+"Klarna rekommenderas - enkel setup, stödjer kort och direktbetalning från "
+"bank."
 
 msgid "Klarna not configured."
 msgstr "Klarna inte konfigurerat."
@@ -575,7 +588,6 @@ msgstr "Ett bekräftelsemail har skickats till dig."
 # ====================
 # Stripe Strings
 # ====================
-
 msgid "Webhook Secret"
 msgstr "Webhook-hemlighet"
 
@@ -617,3 +629,183 @@ msgstr "Omdirigerar till betalning..."
 
 msgid "Proceed to Payment"
 msgstr "Fortsätt till betalning"
+
+# ====================
+# Additional Strings (2026-02-13)
+# ====================
+msgid "ClubFlow"
+msgstr "ClubFlow"
+
+msgid "Connection successful!"
+msgstr "Anslutningen lyckades!"
+
+msgid "Event Booking"
+msgstr "Evenemangsbokning"
+
+msgid "Failed to create checkout session"
+msgstr "Kunde inte skapa betalningssession"
+
+msgid "Invalid booking"
+msgstr "Ogiltig bokning"
+
+msgid "Missing booking ID"
+msgstr "Boknings-ID saknas"
+
+msgid "No Stripe session found"
+msgstr "Ingen Stripe-session hittades"
+
+msgid "No payment amount specified"
+msgstr "Inget betalningsbelopp angivet"
+
+msgid "Stripe API error"
+msgstr "Stripe API-fel"
+
+msgid "Stripe API key not configured"
+msgstr "Stripe API-nyckel inte konfigurerad"
+
+msgid "Stripe keys not configured"
+msgstr "Stripe-nycklar inte konfigurerade"
+
+msgid "Category"
+msgstr "Kategori"
+
+msgid "Date & Time"
+msgstr "Datum & tid"
+
+msgid "Event Date"
+msgstr "Evenemangsdatum"
+
+msgid "Event Mode"
+msgstr "Evenemangsläge"
+
+msgid "Mode"
+msgstr "Läge"
+
+msgid "Could not create payment session."
+msgstr "Kunde inte skapa betalningssession."
+
+msgid "Mon"
+msgstr "Mån"
+
+msgid "Tue"
+msgstr "Tis"
+
+msgid "Wed"
+msgstr "Ons"
+
+msgid "Thu"
+msgstr "Tor"
+
+msgid "Fri"
+msgstr "Fre"
+
+msgid "Sat"
+msgstr "Lör"
+
+msgid "Sun"
+msgstr "Sön"
+
+msgid "Package"
+msgstr "Paket"
+
+msgid "Product"
+msgstr "Produkt"
+
+msgid "Payment was declined or errored"
+msgstr "Betalningen avvisades eller misslyckades"
+
+msgid "Remember to set a Category!"
+msgstr "Kom ihåg att välja en kategori!"
+
+msgid "Repeat"
+msgstr "Upprepa"
+
+msgid "Start"
+msgstr "Start"
+
+msgid "This is a recurring event"
+msgstr "Detta är ett återkommande evenemang"
+
+msgid "Until"
+msgstr "Till"
+
+msgid "Weekly"
+msgstr "Varje vecka"
+
+msgid "booked"
+msgstr "bokade"
+
+msgid "events generated"
+msgstr "evenemang genererade"
+
+msgid "left"
+msgstr "kvar"
+
+msgid "About Payment Log"
+msgstr "Om betalningsloggen"
+
+msgid "Awaiting payment (user may have abandoned checkout)"
+msgstr "Väntar på betalning (användaren kan ha avbrutit)"
+
+msgid "Payment received and confirmed"
+msgstr "Betalning mottagen och bekräftad"
+
+msgid "Status meanings:"
+msgstr "Statusförklaringar:"
+
+msgid "Test Connection"
+msgstr "Testa anslutning"
+
+msgid "Test Stripe Connection"
+msgstr "Testa Stripe-anslutning"
+
+msgid "Testing..."
+msgstr "Testar..."
+
+msgid ""
+"This is a complete log of all payment transactions — successful, pending, "
+"and failed."
+msgstr ""
+"Detta är en komplett logg över alla betalningstransaktioner — lyckade, "
+"väntande och misslyckade."
+
+msgid ""
+"Tip: Old pending entries can often be safely ignored — they represent "
+"abandoned checkouts."
+msgstr ""
+"Tips: Gamla väntande poster kan ofta ignoreras — de representerar avbrutna "
+"betalningar."
+
+msgid "Linked Events"
+msgstr "Länkade evenemang"
+
+msgid "Select events included in this package"
+msgstr "Välj evenemang som ingår i detta paket"
+
+msgid "Booking creates reservations for all linked events"
+msgstr "Bokning skapar reservationer för alla länkade evenemang"
+
+# Member pricing strings
+msgid "non-member"
+msgstr "icke-medlem"
+
+msgid "Member price"
+msgstr "Medlemspris"
+
+msgid "Member:"
+msgstr "Medlem:"
+
+msgid "Non-member:"
+msgstr "Icke-medlem:"
+
+msgid "I am a"
+msgstr "Jag är"
+
+msgid "Member"
+msgstr "Medlem"
+
+msgid "Non-member"
+msgstr "Icke-medlem"
+
+msgid "Type"
+msgstr "Typ"
