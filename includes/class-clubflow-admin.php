@@ -270,9 +270,7 @@ final class ClubFlow_Admin {
 		echo '<option value="product" ' . selected($event_mode, 'product', false) . '>🛒 ' . esc_html__('Product', 'clubflow') . '</option>';
 		echo '<option value="package" ' . selected($event_mode, 'package', false) . '>📦 ' . esc_html__('Package', 'clubflow') . '</option>';
 		echo '</select>';
-		echo '<p class="description" style="margin-top: 6px;">';
-		echo esc_html__('Calendar = shows in calendar. Product/Package = hidden, use shortcode.', 'clubflow');
-		echo '</p>';
+		echo '<span class="clubflow-info-icon" title="' . esc_attr__('Calendar = shows in calendar. Product/Package = hidden, use shortcode.', 'clubflow') . '" style="display: inline-block; margin-left: 6px; cursor: help; color: #2271b1; font-size: 16px; vertical-align: middle;">ⓘ</span>';
 
 		// Shortcode helper
 		echo '<div id="clubflow-shortcode-helper" style="' . ($event_mode !== 'calendar' ? '' : 'display: none;') . 'background: #e7f3ff; padding: 8px; border-radius: 4px; margin-top: 10px; font-size: 12px;">';
