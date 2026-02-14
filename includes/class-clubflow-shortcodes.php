@@ -395,7 +395,7 @@ final class ClubFlow_Shortcodes {
 
 		// Custom label or fall back to event title
 		$label = $atts['label'] ?: get_the_title($event_id);
-		$button_text = $atts['button_text'] ?: __('Boka nu', 'clubflow');
+		$button_text = $atts['button_text'] ?: __('Book now', 'clubflow');
 
 		// For packages, count included events
 		$includes_count = ($event_mode === 'package' && !empty($linked_events)) ? count($linked_events) : 0;
