@@ -364,6 +364,18 @@ body.is-dark .clubflow-hovercard .fc-list-event td,
 	overflow: visible;
 }
 
+/* Calendar event hover - unified behavior */
+.clubflow-calendar .fc-event {
+	transition: transform 0.25s ease, box-shadow 0.25s ease;
+	cursor: pointer;
+}
+
+.clubflow-calendar .fc-event:hover {
+	transform: translateY(-2px) scale(1.02);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	z-index: 10 !important;
+}
+
 .clubflow-calendar .fc .fc-scroller,
 .clubflow-calendar .fc .fc-scroller-harness,
 .clubflow-calendar .fc .fc-daygrid-body,
