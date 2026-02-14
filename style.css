@@ -372,7 +372,7 @@ body.is-dark .clubflow-hovercard .fc-list-event td,
 
 .clubflow-calendar .fc-event:hover {
 	transform: translateY(-2px) scale(1.02);
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	box-shadow: 0 6px 16px rgba(155, 45, 48, 0.35);
 	z-index: 10 !important;
 }
 
@@ -990,7 +990,7 @@ body.is-dark .clubflow-list__link a,
 .clubflow-booking__button:hover:not(:disabled) {
 	background: #7a2325;
 	transform: translateY(-2px) scale(1.04);
-	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+	box-shadow: 0 8px 24px rgba(155, 45, 48, 0.4);
 }
 
 .clubflow-booking__button:active:not(:disabled) {
@@ -1593,7 +1593,7 @@ body.is-dark .clubflow-list__link a,
 .clubflow-booking-widget__button:hover {
 	background: #7a2325;
 	transform: translateY(-2px) scale(1.04);
-	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+	box-shadow: 0 8px 24px rgba(155, 45, 48, 0.4);
 }
 
 .clubflow-booking-widget__button:disabled {
