@@ -32,7 +32,7 @@ msgid "Add New"
 msgstr "Lägg till"
 
 msgid "Add New Event"
-msgstr "Lägg till evenemang"
+msgstr "Lägg till"
 
 msgid "New Event"
 msgstr "Nytt evenemang"
@@ -44,7 +44,7 @@ msgid "View Event"
 msgstr "Visa evenemang"
 
 msgid "All Events"
-msgstr "Alla evenemang"
+msgstr "Alla event"
 
 msgid "Search Events"
 msgstr "Sök evenemang"
@@ -56,13 +56,13 @@ msgid "No events found in Trash."
 msgstr "Inga evenemang i papperskorgen."
 
 msgid "Event Categories"
-msgstr "Eventkategorier"
+msgstr "Kategorier"
 
 msgid "Event Category"
 msgstr "Evenemangskategori"
 
 msgid "Event Tags"
-msgstr "Evenemangstaggar"
+msgstr "Taggar"
 
 msgid "Event Tag"
 msgstr "Evenemangstagg"
@@ -293,7 +293,7 @@ msgid "No payments found."
 msgstr "Inga betalningar hittades."
 
 msgid "Payment Settings"
-msgstr "Betalningsinställningar"
+msgstr "Inställningar"
 
 msgid "Enable Payments"
 msgstr "Aktivera betalningar"
