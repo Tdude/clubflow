@@ -66,25 +66,19 @@ ClubFlow har tre typer av "produkter" som du kan sälja:
 ## Shortcodes — snabbreferens
 
 ### Visa kalendern
-```
+
 [club_calendar]
-```
 
 ### Visa bokning för ett specifikt event
-```
+
 [club_booking id="123"]
-```
 *Ersätt 123 med eventets ID (hittas i URL:en när du redigerar eventet)*
 
 ### Popup-knapp istället för formulär
-```
 [club_booking id="123" popup="true"]
-```
 
 ### Med egen etikett
-```
 [club_booking id="123" label="Pole 1 — Nybörjare"]
-```
 
 ---
 
@@ -94,8 +88,8 @@ Du kan ange två priser per event:
 
 | Fält | Beskrivning |
 |------|-------------|
-| **Pris** | Ordinarie pris (visas för alla) |
-| **Medlemspris** | Rabatterat pris (kunden väljer själv) |
+| Pris | Ordinarie pris (visas för alla) |
+| Medlemspris | Rabatterat pris (kunden väljer själv) |
 
 Om du bara anger ett pris visas inget val.
 
@@ -104,10 +98,10 @@ Om du bara anger ett pris visas inget val.
 ## Vanliga frågor
 
 ### Hur ser jag alla bokningar?
-Gå till **Evenemang → Bokningar** i WP-admin.
+Gå till **ClubFlow → Alla Bokningar** i WP-admin.
 
 ### Hur ändrar jag färg på en kategori i kalendern?
-Gå till **Evenemang → Kategorier** och redigera kategorin. Där kan du välja färg.
+Gå till **ClubFlow → Eventkategorier** och redigera kategorin. Där kan du välja färg. Om ingen färg visas i kalendern har du glömt välja datum. Vitt betyder att kategori inte valts.
 
 ### Varför syns inte mitt event i kalendern?
 Kontrollera att:
@@ -116,8 +110,8 @@ Kontrollera att:
 3. Startdatum är rätt
 
 ### Hur lägger jag till en betalmetod?
-Gå till **Inställningar → ClubFlow** och konfigurera Stripe, Swish eller Klarna.
+Gå till **Inställningar → ClubFlow** och konfigurera Stripe, Swish eller Klarna. Alla behöver någon firmatecknare i klubben som knyter betalningen till ett konto. Swish och klarna behöver handpåläggning i kod för att funka. Det är bara Stripe som är kollat!
 
 ---
 
-*Frågor? Kontakta support eller läs den tekniska dokumentationen i README.md*
+*Frågor? Kontakta support hello@idunworks.com eller läs den tekniska dokumentationen i README.md*

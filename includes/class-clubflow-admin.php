@@ -32,26 +32,17 @@ final class ClubFlow_Admin {
 			return;
 		}
 
-		$readme_excerpt = $this->get_readme_help_excerpt();
 		$user_guide = $this->get_user_guide_content();
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html__( 'ClubFlow', 'clubflow' ); ?></h1>
 			
-			<h2 style="margin-top: 18px;"><?php echo esc_html__( 'Shortcode usage', 'clubflow' ); ?></h2>
-			<div style="max-width: 980px; background: #fff; border: 1px solid #dcdcde; padding: 18px; border-radius: 8px; line-height: 1.6;">
-				<?php if ( $readme_excerpt !== '' ) : ?>
-					<pre style="white-space: pre-wrap; margin: 0;"><?php echo esc_html( $readme_excerpt ); ?></pre>
-				<?php else : ?>
-					<p style="margin-top: 0;"><?php echo esc_html__( 'No shortcode usage information found in the README files.', 'clubflow' ); ?></p>
-				<?php endif; ?>
-			</div>
-
 			<?php if ( $user_guide !== '' ) : ?>
-			<h2 style="margin-top: 32px;"><?php echo esc_html__( 'User Guide', 'clubflow' ); ?></h2>
-			<div style="max-width: 980px; background: #fff; border: 1px solid #dcdcde; padding: 24px 28px; border-radius: 8px; line-height: 1.7;">
+			<div style="max-width: 980px; background: #fff; border: 1px solid #dcdcde; padding: 24px 28px; border-radius: 8px; line-height: 1.7; margin-top: 20px;">
 				<?php echo $this->render_markdown_basic( $user_guide ); ?>
 			</div>
+			<?php else : ?>
+			<p><?php echo esc_html__( 'No user guide found.', 'clubflow' ); ?></p>
 			<?php endif; ?>
 		</div>
 		<?php
@@ -135,59 +126,6 @@ final class ClubFlow_Admin {
 		$html = preg_replace( '/<p[^>]*>\s*<\/p>/', '', $html );
 		
 		return $html;
-	}
-
-	private function get_readme_help_excerpt(): string {
-		$plugin_root = dirname( __DIR__ );
-		$locale = function_exists( 'determine_locale' ) ? (string) determine_locale() : (string) get_locale();
-		$locale_lower = strtolower( $locale );
-		$is_swedish = ( strpos( $locale_lower, 'sv' ) === 0 );
-
-		$preferred = $is_swedish ? $plugin_root . '/README-SVENSKA.md' : $plugin_root . '/README.md';
-		$fallback = $is_swedish ? $plugin_root . '/README.md' : $plugin_root . '/README-SVENSKA.md';
-
-		$preferred_content = file_exists( $preferred ) ? (string) file_get_contents( $preferred ) : '';
-		$fallback_content = file_exists( $fallback ) ? (string) file_get_contents( $fallback ) : '';
-
-		$sections = array(
-			'## Shortcodes',
-		);
-
-		$excerpt = $this->build_readme_excerpt_from_content( $preferred_content, $sections );
-		if ( $excerpt !== '' ) {
-			return $excerpt;
-		}
-
-		return $this->build_readme_excerpt_from_content( $fallback_content, $sections );
-	}
-
-	private function build_readme_excerpt_from_content( string $content, array $sections ): string {
-		if ( $content === '' ) {
-			return '';
-		}
-
-		$out = array();
-		foreach ( $sections as $heading ) {
-			$section = $this->extract_readme_section( $content, (string) $heading );
-			if ( $section !== '' ) {
-				$out[] = trim( $section );
-			}
-		}
-
-		return trim( implode( "\n\n", $out ) );
-	}
-
-	private function extract_readme_section( string $content, string $heading ): string {
-		$pos = stripos( $content, $heading );
-		if ( $pos === false ) {
-			return '';
-		}
-
-		$start = $pos;
-		$next_pos = strpos( $content, "\n## ", $start + strlen( $heading ) );
-		$end = $next_pos === false ? strlen( $content ) : $next_pos + 1;
-
-		return substr( $content, $start, $end - $start );
 	}
 
 	public function register_meta_boxes(): void {
