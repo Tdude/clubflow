@@ -809,3 +809,6 @@ msgstr "Icke-medlem"
 
 msgid "Type"
 msgstr "Typ"
+
+msgid "User Guide"
+msgstr "Användarguide"

@@ -33,9 +33,11 @@ final class ClubFlow_Admin {
 		}
 
 		$readme_excerpt = $this->get_readme_help_excerpt();
+		$user_guide = $this->get_user_guide_content();
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html__( 'ClubFlow', 'clubflow' ); ?></h1>
+			
 			<h2 style="margin-top: 18px;"><?php echo esc_html__( 'Shortcode usage', 'clubflow' ); ?></h2>
 			<div style="max-width: 980px; background: #fff; border: 1px solid #dcdcde; padding: 18px; border-radius: 8px; line-height: 1.6;">
 				<?php if ( $readme_excerpt !== '' ) : ?>
@@ -44,8 +46,95 @@ final class ClubFlow_Admin {
 					<p style="margin-top: 0;"><?php echo esc_html__( 'No shortcode usage information found in the README files.', 'clubflow' ); ?></p>
 				<?php endif; ?>
 			</div>
+
+			<?php if ( $user_guide !== '' ) : ?>
+			<h2 style="margin-top: 32px;"><?php echo esc_html__( 'User Guide', 'clubflow' ); ?></h2>
+			<div style="max-width: 980px; background: #fff; border: 1px solid #dcdcde; padding: 24px 28px; border-radius: 8px; line-height: 1.7;">
+				<?php echo $this->render_markdown_basic( $user_guide ); ?>
+			</div>
+			<?php endif; ?>
 		</div>
 		<?php
+	}
+
+	private function get_user_guide_content(): string {
+		$plugin_root = dirname( __DIR__ );
+		$guide_path = $plugin_root . '/ANVANDARGUIDE.md';
+		
+		if ( ! file_exists( $guide_path ) ) {
+			return '';
+		}
+		
+		$content = file_get_contents( $guide_path );
+		return $content !== false ? $content : '';
+	}
+
+	/**
+	 * Basic markdown to HTML conversion for the user guide
+	 */
+	private function render_markdown_basic( string $md ): string {
+		// Remove the main title (first # line)
+		$md = preg_replace( '/^#\s+[^\n]+\n*/m', '', $md, 1 );
+		
+		// Escape HTML first
+		$html = esc_html( $md );
+		
+		// Headers
+		$html = preg_replace( '/^### (.+)$/m', '<h4 style="margin: 1.5em 0 0.5em; color: #1d2327;">$1</h4>', $html );
+		$html = preg_replace( '/^## (.+)$/m', '<h3 style="margin: 2em 0 0.75em; color: #1d2327; border-bottom: 1px solid #dcdcde; padding-bottom: 0.5em;">$1</h3>', $html );
+		
+		// Bold
+		$html = preg_replace( '/\*\*(.+?)\*\*/', '<strong>$1</strong>', $html );
+		
+		// Inline code
+		$html = preg_replace( '/`([^`]+)`/', '<code style="background: #f0f0f1; padding: 2px 6px; border-radius: 3px; font-size: 13px;">$1</code>', $html );
+		
+		// Code blocks
+		$html = preg_replace( '/```[\w]*\n([\s\S]*?)```/', '<pre style="background: #f0f0f1; padding: 12px 16px; border-radius: 4px; overflow-x: auto; font-size: 13px;">$1</pre>', $html );
+		
+		// Horizontal rules
+		$html = preg_replace( '/^---+$/m', '<hr style="border: none; border-top: 1px solid #dcdcde; margin: 2em 0;">', $html );
+		
+		// Lists (simple)
+		$html = preg_replace( '/^- (.+)$/m', '<li style="margin: 0.3em 0;">$1</li>', $html );
+		$html = preg_replace( '/^(\d+)\. (.+)$/m', '<li style="margin: 0.3em 0;">$2</li>', $html );
+		
+		// Wrap consecutive <li> in <ul>
+		$html = preg_replace( '/(<li[^>]*>.*?<\/li>\n?)+/s', '<ul style="margin: 0.75em 0 0.75em 1.5em; padding: 0;">$0</ul>', $html );
+		
+		// Tables (simple)
+		$html = preg_replace_callback( '/\|(.+)\|\n\|[-| ]+\|\n((?:\|.+\|\n?)+)/', function( $m ) {
+			$headers = array_map( 'trim', explode( '|', trim( $m[1], '| ' ) ) );
+			$rows_raw = preg_split( '/\n/', trim( $m[2] ) );
+			
+			$table = '<table style="border-collapse: collapse; margin: 1em 0; width: 100%;"><thead><tr>';
+			foreach ( $headers as $h ) {
+				$table .= '<th style="border: 1px solid #dcdcde; padding: 8px 12px; background: #f0f0f1; text-align: left;">' . esc_html( $h ) . '</th>';
+			}
+			$table .= '</tr></thead><tbody>';
+			
+			foreach ( $rows_raw as $row ) {
+				$cells = array_map( 'trim', explode( '|', trim( $row, '| ' ) ) );
+				$table .= '<tr>';
+				foreach ( $cells as $c ) {
+					$table .= '<td style="border: 1px solid #dcdcde; padding: 8px 12px;">' . esc_html( $c ) . '</td>';
+				}
+				$table .= '</tr>';
+			}
+			$table .= '</tbody></table>';
+			return $table;
+		}, $html );
+		
+		// Paragraphs - wrap lines that aren't already wrapped
+		$html = preg_replace( '/^(?!<[huplo]|<li|<hr|<table|<pre)(.+)$/m', '<p style="margin: 0.75em 0;">$1</p>', $html );
+		
+		// Italic (after paragraph wrapping)
+		$html = preg_replace( '/\*([^*]+)\*/', '<em>$1</em>', $html );
+		
+		// Clean up empty paragraphs
+		$html = preg_replace( '/<p[^>]*>\s*<\/p>/', '', $html );
+		
+		return $html;
 	}
 
 	private function get_readme_help_excerpt(): string {
