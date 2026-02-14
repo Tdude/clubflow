@@ -583,7 +583,7 @@ final class ClubFlow_Payment {
 			'status'    => __('Status', 'clubflow'),
 			'customer'  => __('Customer', 'clubflow'),
 			'event'     => __('Event', 'clubflow'),
-			'date'      => __('Date', 'clubflow'),
+			'logged'    => __('Logged', 'clubflow'),
 		];
 	}
 
@@ -638,6 +638,13 @@ final class ClubFlow_Payment {
 					} else {
 						echo '<span style="color: #999;">' . esc_html__('Deleted', 'clubflow') . '</span>';
 					}
+				}
+				break;
+
+			case 'logged':
+				$post = get_post($post_id);
+				if ($post) {
+					echo esc_html(wp_date('Y-m-d H:i', strtotime($post->post_date)));
 				}
 				break;
 		}

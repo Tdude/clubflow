@@ -839,3 +839,6 @@ msgstr "Lägg till instruktör"
 
 msgid "New Instructor Name"
 msgstr "Nytt instruktörsnamn"
+
+msgid "Logged"
+msgstr "Loggad"
