@@ -61,8 +61,7 @@ final class ClubFlow_Admin {
 		$fallback_content = file_exists( $fallback ) ? (string) file_get_contents( $fallback ) : '';
 
 		$sections = array(
-			'## Shortcode options',
-			'## Calendar Shortcode Updated',
+			'## Shortcodes',
 		);
 
 		$excerpt = $this->build_readme_excerpt_from_content( $preferred_content, $sections );
