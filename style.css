@@ -967,19 +967,22 @@ body.is-dark .clubflow-list__link a,
 	font-size: 1rem;
 	font-weight: 600;
 	color: #fff;
-	background: var(--clubflow-accent, #3788d8);
+	background: var(--clubflow-accent, var(--accent-red, #9b2d30));
 	border: none;
 	border-radius: 50px;
 	cursor: pointer;
-	transition: background-color 150ms ease, transform 100ms ease;
+	transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .clubflow-booking__button:hover:not(:disabled) {
-	background: #2a6bb5;
+	background: #7a2325;
+	transform: translateY(-2px) scale(1.04);
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .clubflow-booking__button:active:not(:disabled) {
-	transform: scale(0.98);
+	transform: translateY(0) scale(1);
 }
 
 .clubflow-booking__button:disabled {
@@ -1050,7 +1053,7 @@ body.is-dark .clubflow-list__link a,
 
 	.clubflow-booking__button {
 		background: var(--clubflow-accent, #4da3ff);
-		color: #0b0d10;
+		color: #eeeeee;
 	}
 
 	.clubflow-booking__button:hover:not(:disabled) {
@@ -1571,11 +1574,14 @@ body.is-dark .clubflow-list__link a,
 	border: none;
 	border-radius: 50px;
 	cursor: pointer;
-	transition: opacity 0.2s;
+	transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+	box-shadow: 0 4px 12px rgba(155, 45, 48, 0.2);
 }
 
 .clubflow-booking-widget__button:hover {
-	opacity: 0.9;
+	background: #7a2325;
+	transform: translateY(-2px) scale(1.04);
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .clubflow-booking-widget__button:disabled {
@@ -1690,11 +1696,12 @@ body.is-dark .clubflow-list__link a,
 	font-weight: 600;
 	font-size: 0.875rem;
 	border-radius: 50px;
-	transition: opacity 0.2s;
+	transition: transform 0.25s ease, background-color 0.25s ease;
 }
 
 .clubflow-booking-popup__trigger:hover .clubflow-booking-popup__action {
-	opacity: 0.9;
+	background: #7a2325;
+	transform: scale(1.04);
 }
 
 /* Loading state in modal */
