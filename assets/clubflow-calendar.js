@@ -524,7 +524,7 @@
           // Error
           if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Book now';
+            submitBtn.textContent = window.ClubFlow.i18n.bookNow || 'Book now';
           }
           if (messageEl) {
             messageEl.className = 'clubflow-booking__message clubflow-booking__message--error';
@@ -536,7 +536,7 @@
       .catch(function () {
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Book now';
+          submitBtn.textContent = window.ClubFlow.i18n.bookNow || 'Book now';
         }
         if (messageEl) {
           messageEl.className = 'clubflow-booking__message clubflow-booking__message--error';
@@ -822,10 +822,48 @@
     });
   }
 
+  // Handle popup booking triggers [club_booking popup="true"]
+  function initPopupTriggers() {
+    document.addEventListener('click', function (e) {
+      var trigger = e.target.closest('[data-clubflow-booking-popup]');
+      if (!trigger || trigger.disabled) {
+        return;
+      }
+      
+      var eventId = trigger.getAttribute('data-clubflow-booking-popup');
+      if (!eventId) {
+        return;
+      }
+      
+      // Show loading state
+      openModal('<div class="clubflow-modal__loading"><p>Loading...</p></div>');
+      
+      // Fetch event details via AJAX (same method as calendar eventClick)
+      var url = new URL(window.ClubFlow.ajaxUrl);
+      url.searchParams.set('action', window.ClubFlow.actionDetails);
+      url.searchParams.set('_ajax_nonce', window.ClubFlow.nonceDetails);
+      url.searchParams.set('event_id', eventId);
+      
+      fetch(url.toString(), { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data && data.success && data.data && data.data.html) {
+            openModal(data.data.html);
+          } else {
+            openModal('<p>Could not load booking form.</p>');
+          }
+        })
+        .catch(function () {
+          openModal('<p>Could not load booking form.</p>');
+        });
+    });
+  }
+
   function init() {
     ensureSvLocale();
     initModal();
     initStandaloneBookingForms();
+    initPopupTriggers();
     qsa('.clubflow-calendar').forEach(initOne);
   }
 

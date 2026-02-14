@@ -130,6 +130,7 @@ final class ClubFlow_Assets {
 				'nonceDetails' => wp_create_nonce('clubflow_event_details'),
 				'nonceBook' => wp_create_nonce('clubflow_book'),
 				'i18n' => [
+					'bookNow' => __('Book now', 'clubflow'),
 					'booking' => __('Booking...', 'clubflow'),
 					'booked' => __('Booked!', 'clubflow'),
 					'bookingSuccess' => __('Your booking is confirmed! Confirmation code:', 'clubflow'),

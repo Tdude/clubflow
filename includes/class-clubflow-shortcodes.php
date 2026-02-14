@@ -228,6 +228,10 @@ final class ClubFlow_Shortcodes {
 	/**
 	 * Shortcode: [club_booking id="123"]
 	 * Renders a booking form for any event (calendar, product, or package)
+	 * 
+	 * Attributes:
+	 *   popup="true" - Show as button that opens booking form in modal
+	 *   label="..." - Custom label for popup button (defaults to event title)
 	 */
 	public function shortcode_club_booking(array $atts = []): string {
 		$atts = shortcode_atts(
@@ -237,6 +241,8 @@ final class ClubFlow_Shortcodes {
 				'show_spots'   => 'true',
 				'show_includes'=> 'true',
 				'button_text'  => '',
+				'popup'        => 'false',
+				'label'        => '',
 			],
 			$atts,
 			'club_booking'
@@ -254,6 +260,13 @@ final class ClubFlow_Shortcodes {
 
 		// Enqueue assets (force because shortcode may be on non-singular pages)
 		$this->assets->force_enqueue_frontend_assets();
+
+		$is_popup = filter_var($atts['popup'], FILTER_VALIDATE_BOOLEAN);
+
+		// Popup mode: render a trigger button that opens the booking form in a modal
+		if ($is_popup) {
+			return $this->render_booking_popup_trigger($event_id, $atts);
+		}
 
 		$event_mode = get_post_meta($event_id, '_clubflow_event_mode', true) ?: 'calendar';
 		$price = get_post_meta($event_id, '_clubflow_price', true);
@@ -356,6 +369,103 @@ final class ClubFlow_Shortcodes {
 		}
 
 		$html .= '</div>';
+
+		return $html;
+	}
+
+	/**
+	 * Render a popup trigger button for booking
+	 * Clicking opens the full booking form in a modal
+	 */
+	private function render_booking_popup_trigger(int $event_id, array $atts): string {
+		$price = get_post_meta($event_id, '_clubflow_price', true);
+		$member_price = get_post_meta($event_id, '_clubflow_member_price', true);
+		$event_mode = get_post_meta($event_id, '_clubflow_event_mode', true) ?: 'calendar';
+		$linked_events = get_post_meta($event_id, '_clubflow_linked_events', true) ?: [];
+
+		$spots_remaining = null;
+		$is_fully_booked = false;
+		if (class_exists('ClubFlow_Booking')) {
+			$spots_remaining = ClubFlow_Booking::get_spots_remaining($event_id);
+			$is_fully_booked = ClubFlow_Booking::is_fully_booked($event_id);
+		}
+
+		$show_price = filter_var($atts['show_price'], FILTER_VALIDATE_BOOLEAN);
+		$show_spots = filter_var($atts['show_spots'], FILTER_VALIDATE_BOOLEAN);
+
+		// Custom label or fall back to event title
+		$label = $atts['label'] ?: get_the_title($event_id);
+		$button_text = $atts['button_text'] ?: __('Book', 'clubflow');
+
+		// For packages, count included events
+		$includes_count = ($event_mode === 'package' && !empty($linked_events)) ? count($linked_events) : 0;
+
+		$html = '<div class="clubflow-booking-popup" data-event-id="' . esc_attr($event_id) . '">';
+		
+		// Main clickable card
+		$disabled_class = $is_fully_booked ? ' clubflow-booking-popup--disabled' : '';
+		$html .= '<button type="button" class="clubflow-booking-popup__trigger' . $disabled_class . '" ';
+		$html .= 'data-clubflow-booking-popup="' . esc_attr($event_id) . '" ';
+		if ($is_fully_booked) {
+			$html .= 'disabled ';
+		}
+		$html .= '>';
+
+		// Content wrapper
+		$html .= '<span class="clubflow-booking-popup__content">';
+		$html .= '<span class="clubflow-booking-popup__label">' . esc_html($label) . '</span>';
+
+		// Meta info (price, spots, includes count)
+		$meta_parts = [];
+		if ($show_price && $price) {
+			$price_text = esc_html($price);
+			if ($member_price) {
+				$price_text .= ' / ' . esc_html($member_price) . ' ' . __('(member)', 'clubflow');
+			}
+			$meta_parts[] = '<span class="clubflow-booking-popup__price">' . $price_text . '</span>';
+		}
+		if ($includes_count > 0) {
+			$meta_parts[] = '<span class="clubflow-booking-popup__includes">' . 
+				sprintf(_n('%d class', '%d classes', $includes_count, 'clubflow'), $includes_count) . 
+				'</span>';
+		}
+		if ($show_spots && $spots_remaining !== null) {
+			if ($is_fully_booked) {
+				$meta_parts[] = '<span class="clubflow-booking-popup__spots clubflow-booking-popup__spots--full">' . 
+					esc_html__('Fully booked', 'clubflow') . '</span>';
+			} else {
+				$meta_parts[] = '<span class="clubflow-booking-popup__spots">' . 
+					sprintf(__('%d spots', 'clubflow'), $spots_remaining) . '</span>';
+			}
+		}
+
+		if (!empty($meta_parts)) {
+			$html .= '<span class="clubflow-booking-popup__meta">' . implode(' • ', $meta_parts) . '</span>';
+		}
+
+		$html .= '</span>'; // /__content
+
+		// Button/arrow
+		if (!$is_fully_booked) {
+			$html .= '<span class="clubflow-booking-popup__action">' . esc_html($button_text) . '</span>';
+		}
+
+		$html .= '</button>';
+		$html .= '</div>';
+
+		// Ensure modal markup exists on the page
+		if (!$this->modal_markup_rendered) {
+			$this->modal_markup_rendered = true;
+			$html .= '<div class="clubflow-modal" aria-hidden="true" style="display:none">';
+			$html .= '<div class="clubflow-modal__backdrop" data-clubflow-modal-close></div>';
+			$html .= '<div class="clubflow-modal__dialog-wrapper">';
+			$html .= '<button type="button" class="clubflow-modal__close" data-clubflow-modal-close aria-label="Close">&times;</button>';
+			$html .= '<div class="clubflow-modal__dialog" role="dialog" aria-modal="true" aria-label="Event">';
+			$html .= '<div class="clubflow-modal__content" data-clubflow-modal-content></div>';
+			$html .= '</div>';
+			$html .= '</div>';
+			$html .= '</div>';
+		}
 
 		return $html;
 	}

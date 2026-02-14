@@ -969,7 +969,7 @@ body.is-dark .clubflow-list__link a,
 	color: #fff;
 	background: var(--clubflow-accent, #3788d8);
 	border: none;
-	border-radius: 6px;
+	border-radius: 50px;
 	cursor: pointer;
 	transition: background-color 150ms ease, transform 100ms ease;
 }
@@ -1605,4 +1605,101 @@ body.is-dark .clubflow-list__link a,
 
 .clubflow-booking-error {
 	color: var(--accent-red, #c62828);
+}
+
+/* ==========================================================================
+   Popup Booking Trigger
+   [club_booking id="123" popup="true"]
+   ========================================================================== */
+
+.clubflow-booking-popup {
+	margin: 0.5rem 0;
+}
+
+.clubflow-booking-popup__trigger {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	padding: 1rem 1.25rem;
+	background: #fff;
+	border: 1px solid rgba(0, 0, 0, 0.1);
+	border-radius: 12px;
+	cursor: pointer;
+	text-align: left;
+	font-family: inherit;
+	font-size: 1rem;
+	transition: border-color 0.2s, box-shadow 0.2s, transform 0.1s;
+}
+
+.clubflow-booking-popup__trigger:hover {
+	border-color: var(--accent-red, #9b2d30);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.clubflow-booking-popup__trigger:active {
+	transform: scale(0.99);
+}
+
+.clubflow-booking-popup__trigger:focus {
+	outline: none;
+	border-color: var(--accent-red, #9b2d30);
+	box-shadow: 0 0 0 3px rgba(155, 45, 48, 0.15);
+}
+
+.clubflow-booking-popup--disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.clubflow-booking-popup--disabled:hover {
+	border-color: rgba(0, 0, 0, 0.1);
+	box-shadow: none;
+	transform: none;
+}
+
+.clubflow-booking-popup__content {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.clubflow-booking-popup__label {
+	font-weight: 600;
+	color: var(--text-dark, #2d1e12);
+}
+
+.clubflow-booking-popup__meta {
+	font-size: 0.875rem;
+	color: var(--text-light, #5c4033);
+}
+
+.clubflow-booking-popup__price {
+	font-weight: 500;
+}
+
+.clubflow-booking-popup__spots--full {
+	color: var(--accent-red, #9b2d30);
+}
+
+.clubflow-booking-popup__action {
+	flex-shrink: 0;
+	padding: 0.5rem 1rem;
+	background: var(--accent-red, #9b2d30);
+	color: #fff;
+	font-weight: 600;
+	font-size: 0.875rem;
+	border-radius: 50px;
+	transition: opacity 0.2s;
+}
+
+.clubflow-booking-popup__trigger:hover .clubflow-booking-popup__action {
+	opacity: 0.9;
+}
+
+/* Loading state in modal */
+.clubflow-modal__loading {
+	text-align: center;
+	padding: 2rem;
+	color: var(--text-light, #666);
 }

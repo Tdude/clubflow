@@ -56,7 +56,7 @@ msgid "No events found in Trash."
 msgstr "Inga evenemang i papperskorgen."
 
 msgid "Event Categories"
-msgstr "Evenemangskategorier"
+msgstr "Eventkategorier"
 
 msgid "Event Category"
 msgstr "Evenemangskategori"
