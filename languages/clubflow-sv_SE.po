@@ -815,3 +815,27 @@ msgstr "Användarguide"
 
 msgid "Guide"
 msgstr "Guide"
+
+msgid "Instructors"
+msgstr "Instruktörer"
+
+msgid "Instructor"
+msgstr "Instruktör"
+
+msgid "Search Instructors"
+msgstr "Sök instruktörer"
+
+msgid "All Instructors"
+msgstr "Alla instruktörer"
+
+msgid "Edit Instructor"
+msgstr "Redigera instruktör"
+
+msgid "Update Instructor"
+msgstr "Uppdatera instruktör"
+
+msgid "Add New Instructor"
+msgstr "Lägg till instruktör"
+
+msgid "New Instructor Name"
+msgstr "Nytt instruktörsnamn"

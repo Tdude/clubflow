@@ -197,20 +197,27 @@ final class ClubFlow_Cpt {
 			]
 		);
 
-		$tag_labels = [
-			'name' => __('Event Tags', 'clubflow'),
-			'singular_name' => __('Event Tag', 'clubflow'),
+		$instructor_labels = [
+			'name' => __('Instructors', 'clubflow'),
+			'singular_name' => __('Instructor', 'clubflow'),
+			'search_items' => __('Search Instructors', 'clubflow'),
+			'all_items' => __('All Instructors', 'clubflow'),
+			'edit_item' => __('Edit Instructor', 'clubflow'),
+			'update_item' => __('Update Instructor', 'clubflow'),
+			'add_new_item' => __('Add New Instructor', 'clubflow'),
+			'new_item_name' => __('New Instructor Name', 'clubflow'),
+			'menu_name' => __('Instructors', 'clubflow'),
 		];
 
 		register_taxonomy(
 			ClubFlow::TAX_TAG,
 			[ClubFlow::POST_TYPE],
 			[
-				'labels' => $tag_labels,
+				'labels' => $instructor_labels,
 				'public' => true,
 				'show_in_rest' => true,
 				'hierarchical' => false,
-				'rewrite' => ['slug' => 'event-tag'],
+				'rewrite' => ['slug' => 'instructor'],
 			]
 		);
 	}
