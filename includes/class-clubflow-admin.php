@@ -18,11 +18,12 @@ final class ClubFlow_Admin {
 	}
 
 	public function register_settings_page(): void {
-		add_options_page(
-			__( 'ClubFlow', 'clubflow' ),
-			__( 'ClubFlow', 'clubflow' ),
-			'manage_options',
-			'clubflow',
+		add_submenu_page(
+			'edit.php?post_type=' . ClubFlow::POST_TYPE,
+			__( 'User Guide', 'clubflow' ),
+			__( 'Guide', 'clubflow' ),
+			'edit_posts',
+			'clubflow-guide',
 			[$this, 'render_settings_page']
 		);
 	}

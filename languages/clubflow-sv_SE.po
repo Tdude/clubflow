@@ -812,3 +812,6 @@ msgstr "Typ"
 
 msgid "User Guide"
 msgstr "Användarguide"
+
+msgid "Guide"
+msgstr "Guide"
