@@ -365,14 +365,21 @@ body.is-dark .clubflow-hovercard .fc-list-event td,
 }
 
 /* Calendar event hover - unified behavior */
-.clubflow-calendar .fc-event {
-	transition: transform 0.25s ease, box-shadow 0.25s ease;
+.clubflow-calendar .fc-event,
+.clubflow-calendar .fc-event-main,
+.clubflow-calendar .fc-h-event,
+.clubflow-calendar .fc-daygrid-event {
+	transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
 	cursor: pointer;
+	box-shadow: none;
 }
 
-.clubflow-calendar .fc-event:hover {
+.clubflow-calendar .fc-event:hover,
+.clubflow-calendar .fc-h-event:hover,
+.clubflow-calendar .fc-daygrid-event:hover {
 	transform: translateY(-2px) scale(1.02);
-	box-shadow: 0 6px 16px rgba(155, 45, 48, 0.35);
+	box-shadow: 0 6px 16px rgba(155, 45, 48, 0.4) !important;
+	filter: drop-shadow(0 4px 10px rgba(155, 45, 48, 0.35));
 	z-index: 10 !important;
 }
 
