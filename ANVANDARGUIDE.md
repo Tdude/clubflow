@@ -101,7 +101,7 @@ Om du bara anger ett pris visas inget val.
 Gå till **ClubFlow → Alla Bokningar** i WP-admin.
 
 ### Hur ändrar jag färg på en kategori i kalendern?
-Gå till **ClubFlow → Eventkategorier** och redigera kategorin. Där kan du välja färg. Om ingen färg visas i kalendern har du glömt välja datum. Vitt betyder att kategori inte valts.
+Gå till **ClubFlow → Kategorier** och redigera kategorin. Där finns en färgväljare.
 
 ### Varför syns inte mitt event i kalendern?
 Kontrollera att:
