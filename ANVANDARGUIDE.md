@@ -1,8 +1,5 @@
 # ClubFlow — Användarguide för Administratörer
 
-*En enkel guide för hur bokningssystemet fungerar.*
-
----
 
 ## Tre sätt att sälja
 
