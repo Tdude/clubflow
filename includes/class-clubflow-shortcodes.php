@@ -241,7 +241,7 @@ final class ClubFlow_Shortcodes {
 				'show_spots'   => 'true',
 				'show_includes'=> 'true',
 				'button_text'  => '',
-				'popup'        => 'false',
+				'popup'        => 'true',
 				'label'        => '',
 			],
 			$atts,
