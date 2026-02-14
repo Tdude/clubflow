@@ -321,11 +321,21 @@ final class ClubFlow_Admin {
 			var modeSelect = document.getElementById('clubflow_event_mode');
 			var shortcodeHelper = document.getElementById('clubflow-shortcode-helper');
 			var linkedEvents = document.getElementById('clubflow-linked-events');
+			
+			function updateVisibility() {
+				var mode = modeSelect.value;
+				if (shortcodeHelper) {
+					shortcodeHelper.style.display = (mode !== 'calendar') ? 'block' : 'none';
+				}
+				if (linkedEvents) {
+					linkedEvents.style.display = (mode === 'package') ? 'block' : 'none';
+				}
+			}
+			
 			if (modeSelect) {
-				modeSelect.addEventListener('change', function() {
-					shortcodeHelper.style.display = this.value !== 'calendar' ? '' : 'none';
-					linkedEvents.style.display = this.value === 'package' ? '' : 'none';
-				});
+				modeSelect.addEventListener('change', updateVisibility);
+				// Run once on load to sync state
+				updateVisibility();
 			}
 		})();
 		</script>
