@@ -23,11 +23,21 @@ final class ClubFlow_Admin {
 		add_action('edited_' . ClubFlow::TAX_CATEGORY, [$this, 'save_category_color']);
 		
 		// Category color column in list
-		add_filter('manage_edit-' . ClubFlow::TAX_CATEGORY . '_columns', [$this, 'category_color_column']);
-		add_filter('manage_' . ClubFlow::TAX_CATEGORY . '_custom_column', [$this, 'render_category_color_column'], 10, 3);
+		add_filter('manage_edit-' . ClubFlow::TAX_CATEGORY . '_columns', [$this, 'taxonomy_color_column']);
+		add_filter('manage_' . ClubFlow::TAX_CATEGORY . '_custom_column', [$this, 'render_taxonomy_color_column'], 10, 3);
+		
+		// Instructor color picker
+		add_action(ClubFlow::TAX_TAG . '_add_form_fields', [$this, 'render_category_color_field_add']);
+		add_action(ClubFlow::TAX_TAG . '_edit_form_fields', [$this, 'render_category_color_field_edit']);
+		add_action('created_' . ClubFlow::TAX_TAG, [$this, 'save_category_color']);
+		add_action('edited_' . ClubFlow::TAX_TAG, [$this, 'save_category_color']);
+		
+		// Instructor color column in list
+		add_filter('manage_edit-' . ClubFlow::TAX_TAG . '_columns', [$this, 'taxonomy_color_column']);
+		add_filter('manage_' . ClubFlow::TAX_TAG . '_custom_column', [$this, 'render_taxonomy_color_column'], 10, 3);
 	}
 	
-	public function category_color_column(array $columns): array {
+	public function taxonomy_color_column(array $columns): array {
 		$new = [];
 		foreach ($columns as $key => $label) {
 			if ($key === 'name') {
@@ -38,7 +48,7 @@ final class ClubFlow_Admin {
 		return $new;
 	}
 	
-	public function render_category_color_column(string $content, string $column, int $term_id): string {
+	public function render_taxonomy_color_column(string $content, string $column, int $term_id): string {
 		if ($column === 'color') {
 			$color = get_term_meta($term_id, 'clubflow_category_color', true) ?: '#3788d8';
 			return '<span style="display:inline-block; width:24px; height:24px; background:' . esc_attr($color) . '; border-radius:4px; border:1px solid rgba(0,0,0,0.1);"></span>';
