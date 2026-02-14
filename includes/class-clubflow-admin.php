@@ -15,6 +15,12 @@ final class ClubFlow_Admin {
 		add_action('add_meta_boxes', [$this, 'register_meta_boxes']);
 		add_action('save_post_' . ClubFlow::POST_TYPE, [$this, 'save_meta_boxes']);
 		add_action('admin_menu', [$this, 'register_settings_page']);
+		
+		// Category color picker
+		add_action(ClubFlow::TAX_CATEGORY . '_add_form_fields', [$this, 'render_category_color_field_add']);
+		add_action(ClubFlow::TAX_CATEGORY . '_edit_form_fields', [$this, 'render_category_color_field_edit']);
+		add_action('created_' . ClubFlow::TAX_CATEGORY, [$this, 'save_category_color']);
+		add_action('edited_' . ClubFlow::TAX_CATEGORY, [$this, 'save_category_color']);
 	}
 
 	public function register_settings_page(): void {
@@ -180,10 +186,6 @@ final class ClubFlow_Admin {
 			'default'
 		);
 
-		add_action(ClubFlow::TAX_CATEGORY . '_add_form_fields', [$this, 'render_category_color_field_add']);
-		add_action(ClubFlow::TAX_CATEGORY . '_edit_form_fields', [$this, 'render_category_color_field_edit']);
-		add_action('created_' . ClubFlow::TAX_CATEGORY, [$this, 'save_category_color']);
-		add_action('edited_' . ClubFlow::TAX_CATEGORY, [$this, 'save_category_color']);
 	}
 
 	public function render_category_color_field_add(): void {
