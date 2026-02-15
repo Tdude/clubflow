@@ -115,6 +115,24 @@ final class ClubFlow_Booking {
 	}
 
 	/**
+	 * Parse admin-entered price values like "200", "200 kr", "200.50".
+	 */
+	private static function parse_price_value(string $raw): float {
+		$normalized = preg_replace('/[^0-9.,-]/', '', $raw);
+		$normalized = str_replace(',', '.', (string) $normalized);
+		return max(0, (float) $normalized);
+	}
+
+	/**
+	 * Format amount for display/storage.
+	 */
+	private static function format_amount_sek(float $amount): string {
+		$amount = max(0, $amount);
+		$formatted = fmod($amount, 1.0) === 0.0 ? (string) (int) $amount : number_format($amount, 2, '.', '');
+		return $formatted . ' SEK';
+	}
+
+	/**
 	 * Generate a unique confirmation code
 	 */
 	private function generate_confirmation_code(): string {
@@ -144,7 +162,11 @@ final class ClubFlow_Booking {
 		$name  = sanitize_text_field($data['name'] ?? '');
 		$email = sanitize_email($data['email'] ?? '');
 		$phone = sanitize_text_field($data['phone'] ?? '');
+		$requested_tier = sanitize_key((string) ($data['price_tier'] ?? ''));
 		$is_member = !empty($data['is_member']);
+		$price_tier = in_array($requested_tier, ['non_member', 'member', 'student', 'instructor'], true)
+			? $requested_tier
+			: ($is_member ? 'member' : 'non_member');
 		$return_url = esc_url_raw($data['return_url'] ?? '');
 
 		if (empty($name) || empty($email)) {
@@ -208,15 +230,42 @@ final class ClubFlow_Booking {
 
 		// Determine initial booking status based on payment requirements
 		$payment_settings = class_exists('ClubFlow_Payment') ? get_option(ClubFlow_Payment::OPTION_KEY, []) : [];
-		$price = get_post_meta($event_id, '_clubflow_price', true);
-		$member_price = get_post_meta($event_id, '_clubflow_member_price', true);
-		
-		// Use member price if applicable
-		$applicable_price = ($is_member && $member_price !== '') ? $member_price : $price;
-		$amount = $applicable_price ? (float) preg_replace('/[^0-9.]/', '', $applicable_price) : 0;
-		
-		// Store the price used for this booking
+		$price = (string) get_post_meta($event_id, '_clubflow_price', true);
+		$member_price = (string) get_post_meta($event_id, '_clubflow_member_price', true);
+		$student_price = (string) get_post_meta($event_id, '_clubflow_student_price', true);
+		$instructor_price = (string) get_post_meta($event_id, '_clubflow_instructor_price', true);
+		$discount_amount_raw = (string) get_post_meta($event_id, '_clubflow_discount_amount', true);
+		$bulk_threshold = (int) get_post_meta($event_id, '_clubflow_bulk_discount_threshold', true);
+		$bulk_discount_raw = (string) get_post_meta($event_id, '_clubflow_bulk_discount_amount', true);
+
+		$price_by_tier = [
+			'non_member' => $price,
+			'member' => $member_price,
+			'student' => $student_price,
+			'instructor' => $instructor_price,
+		];
+
+		// Fallback to non-member if selected tier has no explicit price.
+		$selected_price_raw = (string) ($price_by_tier[$price_tier] ?? '');
+		if ($selected_price_raw === '') {
+			$price_tier = 'non_member';
+			$selected_price_raw = $price;
+		}
+
+		$selected_amount = self::parse_price_value($selected_price_raw);
+		$general_discount = self::parse_price_value($discount_amount_raw);
+		$bulk_discount = self::parse_price_value($bulk_discount_raw);
+		$current_bookings = self::get_booking_count($event_id);
+		$bulk_active = $bulk_threshold > 0 && ($current_bookings + 1) >= $bulk_threshold;
+		$total_discount = $general_discount + ($bulk_active ? $bulk_discount : 0);
+		$amount = max(0, $selected_amount - $total_discount);
+		$applicable_price = self::format_amount_sek($amount);
+
+		// Store pricing context used for this booking.
+		update_post_meta($booking_id, '_clubflow_booking_price_tier', $price_tier);
 		update_post_meta($booking_id, '_clubflow_booking_price', $applicable_price);
+		update_post_meta($booking_id, '_clubflow_booking_discount_total', self::format_amount_sek($total_discount));
+		update_post_meta($booking_id, '_clubflow_booking_is_member', $price_tier === 'member' ? '1' : '0');
 		$payment_enabled = !empty($payment_settings['enabled']);
 		$payment_required = $payment_enabled && $amount > 0;
 		
@@ -359,7 +408,7 @@ final class ClubFlow_Booking {
 				} elseif ($payment_method === 'manual') {
 					$payment_info = [
 						'method'  => 'manual',
-						'amount'  => $price,
+						'amount'  => $applicable_price,
 						'message' => __('Pay at the venue', 'clubflow'),
 					];
 				}
@@ -404,6 +453,7 @@ final class ClubFlow_Booking {
 			'name'       => $_POST['name'] ?? '',
 			'email'      => $_POST['email'] ?? '',
 			'phone'      => $_POST['phone'] ?? '',
+			'price_tier' => $_POST['price_tier'] ?? '',
 			'is_member'  => isset($_POST['is_member']) ? $_POST['is_member'] === '1' : false,
 			'return_url' => $_POST['return_url'] ?? '',
 		]);
@@ -653,10 +703,18 @@ final class ClubFlow_Booking {
 		echo '<tr><th>' . esc_html__('Phone', 'clubflow') . '</th><td>' . esc_html($phone ?: '—') . '</td></tr>';
 		
 		$is_member = get_post_meta($post->ID, '_clubflow_booking_is_member', true);
+		$price_tier = (string) get_post_meta($post->ID, '_clubflow_booking_price_tier', true);
 		$booking_price = get_post_meta($post->ID, '_clubflow_booking_price', true);
-		if ($is_member !== '') {
-			$member_label = $is_member === '1' ? __('Member', 'clubflow') : __('Non-member', 'clubflow');
-			echo '<tr><th>' . esc_html__('Type', 'clubflow') . '</th><td>' . esc_html($member_label);
+		if ($is_member !== '' || $price_tier !== '') {
+			$labels = [
+				'non_member' => __('Non-member', 'clubflow'),
+				'member' => __('Member', 'clubflow'),
+				'student' => __('Student', 'clubflow'),
+				'instructor' => __('Instructor', 'clubflow'),
+			];
+			$tier_key = $price_tier !== '' ? $price_tier : ($is_member === '1' ? 'member' : 'non_member');
+			$tier_label = $labels[$tier_key] ?? __('Non-member', 'clubflow');
+			echo '<tr><th>' . esc_html__('Type', 'clubflow') . '</th><td>' . esc_html($tier_label);
 			if ($booking_price) {
 				echo ' <span style="color: #666;">(' . esc_html($booking_price) . ')</span>';
 			}

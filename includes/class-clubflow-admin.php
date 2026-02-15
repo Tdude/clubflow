@@ -391,6 +391,12 @@ final class ClubFlow_Admin {
 		$max_spots = get_post_meta($post->ID, '_clubflow_max_spots', true);
 		$price = get_post_meta($post->ID, '_clubflow_price', true);
 		$member_price = get_post_meta($post->ID, '_clubflow_member_price', true);
+		$student_price = get_post_meta($post->ID, '_clubflow_student_price', true);
+		$instructor_price = get_post_meta($post->ID, '_clubflow_instructor_price', true);
+		$discount_amount = get_post_meta($post->ID, '_clubflow_discount_amount', true);
+		$discount_label = get_post_meta($post->ID, '_clubflow_discount_label', true);
+		$bulk_discount_threshold = get_post_meta($post->ID, '_clubflow_bulk_discount_threshold', true);
+		$bulk_discount_amount = get_post_meta($post->ID, '_clubflow_bulk_discount_amount', true);
 		
 		if ($post->post_status === 'auto-draft' && $booking_enabled === '') {
 			$booking_enabled = '1';
@@ -414,6 +420,40 @@ final class ClubFlow_Admin {
 		echo '<p>';
 		echo '<label for="clubflow_member_price">' . esc_html__('Member price', 'clubflow') . ' <span style="color: #666;">(' . esc_html__('optional', 'clubflow') . ')</span></label><br />';
 		echo '<input type="text" id="clubflow_member_price" name="clubflow_member_price" value="' . esc_attr((string) $member_price) . '" placeholder="150 kr" style="width: 100px;" />';
+		echo '</p>';
+
+		echo '<p>';
+		echo '<label for="clubflow_student_price">' . esc_html__('Student price', 'clubflow') . ' <span style="color: #666;">(' . esc_html__('optional', 'clubflow') . ')</span></label><br />';
+		echo '<input type="text" id="clubflow_student_price" name="clubflow_student_price" value="' . esc_attr((string) $student_price) . '" placeholder="170 kr" style="width: 100px;" />';
+		echo '</p>';
+
+		echo '<p>';
+		echo '<label for="clubflow_instructor_price">' . esc_html__('Instructor price', 'clubflow') . ' <span style="color: #666;">(' . esc_html__('optional', 'clubflow') . ')</span></label><br />';
+		echo '<input type="text" id="clubflow_instructor_price" name="clubflow_instructor_price" value="' . esc_attr((string) $instructor_price) . '" placeholder="120 kr" style="width: 100px;" />';
+		echo '</p>';
+
+		echo '<p style="margin-top: 12px; margin-bottom: 6px;"><strong>' . esc_html__('Rabatter', 'clubflow') . '</strong></p>';
+
+		echo '<p>';
+		echo '<label for="clubflow_discount_amount">' . esc_html__('General discount (SEK)', 'clubflow') . ' <span style="color: #666;">(' . esc_html__('optional', 'clubflow') . ')</span></label><br />';
+		echo '<input type="text" id="clubflow_discount_amount" name="clubflow_discount_amount" value="' . esc_attr((string) $discount_amount) . '" placeholder="20" style="width: 100px;" />';
+		echo '</p>';
+
+		echo '<p>';
+		echo '<label for="clubflow_discount_label">' . esc_html__('Discount label', 'clubflow') . ' <span style="color: #666;">(' . esc_html__('shown to customer', 'clubflow') . ')</span></label><br />';
+		echo '<input type="text" id="clubflow_discount_label" name="clubflow_discount_label" value="' . esc_attr((string) $discount_label) . '" placeholder="Student campaign" style="width: 100%;" />';
+		echo '</p>';
+
+		echo '<p style="margin-top: 12px; margin-bottom: 6px;"><strong>' . esc_html__('Mängdrabatt', 'clubflow') . '</strong></p>';
+
+		echo '<p>';
+		echo '<label for="clubflow_bulk_discount_threshold">' . esc_html__('Activate from booking #', 'clubflow') . '</label><br />';
+		echo '<input type="number" id="clubflow_bulk_discount_threshold" name="clubflow_bulk_discount_threshold" value="' . esc_attr((string) $bulk_discount_threshold) . '" min="0" style="width: 100px;" />';
+		echo '</p>';
+
+		echo '<p>';
+		echo '<label for="clubflow_bulk_discount_amount">' . esc_html__('Bulk discount (SEK)', 'clubflow') . ' <span style="color: #666;">(' . esc_html__('applies when threshold reached', 'clubflow') . ')</span></label><br />';
+		echo '<input type="text" id="clubflow_bulk_discount_amount" name="clubflow_bulk_discount_amount" value="' . esc_attr((string) $bulk_discount_amount) . '" placeholder="10" style="width: 100px;" />';
 		echo '</p>';
 
 		// Current bookings
@@ -605,6 +645,48 @@ final class ClubFlow_Admin {
 			update_post_meta($post_id, '_clubflow_member_price', $member_price);
 		} else {
 			delete_post_meta($post_id, '_clubflow_member_price');
+		}
+
+		$student_price = isset($_POST['clubflow_student_price']) ? sanitize_text_field(wp_unslash($_POST['clubflow_student_price'])) : '';
+		if ($student_price !== '') {
+			update_post_meta($post_id, '_clubflow_student_price', $student_price);
+		} else {
+			delete_post_meta($post_id, '_clubflow_student_price');
+		}
+
+		$instructor_price = isset($_POST['clubflow_instructor_price']) ? sanitize_text_field(wp_unslash($_POST['clubflow_instructor_price'])) : '';
+		if ($instructor_price !== '') {
+			update_post_meta($post_id, '_clubflow_instructor_price', $instructor_price);
+		} else {
+			delete_post_meta($post_id, '_clubflow_instructor_price');
+		}
+
+		$discount_amount = isset($_POST['clubflow_discount_amount']) ? sanitize_text_field(wp_unslash($_POST['clubflow_discount_amount'])) : '';
+		if ($discount_amount !== '') {
+			update_post_meta($post_id, '_clubflow_discount_amount', $discount_amount);
+		} else {
+			delete_post_meta($post_id, '_clubflow_discount_amount');
+		}
+
+		$discount_label = isset($_POST['clubflow_discount_label']) ? sanitize_text_field(wp_unslash($_POST['clubflow_discount_label'])) : '';
+		if ($discount_label !== '') {
+			update_post_meta($post_id, '_clubflow_discount_label', $discount_label);
+		} else {
+			delete_post_meta($post_id, '_clubflow_discount_label');
+		}
+
+		$bulk_discount_threshold = isset($_POST['clubflow_bulk_discount_threshold']) ? absint($_POST['clubflow_bulk_discount_threshold']) : 0;
+		if ($bulk_discount_threshold > 0) {
+			update_post_meta($post_id, '_clubflow_bulk_discount_threshold', $bulk_discount_threshold);
+		} else {
+			delete_post_meta($post_id, '_clubflow_bulk_discount_threshold');
+		}
+
+		$bulk_discount_amount = isset($_POST['clubflow_bulk_discount_amount']) ? sanitize_text_field(wp_unslash($_POST['clubflow_bulk_discount_amount'])) : '';
+		if ($bulk_discount_amount !== '') {
+			update_post_meta($post_id, '_clubflow_bulk_discount_amount', $bulk_discount_amount);
+		} else {
+			delete_post_meta($post_id, '_clubflow_bulk_discount_amount');
 		}
 
 		// Save event mode

@@ -270,8 +270,25 @@ final class ClubFlow_Shortcodes {
 
 		$event_mode = get_post_meta($event_id, '_clubflow_event_mode', true) ?: 'calendar';
 		$price = get_post_meta($event_id, '_clubflow_price', true);
+		$member_price = get_post_meta($event_id, '_clubflow_member_price', true);
+		$student_price = get_post_meta($event_id, '_clubflow_student_price', true);
+		$instructor_price = get_post_meta($event_id, '_clubflow_instructor_price', true);
+		$discount_amount = get_post_meta($event_id, '_clubflow_discount_amount', true);
+		$discount_label = get_post_meta($event_id, '_clubflow_discount_label', true);
+		$bulk_threshold = (int) get_post_meta($event_id, '_clubflow_bulk_discount_threshold', true);
+		$bulk_discount_amount = get_post_meta($event_id, '_clubflow_bulk_discount_amount', true);
 		$max_spots = (int) get_post_meta($event_id, '_clubflow_max_spots', true);
 		$linked_events = get_post_meta($event_id, '_clubflow_linked_events', true) ?: [];
+		$pricing_options = [
+			'non_member' => ['label' => __('Non-member', 'clubflow'), 'price' => (string) $price],
+			'member' => ['label' => __('Member', 'clubflow'), 'price' => (string) $member_price],
+			'student' => ['label' => __('Student', 'clubflow'), 'price' => (string) $student_price],
+			'instructor' => ['label' => __('Instructor', 'clubflow'), 'price' => (string) $instructor_price],
+		];
+		$active_pricing_options = array_filter($pricing_options, static function ($opt) {
+			return $opt['price'] !== '';
+		});
+		$has_tier_pricing = count($active_pricing_options) > 1;
 
 		$spots_remaining = null;
 		$is_fully_booked = false;
@@ -293,13 +310,21 @@ final class ClubFlow_Shortcodes {
 		$html .= '<h3 class="clubflow-booking-widget__title">' . esc_html(get_the_title($event_id)) . '</h3>';
 
 		// Meta line (price + spots)
-		if (($show_price && $price) || ($show_spots && $spots_remaining !== null)) {
+		if (($show_price && !empty($active_pricing_options)) || ($show_spots && $spots_remaining !== null)) {
 			$html .= '<p class="clubflow-booking-widget__meta">';
-			if ($show_price && $price) {
-				$html .= '<span class="clubflow-booking-widget__price">' . esc_html($price) . '</span>';
+			if ($show_price && !empty($active_pricing_options)) {
+				if ($has_tier_pricing) {
+					$parts = [];
+					foreach ($active_pricing_options as $option) {
+						$parts[] = esc_html((string) $option['label']) . ': ' . esc_html((string) $option['price']);
+					}
+					$html .= '<span class="clubflow-booking-widget__price">' . implode(' • ', $parts) . '</span>';
+				} else {
+					$html .= '<span class="clubflow-booking-widget__price">' . esc_html((string) $price) . ' SEK</span>';
+				}
 			}
 			if ($show_spots && $spots_remaining !== null) {
-				if ($show_price && $price) {
+				if ($show_price && !empty($active_pricing_options)) {
 					$html .= ' <span class="clubflow-booking-widget__sep">•</span> ';
 				}
 				$spots_text = $is_fully_booked
@@ -307,6 +332,13 @@ final class ClubFlow_Shortcodes {
 					: sprintf(__('%d spots left', 'clubflow'), $spots_remaining);
 				$spots_class = $is_fully_booked ? ' clubflow-booking-widget__spots--full' : '';
 				$html .= '<span class="clubflow-booking-widget__spots' . $spots_class . '">' . esc_html($spots_text) . '</span>';
+			}
+			if ($discount_amount !== '') {
+				$label = $discount_label !== '' ? $discount_label : __('Discount', 'clubflow');
+				$html .= ' <span class="clubflow-booking-widget__sep">•</span> <span class="clubflow-booking-widget__discount">' . esc_html($label) . ': -' . esc_html((string) $discount_amount) . ' SEK</span>';
+			}
+			if ($bulk_threshold > 0 && $bulk_discount_amount !== '') {
+				$html .= ' <span class="clubflow-booking-widget__sep">•</span> <span class="clubflow-booking-widget__discount">' . sprintf(esc_html__('Bulk from #%1$d: -%2$s SEK', 'clubflow'), $bulk_threshold, esc_html((string) $bulk_discount_amount)) . '</span>';
 			}
 			$html .= '</p>';
 		}
@@ -358,6 +390,20 @@ final class ClubFlow_Shortcodes {
 			$html .= '<input type="tel" id="clubflow_widget_phone_' . $event_id . '" name="phone" />';
 			$html .= '</div>';
 
+			if ($has_tier_pricing) {
+				$html .= '<div class="clubflow-booking-widget__field">';
+				$html .= '<label>' . esc_html__('Price type', 'clubflow') . '</label>';
+				$html .= '<div class="clubflow-booking-widget__radio-group">';
+				foreach ($active_pricing_options as $key => $option) {
+					$checked = $key === 'non_member' ? ' checked' : '';
+					$html .= '<label class="clubflow-booking-widget__radio"><input type="radio" name="price_tier" value="' . esc_attr((string) $key) . '"' . $checked . ' /> ' . esc_html((string) $option['label']) . ' (' . esc_html((string) $option['price']) . ')</label>';
+				}
+				$html .= '</div>';
+				$html .= '</div>';
+			} else {
+				$html .= '<input type="hidden" name="price_tier" value="non_member" />';
+			}
+
 			// TODO: Clip card field will go here in Phase 3
 
 			$html .= '<div class="clubflow-booking-widget__submit">';
@@ -380,8 +426,23 @@ final class ClubFlow_Shortcodes {
 	private function render_booking_popup_trigger(int $event_id, array $atts): string {
 		$price = get_post_meta($event_id, '_clubflow_price', true);
 		$member_price = get_post_meta($event_id, '_clubflow_member_price', true);
+		$student_price = get_post_meta($event_id, '_clubflow_student_price', true);
+		$instructor_price = get_post_meta($event_id, '_clubflow_instructor_price', true);
+		$discount_amount = get_post_meta($event_id, '_clubflow_discount_amount', true);
+		$discount_label = get_post_meta($event_id, '_clubflow_discount_label', true);
+		$bulk_threshold = (int) get_post_meta($event_id, '_clubflow_bulk_discount_threshold', true);
+		$bulk_discount_amount = get_post_meta($event_id, '_clubflow_bulk_discount_amount', true);
 		$event_mode = get_post_meta($event_id, '_clubflow_event_mode', true) ?: 'calendar';
 		$linked_events = get_post_meta($event_id, '_clubflow_linked_events', true) ?: [];
+		$pricing_options = [
+			'non_member' => ['label' => __('Non-member', 'clubflow'), 'price' => (string) $price],
+			'member' => ['label' => __('Member', 'clubflow'), 'price' => (string) $member_price],
+			'student' => ['label' => __('Student', 'clubflow'), 'price' => (string) $student_price],
+			'instructor' => ['label' => __('Instructor', 'clubflow'), 'price' => (string) $instructor_price],
+		];
+		$active_pricing_options = array_filter($pricing_options, static function ($opt) {
+			return $opt['price'] !== '';
+		});
 
 		$spots_remaining = null;
 		$is_fully_booked = false;
@@ -417,12 +478,19 @@ final class ClubFlow_Shortcodes {
 
 		// Meta info (price, spots, includes count)
 		$meta_parts = [];
-		if ($show_price && $price) {
-			$price_text = esc_html($price);
-			if ($member_price) {
-				$price_text .= ' / ' . esc_html($member_price) . ' ' . __('(member)', 'clubflow');
+		if ($show_price && !empty($active_pricing_options)) {
+			$parts = [];
+			foreach ($active_pricing_options as $option) {
+				$parts[] = esc_html((string) $option['label']) . ': ' . esc_html((string) $option['price']);
 			}
-			$meta_parts[] = '<span class="clubflow-booking-popup__price">' . $price_text . '</span>';
+			$meta_parts[] = '<span class="clubflow-booking-popup__price">' . implode(' • ', $parts) . '</span>';
+		}
+		if ($discount_amount !== '') {
+			$label_text = $discount_label !== '' ? $discount_label : __('Discount', 'clubflow');
+			$meta_parts[] = '<span class="clubflow-booking-popup__discount">' . esc_html($label_text) . ': -' . esc_html((string) $discount_amount) . ' SEK</span>';
+		}
+		if ($bulk_threshold > 0 && $bulk_discount_amount !== '') {
+			$meta_parts[] = '<span class="clubflow-booking-popup__discount">' . sprintf(esc_html__('Bulk from #%1$d: -%2$s SEK', 'clubflow'), $bulk_threshold, esc_html((string) $bulk_discount_amount)) . '</span>';
 		}
 		if ($includes_count > 0) {
 			$meta_parts[] = '<span class="clubflow-booking-popup__includes">' . 

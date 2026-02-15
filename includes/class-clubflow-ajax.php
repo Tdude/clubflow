@@ -289,8 +289,22 @@ final class ClubFlow_Ajax {
 
 		$price = get_post_meta($event_id, '_clubflow_price', true);
 		$member_price = get_post_meta($event_id, '_clubflow_member_price', true);
-		$max_spots = (int) get_post_meta($event_id, '_clubflow_max_spots', true);
-		$has_member_pricing = ($member_price !== '' && $price !== '');
+		$student_price = get_post_meta($event_id, '_clubflow_student_price', true);
+		$instructor_price = get_post_meta($event_id, '_clubflow_instructor_price', true);
+		$discount_amount = get_post_meta($event_id, '_clubflow_discount_amount', true);
+		$discount_label = get_post_meta($event_id, '_clubflow_discount_label', true);
+		$bulk_threshold = (int) get_post_meta($event_id, '_clubflow_bulk_discount_threshold', true);
+		$bulk_discount_amount = get_post_meta($event_id, '_clubflow_bulk_discount_amount', true);
+		$pricing_options = [
+			'non_member' => ['label' => __('Non-member', 'clubflow'), 'price' => (string) $price],
+			'member' => ['label' => __('Member', 'clubflow'), 'price' => (string) $member_price],
+			'student' => ['label' => __('Student', 'clubflow'), 'price' => (string) $student_price],
+			'instructor' => ['label' => __('Instructor', 'clubflow'), 'price' => (string) $instructor_price],
+		];
+		$active_pricing_options = array_filter($pricing_options, static function ($opt) {
+			return $opt['price'] !== '';
+		});
+		$has_tier_pricing = count($active_pricing_options) > 1;
 		
 		$spots_remaining = null;
 		$is_fully_booked = false;
@@ -306,23 +320,35 @@ final class ClubFlow_Ajax {
 
 		// Show price and spots
 		$html .= '<p class="clubflow-booking__meta">';
-		if ($has_member_pricing) {
-			$html .= '<span class="clubflow-booking__price">';
-			$html .= esc_html__('Member:', 'clubflow') . ' <strong>' . esc_html($member_price) . '</strong>';
-			$html .= ' &bull; ';
-			$html .= esc_html__('Non-member:', 'clubflow') . ' <strong>' . esc_html($price) . '</strong>';
-			$html .= '</span>';
+		$has_meta_price = false;
+		if ($has_tier_pricing) {
+			$parts = [];
+			foreach ($active_pricing_options as $option) {
+				$parts[] = esc_html((string) $option['label']) . ': <strong>' . esc_html((string) $option['price']) . '</strong>';
+			}
+			if (!empty($parts)) {
+				$html .= '<span class="clubflow-booking__price">' . implode(' &bull; ', $parts) . '</span>';
+				$has_meta_price = true;
+			}
 		} elseif ($price) {
 			$html .= '<span class="clubflow-booking__price">' . esc_html__('Price:', 'clubflow') . ' <strong>' . esc_html($price) . ' SEK</strong></span>';
+			$has_meta_price = true;
 		}
 		if ($spots_remaining !== null) {
-			if ($price || $has_member_pricing) {
+			if ($has_meta_price) {
 				$html .= ' &bull; ';
 			}
 			$spots_text = $is_fully_booked
 				? __('Fully booked', 'clubflow')
 				: sprintf(__('%d spots left', 'clubflow'), $spots_remaining);
 			$html .= '<span class="clubflow-booking__spots' . ($is_fully_booked ? ' clubflow-booking__spots--full' : '') . '">' . esc_html($spots_text) . '</span>';
+		}
+		if ($discount_amount !== '') {
+			$label = $discount_label !== '' ? $discount_label : __('Discount', 'clubflow');
+			$html .= ' &bull; <span class="clubflow-booking__discount">' . esc_html($label) . ': -' . esc_html((string) $discount_amount) . ' SEK</span>';
+		}
+		if ($bulk_threshold > 0 && $bulk_discount_amount !== '') {
+			$html .= ' &bull; <span class="clubflow-booking__discount">' . sprintf(esc_html__('Bulk from #%1$d: -%2$s SEK', 'clubflow'), $bulk_threshold, esc_html((string) $bulk_discount_amount)) . '</span>';
 		}
 		$html .= '</p>';
 
@@ -348,15 +374,19 @@ final class ClubFlow_Ajax {
 			$html .= '<input type="tel" id="clubflow_book_phone" name="phone" />';
 			$html .= '</p>';
 
-			// Member selection if both prices exist
-			if ($has_member_pricing) {
+			// Tier selection when multiple prices are configured
+			if ($has_tier_pricing) {
 				$html .= '<p class="clubflow-booking__field clubflow-booking__field--member">';
-				$html .= '<label>' . esc_html__('I am a', 'clubflow') . '</label>';
+				$html .= '<label>' . esc_html__('Price type', 'clubflow') . '</label>';
 				$html .= '<span class="clubflow-booking__radio-group">';
-				$html .= '<label class="clubflow-booking__radio"><input type="radio" name="is_member" value="1" /> ' . esc_html__('Member', 'clubflow') . ' <span class="clubflow-booking__radio-price">(' . esc_html($member_price) . ')</span></label>';
-				$html .= '<label class="clubflow-booking__radio"><input type="radio" name="is_member" value="0" checked /> ' . esc_html__('Non-member', 'clubflow') . ' <span class="clubflow-booking__radio-price">(' . esc_html($price) . ')</span></label>';
+				foreach ($active_pricing_options as $key => $option) {
+					$checked = $key === 'non_member' ? ' checked' : '';
+					$html .= '<label class="clubflow-booking__radio"><input type="radio" name="price_tier" value="' . esc_attr((string) $key) . '"' . $checked . ' /> ' . esc_html((string) $option['label']) . ' <span class="clubflow-booking__radio-price">(' . esc_html((string) $option['price']) . ')</span></label>';
+				}
 				$html .= '</span>';
 				$html .= '</p>';
+			} else {
+				$html .= '<input type="hidden" name="price_tier" value="non_member" />';
 			}
 
 			$html .= '<p class="clubflow-booking__submit">';
