@@ -26,6 +26,8 @@ final class ClubFlow_Cpt {
 				$new_columns['event_mode'] = __('Mode', 'clubflow');
 				$new_columns['event_date'] = __('Event Date', 'clubflow');
 				$new_columns['event_time'] = __('Time', 'clubflow');
+				$new_columns['event_bookings'] = __('Booked', 'clubflow');
+				$new_columns['event_series'] = __('Series', 'clubflow');
 				$new_columns['event_category'] = __('Category', 'clubflow');
 				$new_columns['event_price'] = __('Price', 'clubflow');
 			}
@@ -91,6 +93,46 @@ final class ClubFlow_Cpt {
 				} else {
 					echo '<span style="color: #999;">—</span>';
 				}
+				break;
+
+			case 'event_bookings':
+				if (!class_exists('ClubFlow_Booking')) {
+					echo '<span style="color: #999;">—</span>';
+					break;
+				}
+
+				$booking_enabled = get_post_meta($post_id, '_clubflow_booking_enabled', true) === '1';
+				if (!$booking_enabled) {
+					echo '<span style="color: #999;">—</span>';
+					break;
+				}
+
+				$count = ClubFlow_Booking::get_booking_count($post_id);
+				$max_spots = (int) get_post_meta($post_id, '_clubflow_max_spots', true);
+				if ($max_spots > 0) {
+					$color = $count > $max_spots ? '#c62828' : '#2e7d32';
+					echo '<span style="color: ' . esc_attr($color) . '; font-weight: 600;">' . esc_html($count) . '/' . esc_html($max_spots) . '</span>';
+				} else {
+					echo '<strong>' . esc_html($count) . '</strong>';
+				}
+				break;
+
+			case 'event_series':
+				$parent_id = (int) get_post_meta($post_id, '_clubflow_recurrence_parent', true);
+				if ($parent_id > 0) {
+					echo '<a href="' . esc_url(get_edit_post_link($parent_id)) . '">↳ #' . esc_html((string) $parent_id) . '</a>';
+					break;
+				}
+
+				$is_parent = get_post_meta($post_id, '_clubflow_recurrence_enabled', true) === '1';
+				if (!$is_parent || !class_exists('ClubFlow_Recurrence')) {
+					echo '<span style="color: #999;">—</span>';
+					break;
+				}
+
+				$children = ClubFlow_Recurrence::get_child_count($post_id);
+				$total = $children + 1;
+				echo '<span style="font-weight: 600;">' . esc_html((string) $total) . '</span> <span style="color:#666;">' . esc_html__('events', 'clubflow') . '</span>';
 				break;
 				
 			case 'event_category':

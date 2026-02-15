@@ -313,7 +313,7 @@ final class ClubFlow_Ajax {
 			$html .= esc_html__('Non-member:', 'clubflow') . ' <strong>' . esc_html($price) . '</strong>';
 			$html .= '</span>';
 		} elseif ($price) {
-			$html .= '<span class="clubflow-booking__price">' . esc_html__('Price:', 'clubflow') . ' <strong>' . esc_html($price) . '</strong></span>';
+			$html .= '<span class="clubflow-booking__price">' . esc_html__('Price:', 'clubflow') . ' <strong>' . esc_html($price) . ' SEK</strong></span>';
 		}
 		if ($spots_remaining !== null) {
 			if ($price || $has_member_pricing) {

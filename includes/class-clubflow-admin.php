@@ -275,6 +275,8 @@ final class ClubFlow_Admin {
 		$start = $this->utils->format_datetime_for_input((string) get_post_meta($post->ID, '_clubflow_start', true));
 		$end = $this->utils->format_datetime_for_input((string) get_post_meta($post->ID, '_clubflow_end', true));
 		$all_day = get_post_meta($post->ID, '_clubflow_all_day', true);
+		$recurrence_enabled = get_post_meta($post->ID, '_clubflow_recurrence_enabled', true) === '1';
+		$is_recurrence_child = (bool) get_post_meta($post->ID, '_clubflow_recurrence_parent', true);
 		$all_day_checked = (($all_day === '1') || ($all_day === '' && $post->post_status === 'auto-draft')) ? 'checked' : '';
 
 		echo '<p>';
@@ -291,6 +293,12 @@ final class ClubFlow_Admin {
 		echo '<label><input type="checkbox" id="clubflow_all_day" name="clubflow_all_day" value="1" ' . esc_attr($all_day_checked) . ' /> ';
 		echo esc_html__('All day', 'clubflow') . '</label>';
 		echo '</p>';
+
+		if ($recurrence_enabled || $is_recurrence_child) {
+			echo '<p style="margin-top: 10px; padding: 8px 10px; background: #f0f6fc; border-left: 4px solid #2271b1; color: #1d2327;">';
+			echo esc_html__('For recurring events, this sets the base time and first occurrence date.', 'clubflow');
+			echo '</p>';
+		}
 	}
 
 	/**

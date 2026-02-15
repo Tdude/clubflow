@@ -118,7 +118,29 @@ final class ClubFlow_Recurrence {
 
 		// Save recurrence settings
 		$type = sanitize_text_field($_POST['clubflow_recurrence_type'] ?? 'weekly');
+		if (!in_array($type, ['daily', 'weekly'], true)) {
+			$type = 'weekly';
+		}
+
 		$days = isset($_POST['clubflow_recurrence_days']) ? array_map('sanitize_text_field', (array) $_POST['clubflow_recurrence_days']) : [];
+		$days = array_values(array_intersect($days, array_keys(self::DAYS)));
+
+		// If specific weekdays are selected, enforce weekly mode to avoid accidental daily generation.
+		if (!empty($days)) {
+			$type = 'weekly';
+		}
+
+		// Weekly recurrence must have at least one weekday; fallback to parent's start weekday.
+		if ($type === 'weekly' && empty($days)) {
+			$parent_start = (string) get_post_meta($post_id, '_clubflow_start', true);
+			if ($parent_start !== '') {
+				$weekday = strtolower(substr(date('D', strtotime($parent_start)), 0, 3));
+				if (isset(self::DAYS[$weekday])) {
+					$days = [$weekday];
+				}
+			}
+		}
+
 		$until = sanitize_text_field($_POST['clubflow_recurrence_until'] ?? '');
 		
 		update_post_meta($post_id, '_clubflow_recurrence_type', $type);
@@ -272,7 +294,7 @@ final class ClubFlow_Recurrence {
 				$day_of_week = strtolower($current->format('D'));
 				$day_key = substr($day_of_week, 0, 3);
 				
-				if (in_array($day_key, $days)) {
+				if (in_array($day_key, $days, true)) {
 					$dates[] = clone $current;
 				}
 				$current->modify('+1 day');
