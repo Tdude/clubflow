@@ -432,7 +432,7 @@ final class ClubFlow_Admin {
 		echo '<input type="text" id="clubflow_instructor_price" name="clubflow_instructor_price" value="' . esc_attr((string) $instructor_price) . '" placeholder="120 kr" style="width: 100px;" />';
 		echo '</p>';
 
-		echo '<p style="margin-top: 12px; margin-bottom: 6px;"><strong>' . esc_html__('Rabatter', 'clubflow') . '</strong></p>';
+		echo '<p style="margin-top: 12px; margin-bottom: 6px;"><strong>' . esc_html__('Discounts', 'clubflow') . '</strong></p>';
 
 		echo '<p>';
 		echo '<label for="clubflow_discount_amount">' . esc_html__('General discount (SEK)', 'clubflow') . ' <span style="color: #666;">(' . esc_html__('optional', 'clubflow') . ')</span></label><br />';
@@ -441,10 +441,10 @@ final class ClubFlow_Admin {
 
 		echo '<p>';
 		echo '<label for="clubflow_discount_label">' . esc_html__('Discount label', 'clubflow') . ' <span style="color: #666;">(' . esc_html__('shown to customer', 'clubflow') . ')</span></label><br />';
-		echo '<input type="text" id="clubflow_discount_label" name="clubflow_discount_label" value="' . esc_attr((string) $discount_label) . '" placeholder="Student campaign" style="width: 100%;" />';
+		echo '<input type="text" id="clubflow_discount_label" name="clubflow_discount_label" value="' . esc_attr((string) $discount_label) . '" placeholder="' . esc_attr__('Student campaign', 'clubflow') . '" style="width: 100%;" />';
 		echo '</p>';
 
-		echo '<p style="margin-top: 12px; margin-bottom: 6px;"><strong>' . esc_html__('Mängdrabatt', 'clubflow') . '</strong></p>';
+		echo '<p style="margin-top: 12px; margin-bottom: 6px;"><strong>' . esc_html__('Bulk discount', 'clubflow') . '</strong></p>';
 
 		echo '<p>';
 		echo '<label for="clubflow_bulk_discount_threshold">' . esc_html__('Activate from booking #', 'clubflow') . '</label><br />';

@@ -154,6 +154,9 @@ msgstr "Bokningsdetaljer"
 msgid "Booking Settings"
 msgstr "Bokningsinställningar"
 
+msgid "Enable booking"
+msgstr "Aktivera bokning"
+
 msgid "Enable booking for this event"
 msgstr "Aktivera bokning för detta evenemang"
 
@@ -791,6 +794,64 @@ msgstr "icke-medlem"
 
 msgid "Member price"
 msgstr "Medlemspris"
+
+msgid "Student price"
+msgstr "Studentpris"
+
+msgid "Instructor price"
+msgstr "Instruktörspris"
+
+msgid "Discounts"
+msgstr "Rabatter"
+
+msgid "General discount (SEK)"
+msgstr "Allmän rabatt (SEK)"
+
+msgid "Discount label"
+msgstr "Rabattetikett"
+
+msgid "Discount"
+msgstr "Rabatt"
+
+msgid "shown to customer"
+msgstr "visas för kunden"
+
+msgid "Bulk discount"
+msgstr "Mängdrabatt"
+
+msgid "Activate from booking #"
+msgstr "Aktivera från bokning #"
+
+msgid "Bulk discount (SEK)"
+msgstr "Mängdrabatt (SEK)"
+
+msgid "applies when threshold reached"
+msgstr "gäller när tröskeln nås"
+
+msgid "Price type"
+msgstr "Pristyp"
+
+msgid "Student campaign"
+msgstr "Studentkampanj"
+
+#, php-format
+msgid "%d spots"
+msgstr "%d platser"
+
+#, php-format
+msgid "%d class"
+msgstr "%d klass"
+
+#, php-format
+msgid "%d classes"
+msgstr "%d klasser"
+
+#, php-format
+msgid "Bulk from #%1$d: -%2$s SEK"
+msgstr "Mängdrabatt från #%1$d: -%2$s SEK"
+
+msgid "Student"
+msgstr "Student"
 
 msgid "Member:"
 msgstr "Medlem:"
