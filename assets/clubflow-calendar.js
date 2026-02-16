@@ -276,6 +276,53 @@
     }
   }
 
+  function parseAmountAttr(form, name) {
+    try {
+      var v = form && form.getAttribute ? form.getAttribute(name) : '';
+      if (v === null || v === undefined) {
+        return 0;
+      }
+      var n = parseFloat(String(v).replace(',', '.'));
+      return isNaN(n) ? 0 : n;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  function getSelectedAmount(form) {
+    var baseAmount = parseAmountAttr(form, 'data-clubflow-price-amount');
+    var memberAmount = parseAmountAttr(form, 'data-clubflow-member-price-amount');
+    var memberChoice = qs('input[name="is_member"]:checked', form);
+    if (memberChoice && memberChoice.value === '1') {
+      return memberAmount;
+    }
+    return baseAmount;
+  }
+
+  function setRequired(el, required) {
+    if (!el) return;
+    if (required) {
+      el.setAttribute('required', 'required');
+    } else {
+      el.removeAttribute('required');
+    }
+  }
+
+  function updateFreeFields(form) {
+    if (!form) return;
+
+    var amount = getSelectedAmount(form);
+    var isFree = amount <= 0;
+
+    qsa('[data-clubflow-free-field]', form).forEach(function (wrap) {
+      wrap.style.display = isFree ? '' : 'none';
+    });
+
+    qsa('[data-clubflow-free-required]', form).forEach(function (input) {
+      setRequired(input, isFree);
+    });
+  }
+
   function openModal(html) {
     var modal = getModal();
     if (!modal) {
@@ -294,6 +341,13 @@
     if (content) {
       content.innerHTML = html;
     }
+
+    try {
+      var injectedForm = content ? qs('[data-clubflow-booking-form]', content) : null;
+      if (injectedForm) {
+        updateFreeFields(injectedForm);
+      }
+    } catch (e) {}
 
     modal.style.display = 'block';
     modal.setAttribute('aria-hidden', 'false');
@@ -399,6 +453,8 @@
     if (!window.ClubFlow) {
       return;
     }
+
+    updateFreeFields(form);
 
     var submitBtn = qs('button[type="submit"]', form);
     var messageEl = qs('[data-clubflow-booking-message]', form.parentNode);
@@ -819,6 +875,21 @@
       
       e.preventDefault();
       handleBookingSubmit(form);
+    });
+
+    document.addEventListener('change', function (e) {
+      var t = e && e.target ? e.target : null;
+      if (!t) return;
+
+      if (t.name === 'is_member') {
+        var form = t.closest('[data-clubflow-booking-form]');
+        if (!form) return;
+        updateFreeFields(form);
+      }
+    });
+
+    qsa('[data-clubflow-booking-form]').forEach(function (form) {
+      updateFreeFields(form);
     });
   }
 

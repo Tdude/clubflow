@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../banana"
+		},
+		{
+			"path": "."
+		},
+		{
+			"path": "../../themes/upaif"
+		}
+	],
+	"settings": {}
+}

@@ -272,6 +272,7 @@ final class ClubFlow_Shortcodes {
 		$price = get_post_meta($event_id, '_clubflow_price', true);
 		$max_spots = (int) get_post_meta($event_id, '_clubflow_max_spots', true);
 		$linked_events = get_post_meta($event_id, '_clubflow_linked_events', true) ?: [];
+		$price_amount = $price !== '' ? (float) preg_replace('/[^0-9.]/', '', (string) $price) : 0;
 
 		$spots_remaining = null;
 		$is_fully_booked = false;
@@ -339,7 +340,9 @@ final class ClubFlow_Shortcodes {
 			$html .= '</div>';
 		} else {
 			// Booking form
-			$html .= '<form class="clubflow-booking-widget__form" data-clubflow-booking-form>';
+			$html .= '<form class="clubflow-booking-widget__form" data-clubflow-booking-form '
+				. 'data-clubflow-price-amount="' . esc_attr($price_amount) . '" '
+				. 'data-clubflow-member-price-amount="0">';
 			$html .= '<input type="hidden" name="event_id" value="' . esc_attr($event_id) . '" />';
 			$html .= '<input type="hidden" name="return_url" value="' . esc_attr(home_url($_SERVER['REQUEST_URI'] ?? '')) . '" />';
 
@@ -355,7 +358,12 @@ final class ClubFlow_Shortcodes {
 
 			$html .= '<div class="clubflow-booking-widget__field">';
 			$html .= '<label for="clubflow_widget_phone_' . $event_id . '">' . esc_html__('Phone', 'clubflow') . ' <span class="optional">(' . esc_html__('optional', 'clubflow') . ')</span></label>';
-			$html .= '<input type="tel" id="clubflow_widget_phone_' . $event_id . '" name="phone" />';
+			$html .= '<input type="tel" id="clubflow_widget_phone_' . $event_id . '" name="phone" data-clubflow-free-required />';
+			$html .= '</div>';
+
+			$html .= '<div class="clubflow-booking-widget__field" data-clubflow-free-field style="display:none">';
+			$html .= '<label for="clubflow_widget_address_' . $event_id . '">' . esc_html__('Address', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<input type="text" id="clubflow_widget_address_' . $event_id . '" name="address" data-clubflow-free-required />';
 			$html .= '</div>';
 
 			// TODO: Clip card field will go here in Phase 3

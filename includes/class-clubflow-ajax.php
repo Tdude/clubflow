@@ -291,6 +291,8 @@ final class ClubFlow_Ajax {
 		$member_price = get_post_meta($event_id, '_clubflow_member_price', true);
 		$max_spots = (int) get_post_meta($event_id, '_clubflow_max_spots', true);
 		$has_member_pricing = ($member_price !== '' && $price !== '');
+		$price_amount = $price !== '' ? (float) preg_replace('/[^0-9.]/', '', (string) $price) : 0;
+		$member_price_amount = $member_price !== '' ? (float) preg_replace('/[^0-9.]/', '', (string) $member_price) : 0;
 		
 		$spots_remaining = null;
 		$is_fully_booked = false;
@@ -330,7 +332,9 @@ final class ClubFlow_Ajax {
 			$html .= '<p class="clubflow-booking__full">' . esc_html__('This event is fully booked. Please check back later or contact us.', 'clubflow') . '</p>';
 		} else {
 			// Booking form
-			$html .= '<form class="clubflow-booking__form" data-clubflow-booking-form>';
+			$html .= '<form class="clubflow-booking__form" data-clubflow-booking-form '
+				. 'data-clubflow-price-amount="' . esc_attr($price_amount) . '" '
+				. 'data-clubflow-member-price-amount="' . esc_attr($member_price_amount) . '">' ;
 			$html .= '<input type="hidden" name="event_id" value="' . esc_attr($event_id) . '" />';
 			
 			$html .= '<p class="clubflow-booking__field">';
@@ -345,7 +349,12 @@ final class ClubFlow_Ajax {
 
 			$html .= '<p class="clubflow-booking__field">';
 			$html .= '<label for="clubflow_book_phone">' . esc_html__('Phone', 'clubflow') . ' <span class="optional">(' . esc_html__('optional', 'clubflow') . ')</span></label>';
-			$html .= '<input type="tel" id="clubflow_book_phone" name="phone" />';
+			$html .= '<input type="tel" id="clubflow_book_phone" name="phone" data-clubflow-free-required />';
+			$html .= '</p>';
+
+			$html .= '<p class="clubflow-booking__field" data-clubflow-free-field style="display:none">';
+			$html .= '<label for="clubflow_book_address">' . esc_html__('Address', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<input type="text" id="clubflow_book_address" name="address" data-clubflow-free-required />';
 			$html .= '</p>';
 
 			// Member selection if both prices exist
