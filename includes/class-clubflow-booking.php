@@ -144,12 +144,15 @@ final class ClubFlow_Booking {
 		$name  = sanitize_text_field($data['name'] ?? '');
 		$email = sanitize_email($data['email'] ?? '');
 		$phone = sanitize_text_field($data['phone'] ?? '');
+		$street = sanitize_text_field($data['street'] ?? '');
+		$postal_code = sanitize_text_field($data['postal_code'] ?? '');
+		$city = sanitize_text_field($data['city'] ?? '');
 		$address = sanitize_text_field($data['address'] ?? '');
 		$is_member = !empty($data['is_member']);
 		$return_url = esc_url_raw($data['return_url'] ?? '');
 
-		if (empty($name) || empty($email)) {
-			return ['success' => false, 'error' => __('Name and email are required.', 'clubflow')];
+		if (empty($name) || empty($email) || empty($phone)) {
+			return ['success' => false, 'error' => __('Name, email and phone are required.', 'clubflow')];
 		}
 
 		if (!is_email($email)) {
@@ -186,9 +189,17 @@ final class ClubFlow_Booking {
 		$amount = $applicable_price ? (float) preg_replace('/[^0-9.]/', '', $applicable_price) : 0;
 
 		if ($amount <= 0) {
-			if (empty($phone) || empty($address)) {
-				return ['success' => false, 'error' => __('Phone and address are required for free bookings.', 'clubflow')];
+			if (empty($street) || empty($postal_code) || empty($city)) {
+				return ['success' => false, 'error' => __('Street, postal code and city are required for free bookings.', 'clubflow')];
 			}
+		}
+
+		$combined_address = trim(implode(' ', array_filter([
+			$street,
+			trim($postal_code . ' ' . $city),
+		])));
+		if ($combined_address !== '') {
+			$address = $combined_address;
 		}
 
 		// Generate confirmation code
@@ -211,6 +222,9 @@ final class ClubFlow_Booking {
 		update_post_meta($booking_id, '_clubflow_booking_name', $name);
 		update_post_meta($booking_id, '_clubflow_booking_email', $email);
 		update_post_meta($booking_id, '_clubflow_booking_phone', $phone);
+		update_post_meta($booking_id, '_clubflow_booking_street', $street);
+		update_post_meta($booking_id, '_clubflow_booking_postal_code', $postal_code);
+		update_post_meta($booking_id, '_clubflow_booking_city', $city);
 		update_post_meta($booking_id, '_clubflow_booking_address', $address);
 		update_post_meta($booking_id, '_clubflow_booking_is_member', $is_member ? '1' : '0');
 		update_post_meta($booking_id, '_clubflow_booking_confirmation_code', $confirmation_code);
@@ -383,6 +397,15 @@ final class ClubFlow_Booking {
 			'email'             => $email,
 		];
 
+		if (!$payment_required) {
+			$base_url = $return_url !== '' ? $return_url : home_url();
+			$base_url = strtok($base_url, '?');
+			$result['redirect_url'] = add_query_arg([
+				'booking_confirmed' => '1',
+				'code'              => $confirmation_code,
+			], $base_url);
+		}
+
 		if ($payment_info) {
 			$result['payment'] = $payment_info;
 		}
@@ -411,7 +434,9 @@ final class ClubFlow_Booking {
 			'name'       => $_POST['name'] ?? '',
 			'email'      => $_POST['email'] ?? '',
 			'phone'      => $_POST['phone'] ?? '',
-			'address'    => $_POST['address'] ?? '',
+			'street'     => $_POST['street'] ?? '',
+			'postal_code'=> $_POST['postal_code'] ?? '',
+			'city'       => $_POST['city'] ?? '',
 			'is_member'  => isset($_POST['is_member']) ? $_POST['is_member'] === '1' : false,
 			'return_url' => $_POST['return_url'] ?? '',
 		]);
@@ -451,6 +476,9 @@ final class ClubFlow_Booking {
 				'name'              => get_post_meta($post->ID, '_clubflow_booking_name', true),
 				'email'             => get_post_meta($post->ID, '_clubflow_booking_email', true),
 				'phone'             => get_post_meta($post->ID, '_clubflow_booking_phone', true),
+				'street'            => get_post_meta($post->ID, '_clubflow_booking_street', true),
+				'postal_code'       => get_post_meta($post->ID, '_clubflow_booking_postal_code', true),
+				'city'              => get_post_meta($post->ID, '_clubflow_booking_city', true),
 				'address'           => get_post_meta($post->ID, '_clubflow_booking_address', true),
 				'status'            => get_post_meta($post->ID, '_clubflow_booking_status', true),
 				'confirmation_code' => get_post_meta($post->ID, '_clubflow_booking_confirmation_code', true),
@@ -502,7 +530,8 @@ final class ClubFlow_Booking {
 		echo '<th>' . esc_html__('Name', 'clubflow') . '</th>';
 		echo '<th>' . esc_html__('Email', 'clubflow') . '</th>';
 		echo '<th>' . esc_html__('Phone', 'clubflow') . '</th>';
-		echo '<th>' . esc_html__('Address', 'clubflow') . '</th>';
+		echo '<th>' . esc_html__('Street', 'clubflow') . '</th>';
+		echo '<th>' . esc_html__('Post address', 'clubflow') . '</th>';
 		echo '<th>' . esc_html__('Code', 'clubflow') . '</th>';
 		echo '<th>' . esc_html__('Status', 'clubflow') . '</th>';
 		echo '<th>' . esc_html__('Booked', 'clubflow') . '</th>';
@@ -510,11 +539,24 @@ final class ClubFlow_Booking {
 		echo '<tbody>';
 
 		foreach ($bookings as $booking) {
+			$street = trim((string) ($booking['street'] ?? ''));
+			$postal_code = trim((string) ($booking['postal_code'] ?? ''));
+			$city = trim((string) ($booking['city'] ?? ''));
+			$legacy_address = trim((string) ($booking['address'] ?? ''));
+			$post_address = trim($postal_code . ' ' . $city);
+
+			$street_display = $street;
+			$post_display = $post_address;
+			if ($street_display === '' && $post_display === '' && $legacy_address !== '') {
+				$street_display = $legacy_address;
+			}
+
 			echo '<tr>';
 			echo '<td>' . esc_html($booking['name']) . '</td>';
 			echo '<td><a href="mailto:' . esc_attr($booking['email']) . '">' . esc_html($booking['email']) . '</a></td>';
 			echo '<td>' . esc_html($booking['phone'] ?: '—') . '</td>';
-			echo '<td>' . esc_html($booking['address'] ?: '—') . '</td>';
+			echo '<td>' . esc_html($street_display ?: '—') . '</td>';
+			echo '<td>' . esc_html($post_display ?: '—') . '</td>';
 			echo '<td><code>' . esc_html($booking['confirmation_code']) . '</code></td>';
 			echo '<td>' . esc_html(ucfirst($booking['status'])) . '</td>';
 			echo '<td>' . esc_html($booking['created'] ? wp_date('Y-m-d H:i', strtotime($booking['created'])) : '—') . '</td>';
@@ -638,6 +680,9 @@ final class ClubFlow_Booking {
 		$name = get_post_meta($post->ID, '_clubflow_booking_name', true);
 		$email = get_post_meta($post->ID, '_clubflow_booking_email', true);
 		$phone = get_post_meta($post->ID, '_clubflow_booking_phone', true);
+		$street = get_post_meta($post->ID, '_clubflow_booking_street', true);
+		$postal_code = get_post_meta($post->ID, '_clubflow_booking_postal_code', true);
+		$city = get_post_meta($post->ID, '_clubflow_booking_city', true);
 		$address = get_post_meta($post->ID, '_clubflow_booking_address', true);
 		$status = get_post_meta($post->ID, '_clubflow_booking_status', true);
 		$code = get_post_meta($post->ID, '_clubflow_booking_confirmation_code', true);
@@ -663,7 +708,17 @@ final class ClubFlow_Booking {
 		echo '<tr><th>' . esc_html__('Name', 'clubflow') . '</th><td>' . esc_html($name) . '</td></tr>';
 		echo '<tr><th>' . esc_html__('Email', 'clubflow') . '</th><td><a href="mailto:' . esc_attr($email) . '">' . esc_html($email) . '</a></td></tr>';
 		echo '<tr><th>' . esc_html__('Phone', 'clubflow') . '</th><td>' . esc_html($phone ?: '—') . '</td></tr>';
-		echo '<tr><th>' . esc_html__('Address', 'clubflow') . '</th><td>' . esc_html($address ?: '—') . '</td></tr>';
+		$street = trim((string) $street);
+		$postal_code = trim((string) $postal_code);
+		$city = trim((string) $city);
+		$legacy_address = trim((string) $address);
+		$post_address = trim($postal_code . ' ' . $city);
+		if ($street === '' && $post_address === '' && $legacy_address !== '') {
+			echo '<tr><th>' . esc_html__('Address', 'clubflow') . '</th><td>' . esc_html($legacy_address) . '</td></tr>';
+		} else {
+			echo '<tr><th>' . esc_html__('Street', 'clubflow') . '</th><td>' . esc_html($street ?: '—') . '</td></tr>';
+			echo '<tr><th>' . esc_html__('Post address', 'clubflow') . '</th><td>' . esc_html($post_address ?: '—') . '</td></tr>';
+		}
 		
 		$is_member = get_post_meta($post->ID, '_clubflow_booking_is_member', true);
 		$booking_price = get_post_meta($post->ID, '_clubflow_booking_price', true);

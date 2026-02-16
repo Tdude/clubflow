@@ -570,6 +570,13 @@
             
             messageEl.innerHTML = html;
             messageEl.style.display = 'block';
+
+            // If server provided a redirect URL (e.g. free bookings), navigate there
+            // so the PHP confirmation toast can show.
+            if (data.data && data.data.redirect_url) {
+              window.location.href = data.data.redirect_url;
+              return;
+            }
             
             // Start polling for payment status if Swish
             if (data.data.payment && data.data.payment.method === 'swish' && data.data.payment.check_url) {

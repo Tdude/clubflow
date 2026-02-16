@@ -208,6 +208,18 @@ msgstr "E-post"
 msgid "Phone"
 msgstr "Telefon"
 
+msgid "Street"
+msgstr "Gatuadress"
+
+msgid "Postal code"
+msgstr "Postnummer"
+
+msgid "City"
+msgstr "Ort"
+
+msgid "Post address"
+msgstr "Postadress"
+
 msgid "Book now"
 msgstr "Boka nu"
 
@@ -231,6 +243,9 @@ msgstr "Detta evenemang är fullbokat."
 
 msgid "Name and email are required."
 msgstr "Namn och e-post krävs."
+
+msgid "Name, email and phone are required."
+msgstr "Namn, e-post och telefon krävs."
 
 msgid "Please enter a valid email address."
 msgstr "Ange en giltig e-postadress."

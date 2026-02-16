@@ -357,13 +357,23 @@ final class ClubFlow_Shortcodes {
 			$html .= '</div>';
 
 			$html .= '<div class="clubflow-booking-widget__field">';
-			$html .= '<label for="clubflow_widget_phone_' . $event_id . '">' . esc_html__('Phone', 'clubflow') . ' <span class="optional">(' . esc_html__('optional', 'clubflow') . ')</span></label>';
-			$html .= '<input type="tel" id="clubflow_widget_phone_' . $event_id . '" name="phone" data-clubflow-free-required />';
+			$html .= '<label for="clubflow_widget_phone_' . $event_id . '">' . esc_html__('Phone', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<input type="tel" id="clubflow_widget_phone_' . $event_id . '" name="phone" required />';
 			$html .= '</div>';
 
 			$html .= '<div class="clubflow-booking-widget__field" data-clubflow-free-field style="display:none">';
-			$html .= '<label for="clubflow_widget_address_' . $event_id . '">' . esc_html__('Address', 'clubflow') . ' <span class="required">*</span></label>';
-			$html .= '<input type="text" id="clubflow_widget_address_' . $event_id . '" name="address" data-clubflow-free-required />';
+			$html .= '<label for="clubflow_widget_street_' . $event_id . '">' . esc_html__('Street', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<input type="text" id="clubflow_widget_street_' . $event_id . '" name="street" data-clubflow-free-required />';
+			$html .= '</div>';
+
+			$html .= '<div class="clubflow-booking-widget__field" data-clubflow-free-field style="display:none">';
+			$html .= '<label for="clubflow_widget_postal_code_' . $event_id . '">' . esc_html__('Postal code', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<input type="text" id="clubflow_widget_postal_code_' . $event_id . '" name="postal_code" data-clubflow-free-required />';
+			$html .= '</div>';
+
+			$html .= '<div class="clubflow-booking-widget__field" data-clubflow-free-field style="display:none">';
+			$html .= '<label for="clubflow_widget_city_' . $event_id . '">' . esc_html__('City', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<input type="text" id="clubflow_widget_city_' . $event_id . '" name="city" data-clubflow-free-required />';
 			$html .= '</div>';
 
 			// TODO: Clip card field will go here in Phase 3

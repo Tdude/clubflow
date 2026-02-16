@@ -348,13 +348,23 @@ final class ClubFlow_Ajax {
 			$html .= '</p>';
 
 			$html .= '<p class="clubflow-booking__field">';
-			$html .= '<label for="clubflow_book_phone">' . esc_html__('Phone', 'clubflow') . ' <span class="optional">(' . esc_html__('optional', 'clubflow') . ')</span></label>';
-			$html .= '<input type="tel" id="clubflow_book_phone" name="phone" data-clubflow-free-required />';
+			$html .= '<label for="clubflow_book_phone">' . esc_html__('Phone', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<input type="tel" id="clubflow_book_phone" name="phone" required />';
 			$html .= '</p>';
 
 			$html .= '<p class="clubflow-booking__field" data-clubflow-free-field style="display:none">';
-			$html .= '<label for="clubflow_book_address">' . esc_html__('Address', 'clubflow') . ' <span class="required">*</span></label>';
-			$html .= '<input type="text" id="clubflow_book_address" name="address" data-clubflow-free-required />';
+			$html .= '<label for="clubflow_book_street">' . esc_html__('Street', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<input type="text" id="clubflow_book_street" name="street" data-clubflow-free-required />';
+			$html .= '</p>';
+
+			$html .= '<p class="clubflow-booking__field" data-clubflow-free-field style="display:none">';
+			$html .= '<label for="clubflow_book_postal_code">' . esc_html__('Postal code', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<input type="text" id="clubflow_book_postal_code" name="postal_code" data-clubflow-free-required />';
+			$html .= '</p>';
+
+			$html .= '<p class="clubflow-booking__field" data-clubflow-free-field style="display:none">';
+			$html .= '<label for="clubflow_book_city">' . esc_html__('City', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<input type="text" id="clubflow_book_city" name="city" data-clubflow-free-required />';
 			$html .= '</p>';
 
 			// Member selection if both prices exist
