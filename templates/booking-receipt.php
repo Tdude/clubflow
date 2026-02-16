@@ -20,7 +20,13 @@ $rows = is_array($receipt['rows'] ?? null) ? $receipt['rows'] : [];
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<title><?php echo esc_html($title); ?></title>
 	<style>
-		body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 13px; color: #111; }
+		@page { size: A4; margin: 14mm; }
+		body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 13px; color: #111; margin: 0; padding: 0; background: #fff; }
+		.page { max-width: 210mm; margin: 0 auto; padding: 14mm; box-sizing: border-box; }
+		.site { display: flex; align-items: center; gap: 10px; margin: 0 0 10px 0; }
+		.site img { max-height: 28px; width: auto; }
+		.site-name { font-weight: 600; font-size: 13px; }
+		.footer { margin-top: 18px; padding-top: 10px; border-top: 1px solid #e5e5e5; color: #555; font-size: 12px; }
 		h1 { font-size: 18px; margin: 0 0 8px 0; }
 		.meta { margin: 0 0 14px 0; }
 		.meta strong { display: inline-block; min-width: 120px; }
@@ -32,7 +38,31 @@ $rows = is_array($receipt['rows'] ?? null) ? $receipt['rows'] : [];
 	</style>
 </head>
 <body>
-	<h1><?php echo esc_html($title); ?></h1>
+	<div class="page">
+		<?php
+		$site_name = get_bloginfo('name');
+		$logo_url = '';
+		$footer_text = '';
+		if (function_exists('has_custom_logo') && has_custom_logo()) {
+			$logo_id = (int) get_theme_mod('custom_logo');
+			$logo_src = $logo_id ? wp_get_attachment_image_src($logo_id, 'full') : false;
+			if (is_array($logo_src) && !empty($logo_src[0])) {
+				$logo_url = (string) $logo_src[0];
+			}
+		}
+		if (function_exists('get_theme_mod')) {
+			$footer_text = (string) get_theme_mod('upaif_footer_text', '');
+		}
+		?>
+
+		<div class="site">
+			<?php if ($logo_url !== ''): ?>
+				<img src="<?php echo esc_url($logo_url); ?>" alt="<?php echo esc_attr($site_name); ?>" />
+			<?php endif; ?>
+			<div class="site-name"><?php echo esc_html($site_name); ?></div>
+		</div>
+
+		<h1><?php echo esc_html($title); ?></h1>
 
 	<div class="meta">
 		<?php if ($customer_name !== ''): ?>
@@ -51,7 +81,7 @@ $rows = is_array($receipt['rows'] ?? null) ? $receipt['rows'] : [];
 		<?php echo esc_html(number_format($total_paid, 2, '.', ' ') . ' ' . $currency); ?>
 	</div>
 
-	<table>
+		<table>
 		<thead>
 			<tr>
 				<th><?php echo esc_html__('Date purchased', 'clubflow'); ?></th>
@@ -92,6 +122,11 @@ $rows = is_array($receipt['rows'] ?? null) ? $receipt['rows'] : [];
 			<?php endforeach; ?>
 		<?php endif; ?>
 		</tbody>
-	</table>
+		</table>
+
+		<?php if (trim($footer_text) !== ''): ?>
+			<div class="footer"><?php echo wp_kses_post(wpautop($footer_text)); ?></div>
+		<?php endif; ?>
+	</div>
 </body>
 </html>

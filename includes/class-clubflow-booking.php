@@ -17,25 +17,122 @@ final class ClubFlow_Booking {
 		add_action('init', [$this, 'register_booking_cpt']);
 		add_action('wp_ajax_' . self::AJAX_ACTION_BOOK, [$this, 'ajax_book']);
 		add_action('wp_ajax_nopriv_' . self::AJAX_ACTION_BOOK, [$this, 'ajax_book']);
-		add_action('wp_footer', [$this, 'maybe_show_confirmation_toast']);
-		
-		// Admin enhancements
 		add_action('add_meta_boxes', [$this, 'register_bookings_meta_box']);
 		add_filter('manage_' . ClubFlow::POST_TYPE . '_posts_columns', [$this, 'add_bookings_column']);
 		add_action('manage_' . ClubFlow::POST_TYPE . '_posts_custom_column', [$this, 'render_bookings_column'], 10, 2);
-		
-		// Booking CPT admin columns
 		add_filter('manage_' . self::POST_TYPE . '_posts_columns', [$this, 'booking_admin_columns']);
 		add_action('manage_' . self::POST_TYPE . '_posts_custom_column', [$this, 'render_booking_admin_column'], 10, 2);
-		add_action('add_meta_boxes', [$this, 'register_booking_details_meta_box']);
-		
-		// Admin actions for payment confirmation
+		add_action('add_meta_boxes_' . self::POST_TYPE, [$this, 'register_booking_details_meta_box']);
 		add_action('admin_post_clubflow_confirm_payment', [$this, 'handle_confirm_payment']);
+		add_action('admin_post_clubflow_view_receipt', [$this, 'handle_view_receipt']);
+		add_action('manage_posts_extra_tablenav', [$this, 'render_receipt_controls']);
+		add_action('wp_footer', [$this, 'maybe_show_confirmation_toast']);
 	}
 
-	/**
-	 * Register the booking custom post type
-	 */
+	public function render_receipt_controls(string $which): void {
+		if (!is_admin() || $which !== 'top') {
+			return;
+		}
+
+		$screen = function_exists('get_current_screen') ? get_current_screen() : null;
+		if (!$screen || ($screen->base ?? '') !== 'edit' || ($screen->post_type ?? '') !== self::POST_TYPE) {
+			return;
+		}
+
+		if (!current_user_can('edit_posts')) {
+			return;
+		}
+
+		$email = isset($_GET['clubflow_receipt_email']) ? sanitize_email((string) $_GET['clubflow_receipt_email']) : '';
+		$from = isset($_GET['clubflow_receipt_from']) ? sanitize_text_field((string) $_GET['clubflow_receipt_from']) : '';
+		$to = isset($_GET['clubflow_receipt_to']) ? sanitize_text_field((string) $_GET['clubflow_receipt_to']) : '';
+		$nonce = wp_create_nonce('clubflow_view_receipt');
+
+		echo '<div class="alignleft actions" style="margin-left: 8px;">';
+		echo '<input type="email" id="clubflow_receipt_email" placeholder="' . esc_attr__('Email', 'clubflow') . '" value="' . esc_attr($email) . '" style="min-width: 220px;" />';
+		echo '<input type="date" id="clubflow_receipt_from" value="' . esc_attr($from) . '" />';
+		echo '<input type="date" id="clubflow_receipt_to" value="' . esc_attr($to) . '" />';
+		echo '<a href="#" class="button" id="clubflow_view_receipt_btn">' . esc_html__('View Receipt', 'clubflow') . '</a>';
+		echo '<script>(function(){var btn=document.getElementById("clubflow_view_receipt_btn");if(!btn)return;btn.addEventListener("click",function(e){e.preventDefault();var email=(document.getElementById("clubflow_receipt_email")||{}).value||"";var from=(document.getElementById("clubflow_receipt_from")||{}).value||"";var to=(document.getElementById("clubflow_receipt_to")||{}).value||"";var url=' . json_encode(admin_url('admin-post.php?action=clubflow_view_receipt&_wpnonce=' . $nonce)) . ';url += "&clubflow_receipt_email="+encodeURIComponent(email);url += "&clubflow_receipt_from="+encodeURIComponent(from);url += "&clubflow_receipt_to="+encodeURIComponent(to);window.open(url, "_blank");});})();</script>';
+		echo '</div>';
+	}
+
+	public function handle_view_receipt(): void {
+		if (!current_user_can('edit_posts')) {
+			wp_die(__('Unauthorized', 'clubflow'));
+		}
+
+		check_admin_referer('clubflow_view_receipt');
+
+		$email = isset($_GET['clubflow_receipt_email']) ? sanitize_email((string) $_GET['clubflow_receipt_email']) : '';
+		$from = isset($_GET['clubflow_receipt_from']) ? sanitize_text_field((string) $_GET['clubflow_receipt_from']) : '';
+		$to = isset($_GET['clubflow_receipt_to']) ? sanitize_text_field((string) $_GET['clubflow_receipt_to']) : '';
+
+		$meta_query = [];
+		if ($email !== '') {
+			$meta_query[] = [
+				'key'   => '_clubflow_booking_email',
+				'value' => $email,
+			];
+		}
+
+		$from_dt = $from !== '' ? $from . ' 00:00:00' : '';
+		$to_dt = $to !== '' ? $to . ' 23:59:59' : '';
+		if ($from_dt !== '' && $to_dt !== '') {
+			$meta_query[] = [
+				'key'     => '_clubflow_booking_created',
+				'value'   => [$from_dt, $to_dt],
+				'compare' => 'BETWEEN',
+				'type'    => 'DATETIME',
+			];
+		} elseif ($from_dt !== '') {
+			$meta_query[] = [
+				'key'     => '_clubflow_booking_created',
+				'value'   => $from_dt,
+				'compare' => '>=',
+				'type'    => 'DATETIME',
+			];
+		} elseif ($to_dt !== '') {
+			$meta_query[] = [
+				'key'     => '_clubflow_booking_created',
+				'value'   => $to_dt,
+				'compare' => '<=',
+				'type'    => 'DATETIME',
+			];
+		}
+
+		$args = [
+			'post_type'      => self::POST_TYPE,
+			'post_status'    => 'publish',
+			'posts_per_page' => -1,
+			'orderby'        => 'date',
+			'order'          => 'ASC',
+			'fields'         => 'ids',
+		];
+		if (!empty($meta_query)) {
+			$args['meta_query'] = $meta_query;
+		}
+
+		$query = new \WP_Query($args);
+		$booking_ids = is_array($query->posts) ? array_map('intval', $query->posts) : [];
+
+		$model = self::build_receipt_model($booking_ids, [
+			'from' => $from,
+			'to' => $to,
+			'customer_email' => $email,
+		]);
+
+		$html = self::render_receipt_html($model);
+		if ($html === '') {
+			wp_die(__('Could not generate receipt.', 'clubflow'));
+		}
+
+		nocache_headers();
+		header('Content-Type: text/html; charset=' . get_bloginfo('charset'));
+		echo $html;
+		exit;
+	}
+
 	public function register_booking_cpt(): void {
 		$labels = [
 			'name'               => __('Bookings', 'clubflow'),

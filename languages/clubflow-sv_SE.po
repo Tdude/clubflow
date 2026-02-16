@@ -280,6 +280,33 @@ msgstr "Bokad"
 msgid "Confirmation Code"
 msgstr "Bekräftelsekod"
 
+msgid "Receipt / Payment summary"
+msgstr "Kvitto / Betalningssammanställning"
+
+msgid "View Receipt"
+msgstr "Visa kvitto"
+
+msgid "Customer"
+msgstr "Kund"
+
+msgid "Period"
+msgstr "Period"
+
+msgid "Total"
+msgstr "Totalt"
+
+msgid "Date purchased"
+msgstr "Köpt datum"
+
+msgid "Date booked"
+msgstr "Bokat datum"
+
+msgid "Summary"
+msgstr "Sammanfattning"
+
+msgid "Could not generate receipt."
+msgstr "Kunde inte skapa kvitto."
+
 msgid "No bookings yet."
 msgstr "Inga bokningar ännu."
 
@@ -372,9 +399,6 @@ msgstr "Belopp:"
 
 msgid "Method"
 msgstr "Metod"
-
-msgid "Customer"
-msgstr "Kund"
 
 msgid "Manual"
 msgstr "Manuell"
