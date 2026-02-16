@@ -809,6 +809,116 @@ final class ClubFlow_Booking {
 		exit;
 	}
 
+	public static function build_receipt_model(array $booking_ids, array $args = []): array {
+		$from = isset($args['from']) ? sanitize_text_field((string) $args['from']) : '';
+		$to = isset($args['to']) ? sanitize_text_field((string) $args['to']) : '';
+		$customer_email_filter = isset($args['customer_email']) ? sanitize_email((string) $args['customer_email']) : '';
+
+		$rows = [];
+		$total_paid = 0.0;
+		$currency = '';
+
+		foreach ($booking_ids as $booking_id) {
+			$booking_id = absint($booking_id);
+			if ($booking_id <= 0 || get_post_type($booking_id) !== self::POST_TYPE) {
+				continue;
+			}
+
+			$customer_name = (string) get_post_meta($booking_id, '_clubflow_booking_name', true);
+			$customer_email = (string) get_post_meta($booking_id, '_clubflow_booking_email', true);
+			if ($customer_email_filter !== '' && strtolower($customer_email_filter) !== strtolower($customer_email)) {
+				continue;
+			}
+
+			$event_id = (int) get_post_meta($booking_id, '_clubflow_booking_event_id', true);
+			$event_title = $event_id > 0 ? (string) get_the_title($event_id) : '';
+			$event_start = $event_id > 0 ? (string) get_post_meta($event_id, '_clubflow_start', true) : '';
+			$event_location = $event_id > 0 ? (string) get_post_meta($event_id, '_clubflow_location', true) : '';
+
+			$date_booked = (string) get_post_meta($booking_id, '_clubflow_booking_created', true);
+			$status = (string) get_post_meta($booking_id, '_clubflow_booking_status', true);
+			$confirmation_code = (string) get_post_meta($booking_id, '_clubflow_booking_confirmation_code', true);
+			$booking_price = (string) get_post_meta($booking_id, '_clubflow_booking_price', true);
+
+			$payment = null;
+			if (class_exists('ClubFlow_Payment')) {
+				$payment = ClubFlow_Payment::get_booking_payment($booking_id);
+			}
+
+			$date_purchased = '';
+			$price = $booking_price;
+			$payment_method = '';
+			$payment_status = '';
+			if (is_array($payment)) {
+				$date_purchased = (string) ($payment['timestamp'] ?? '');
+				$price = (string) ($payment['amount'] ?? $price);
+				$currency = (string) ($payment['currency'] ?? $currency);
+				$payment_method = (string) ($payment['method'] ?? '');
+				$payment_status = (string) ($payment['status'] ?? '');
+				if ($payment_status === 'completed') {
+					$total_paid += (float) str_replace(',', '.', (string) $price);
+				}
+			}
+
+			$summary_parts = [];
+			if ($event_title !== '') {
+				$summary_parts[] = $event_title;
+			}
+			if ($event_start !== '') {
+				$summary_parts[] = wp_date('Y-m-d H:i', strtotime($event_start));
+			}
+			if ($event_location !== '') {
+				$summary_parts[] = $event_location;
+			}
+			$summary = implode(' — ', $summary_parts);
+
+			$rows[] = [
+				'date_purchased'    => $date_purchased,
+				'date_booked'       => $date_booked,
+				'price'             => $price,
+				'currency'          => $currency !== '' ? $currency : 'SEK',
+				'payment_method'    => $payment_method,
+				'status'            => $status !== '' ? $status : $payment_status,
+				'summary'           => $summary,
+				'customer_name'     => $customer_name,
+				'customer_email'    => $customer_email,
+				'confirmation_code' => $confirmation_code,
+			];
+		}
+
+		$customer_name = isset($args['customer_name']) ? sanitize_text_field((string) $args['customer_name']) : '';
+		$customer_email = $customer_email_filter;
+		if ($customer_name === '' && !empty($rows)) {
+			$customer_name = (string) ($rows[0]['customer_name'] ?? '');
+		}
+		if ($customer_email === '' && !empty($rows)) {
+			$customer_email = (string) ($rows[0]['customer_email'] ?? '');
+		}
+
+		return [
+			'title'         => __('Receipt / Payment summary', 'clubflow'),
+			'customer_name' => $customer_name,
+			'customer_email'=> $customer_email,
+			'from'          => $from,
+			'to'            => $to,
+			'total_paid'    => $total_paid,
+			'currency'      => $currency !== '' ? $currency : 'SEK',
+			'rows'          => $rows,
+		];
+	}
+
+	public static function render_receipt_html(array $receipt_model): string {
+		$template_path = dirname(__DIR__) . '/templates/booking-receipt.php';
+		if (!file_exists($template_path)) {
+			return '';
+		}
+
+		$receipt = $receipt_model;
+		ob_start();
+		include $template_path;
+		return (string) ob_get_clean();
+	}
+
 	/**
 	 * Show confirmation toast when returning from payment
 	 */
