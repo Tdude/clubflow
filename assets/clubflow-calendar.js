@@ -732,6 +732,7 @@
     var calendar = new FullCalendar.Calendar(el, {
       headerToolbar: isMobile ? mobileToolbar : desktopToolbar,
       titleFormat: isMobile ? { month: 'long' } : { year: 'numeric', month: 'long' },
+      timeZone: (window.ClubFlow && window.ClubFlow.timeZone) ? window.ClubFlow.timeZone : 'local',
       locale: 'sv',
       firstDay: 1,
       views: {

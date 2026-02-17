@@ -6,9 +6,26 @@ if (!defined('ABSPATH')) {
 
 final class ClubFlow_Ajax {
 	private ClubFlow_Utils $utils;
+	private const FC_LOCAL_ISO_FORMAT = 'Y-m-d\\TH:i:s';
 
 	public function __construct(ClubFlow_Utils $utils) {
 		$this->utils = $utils;
+	}
+
+	private function format_stored_datetime_for_fullcalendar(string $stored): string {
+		$stored = trim($stored);
+		if ($stored === '') {
+			return '';
+		}
+		$dt = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $stored, wp_timezone());
+		if (!($dt instanceof \DateTimeImmutable)) {
+			return '';
+		}
+		$errors = \DateTimeImmutable::getLastErrors();
+		if (!empty($errors['warning_count']) || !empty($errors['error_count'])) {
+			return '';
+		}
+		return $dt->format(self::FC_LOCAL_ISO_FORMAT);
 	}
 
 	public function register(): void {
@@ -16,6 +33,338 @@ final class ClubFlow_Ajax {
 		add_action('wp_ajax_nopriv_' . ClubFlow::AJAX_ACTION_EVENTS, [$this, 'ajax_events']);
 		add_action('wp_ajax_' . ClubFlow::AJAX_ACTION_EVENT_DETAILS, [$this, 'ajax_event_details']);
 		add_action('wp_ajax_nopriv_' . ClubFlow::AJAX_ACTION_EVENT_DETAILS, [$this, 'ajax_event_details']);
+
+		add_action('wp_ajax_clubflow_admin_calendar_events', [$this, 'ajax_admin_calendar_events']);
+		add_action('wp_ajax_clubflow_admin_calendar_save_event', [$this, 'ajax_admin_calendar_save_event']);
+	}
+
+	private function admin_calendar_auth_or_die(): void {
+		check_ajax_referer('clubflow_admin_calendar', 'nonce');
+		if (!current_user_can('edit_posts')) {
+			wp_send_json_error(['message' => __('Unauthorized', 'clubflow')], 403);
+		}
+	}
+
+	public function ajax_admin_calendar_events(): void {
+		$this->admin_calendar_auth_or_die();
+
+		$start = isset($_GET['start']) ? sanitize_text_field(wp_unslash($_GET['start'])) : '';
+		$end = isset($_GET['end']) ? sanitize_text_field(wp_unslash($_GET['end'])) : '';
+		$category = isset($_GET['category']) ? sanitize_text_field(wp_unslash($_GET['category'])) : '';
+
+		$start_ts = strtotime($start);
+		$end_ts = strtotime($end);
+		if ($start_ts === false || $end_ts === false) {
+			wp_send_json_error(['message' => __('Invalid date range', 'clubflow')], 400);
+		}
+
+		$args = [
+			'post_type' => ClubFlow::POST_TYPE,
+			'post_status' => 'any',
+			'posts_per_page' => 800,
+			'orderby' => 'meta_value',
+			'meta_key' => '_clubflow_start',
+			'order' => 'ASC',
+			'meta_query' => [
+				'relation' => 'AND',
+				[
+					'key' => '_clubflow_start',
+					'compare' => 'EXISTS',
+				],
+				[
+					'relation' => 'OR',
+					['key' => '_clubflow_event_mode', 'value' => 'calendar'],
+					['key' => '_clubflow_event_mode', 'compare' => 'NOT EXISTS'],
+				],
+			],
+		];
+
+		if ($category !== '') {
+			$args['tax_query'] = [
+				[
+					'taxonomy' => ClubFlow::TAX_CATEGORY,
+					'field' => 'slug',
+					'terms' => [$category],
+				],
+			];
+		}
+
+		$query = new \WP_Query($args);
+		$events = [];
+		foreach ($query->posts as $post) {
+			$start_meta = trim((string) get_post_meta($post->ID, '_clubflow_start', true));
+			if ($start_meta === '') {
+				continue;
+			}
+			$start_meta_ts = strtotime($start_meta);
+			if ($start_meta_ts === false) {
+				continue;
+			}
+
+			$end_meta = trim((string) get_post_meta($post->ID, '_clubflow_end', true));
+			$end_meta_ts = ($end_meta !== '') ? strtotime($end_meta) : false;
+			$has_end_date = ($end_meta_ts !== false && $end_meta_ts > 0);
+
+			$all_day_meta = (string) get_post_meta($post->ID, '_clubflow_all_day', true);
+			$is_all_day = ($all_day_meta === '1');
+			$event_end_ts = $has_end_date ? $end_meta_ts : $start_meta_ts;
+
+			if ($start_meta_ts > $end_ts || $event_end_ts < $start_ts) {
+				continue;
+			}
+
+			$start_iso = $this->format_stored_datetime_for_fullcalendar($start_meta);
+			if ($start_iso === '') {
+				continue;
+			}
+
+			$event = [
+				'id' => $post->ID,
+				'title' => html_entity_decode(get_the_title($post), ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+				'start' => $start_iso,
+				'allDay' => $is_all_day,
+				'display' => $has_end_date ? 'block' : 'list-item',
+				'extendedProps' => [
+					'postStatus' => (string) $post->post_status,
+				],
+			];
+
+			if ($has_end_date) {
+				if ($is_all_day) {
+					$end_dt = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $end_meta, wp_timezone());
+					if ($end_dt instanceof \DateTimeImmutable && $end_dt->format('H:i:s') === '00:00:00') {
+						$end_meta = $end_dt->modify('+1 day')->format('Y-m-d H:i:s');
+					}
+				}
+				$end_iso = $this->format_stored_datetime_for_fullcalendar($end_meta);
+				if ($end_iso !== '') {
+					$event['end'] = $end_iso;
+				}
+			}
+
+			$cat = $this->utils->get_category_display_data($post->ID);
+			$color = (string) ($cat['color'] ?? '');
+			$has_category = (bool) ($cat['has_category'] ?? false);
+			if ($has_category) {
+				$event['backgroundColor'] = $color;
+				$event['borderColor'] = $color;
+			} else {
+				$event['backgroundColor'] = '#ffffff';
+				$event['borderColor'] = $color;
+				$event['textColor'] = $color;
+			}
+
+			$booking_enabled = get_post_meta($post->ID, '_clubflow_booking_enabled', true) === '1';
+			$max_spots = (int) get_post_meta($post->ID, '_clubflow_max_spots', true);
+			$price = (string) get_post_meta($post->ID, '_clubflow_price', true);
+			$location = (string) get_post_meta($post->ID, '_clubflow_location', true);
+
+			$category_ids = wp_get_object_terms($post->ID, ClubFlow::TAX_CATEGORY, ['fields' => 'ids']);
+			$category_id = (!is_wp_error($category_ids) && !empty($category_ids)) ? (int) $category_ids[0] : 0;
+			$instructor_ids = wp_get_object_terms($post->ID, ClubFlow::TAX_TAG, ['fields' => 'ids']);
+			$instructor_id = (!is_wp_error($instructor_ids) && !empty($instructor_ids)) ? (int) $instructor_ids[0] : 0;
+
+			$booked = 0;
+			if ($booking_enabled && class_exists('ClubFlow_Booking')) {
+				$booked = ClubFlow_Booking::get_booking_count($post->ID);
+			}
+
+			$event['extendedProps']['bookingEnabled'] = $booking_enabled;
+			$event['extendedProps']['maxSpots'] = $max_spots;
+			$event['extendedProps']['booked'] = $booked;
+			$event['extendedProps']['price'] = $price;
+			$event['extendedProps']['location'] = $location;
+			$event['extendedProps']['categoryId'] = $category_id;
+			$event['extendedProps']['instructorId'] = $instructor_id;
+
+			$events[] = $event;
+		}
+
+		wp_send_json_success($events);
+	}
+
+	private function normalize_admin_calendar_datetime(string $value): string {
+		$value = trim($value);
+		if ($value === '') {
+			return '';
+		}
+		return $this->utils->normalize_datetime_for_storage($value);
+	}
+
+	private function find_overlaps(string $start, string $end, int $exclude_event_id = 0): array {
+		$start_dt = $start !== '' ? new \DateTimeImmutable($start, wp_timezone()) : null;
+		$end_dt = $end !== '' ? new \DateTimeImmutable($end, wp_timezone()) : null;
+		if (!$start_dt) {
+			return [];
+		}
+		if (!$end_dt) {
+			$end_dt = $start_dt;
+		}
+
+		$args = [
+			'post_type' => ClubFlow::POST_TYPE,
+			'post_status' => 'any',
+			'posts_per_page' => 200,
+			'fields' => 'ids',
+			'meta_query' => [
+				'relation' => 'AND',
+				[
+					'relation' => 'OR',
+					['key' => '_clubflow_event_mode', 'value' => 'calendar'],
+					['key' => '_clubflow_event_mode', 'compare' => 'NOT EXISTS'],
+				],
+				[
+					'key' => '_clubflow_start',
+					'value' => $end_dt->format('Y-m-d H:i:s'),
+					'compare' => '<=',
+					'type' => 'DATETIME',
+				],
+			],
+		];
+		if ($exclude_event_id > 0) {
+			$args['post__not_in'] = [$exclude_event_id];
+		}
+
+		$q = new \WP_Query($args);
+		$ids = is_array($q->posts) ? array_map('intval', $q->posts) : [];
+		$overlaps = [];
+		foreach ($ids as $id) {
+			$other_start = (string) get_post_meta($id, '_clubflow_start', true);
+			if ($other_start === '') {
+				continue;
+			}
+			$other_end = (string) get_post_meta($id, '_clubflow_end', true);
+			$other_end = $other_end !== '' ? $other_end : $other_start;
+
+			$os = strtotime($other_start);
+			$oe = strtotime($other_end);
+			if ($os === false || $oe === false) {
+				continue;
+			}
+			$ns = $start_dt->getTimestamp();
+			$ne = $end_dt->getTimestamp();
+			if ($ns <= $oe && $ne >= $os) {
+				$overlaps[] = [
+					'id' => $id,
+					'title' => (string) get_the_title($id),
+					'start' => $other_start,
+					'end' => $other_end,
+				];
+			}
+		}
+		return $overlaps;
+	}
+
+	public function ajax_admin_calendar_save_event(): void {
+		$this->admin_calendar_auth_or_die();
+
+		$event_id = isset($_POST['event_id']) ? absint($_POST['event_id']) : 0;
+		$do_delete = isset($_POST['delete']) && sanitize_text_field(wp_unslash($_POST['delete'])) === '1';
+		$title = isset($_POST['title']) ? sanitize_text_field(wp_unslash($_POST['title'])) : '';
+		$start_raw = isset($_POST['start']) ? sanitize_text_field(wp_unslash($_POST['start'])) : '';
+		$end_raw = isset($_POST['end']) ? sanitize_text_field(wp_unslash($_POST['end'])) : '';
+		$all_day = isset($_POST['all_day']) ? '1' : '0';
+		$location = isset($_POST['location']) ? sanitize_text_field(wp_unslash($_POST['location'])) : '';
+		$booking_enabled = isset($_POST['booking_enabled']) ? '1' : '0';
+		$max_spots = isset($_POST['max_spots']) ? absint($_POST['max_spots']) : 0;
+		$price = isset($_POST['price']) ? sanitize_text_field(wp_unslash($_POST['price'])) : '';
+		$category_id = isset($_POST['category_id']) ? absint($_POST['category_id']) : 0;
+		$instructor_id = isset($_POST['instructor_id']) ? absint($_POST['instructor_id']) : 0;
+
+		if ($event_id > 0) {
+			$post = get_post($event_id);
+			if (!$post instanceof \WP_Post || $post->post_type !== ClubFlow::POST_TYPE) {
+				wp_send_json_error(['message' => __('Event not found', 'clubflow')], 404);
+			}
+			if (!current_user_can('edit_post', $event_id)) {
+				wp_send_json_error(['message' => __('Unauthorized', 'clubflow')], 403);
+			}
+		}
+
+		if ($do_delete) {
+			if ($event_id <= 0) {
+				wp_send_json_error(['message' => __('Invalid event', 'clubflow')], 400);
+			}
+			wp_trash_post($event_id);
+			wp_send_json_success(['eventId' => $event_id]);
+		}
+
+		$start = $this->normalize_admin_calendar_datetime($start_raw);
+		$end = $this->normalize_admin_calendar_datetime($end_raw);
+		if ($start === '') {
+			wp_send_json_error(['message' => __('Start is required', 'clubflow')], 400);
+		}
+
+		if ($all_day === '1') {
+			$start_dt = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $start, wp_timezone());
+			if ($start_dt instanceof \DateTimeImmutable) {
+				$start = $start_dt->setTime(0, 0, 0)->format('Y-m-d H:i:s');
+			}
+			if ($end !== '') {
+				$end_dt = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $end, wp_timezone());
+				if ($end_dt instanceof \DateTimeImmutable) {
+					$end = $end_dt->setTime(0, 0, 0)->modify('+1 day')->format('Y-m-d H:i:s');
+				}
+			}
+		}
+		if ($title === '') {
+			$title = __('Booking slot', 'clubflow');
+		}
+
+		$postarr = [
+			'post_type' => ClubFlow::POST_TYPE,
+			'post_title' => $title,
+			'post_status' => 'publish',
+		];
+		if ($event_id > 0) {
+			$postarr['ID'] = $event_id;
+		}
+
+		$saved_id = wp_insert_post($postarr, true);
+		if (is_wp_error($saved_id)) {
+			wp_send_json_error(['message' => $saved_id->get_error_message()], 500);
+		}
+		$saved_id = (int) $saved_id;
+
+		update_post_meta($saved_id, '_clubflow_start', $start);
+		if ($end !== '') {
+			update_post_meta($saved_id, '_clubflow_end', $end);
+		} else {
+			delete_post_meta($saved_id, '_clubflow_end');
+		}
+		update_post_meta($saved_id, '_clubflow_all_day', $all_day);
+		update_post_meta($saved_id, '_clubflow_event_mode', 'calendar');
+		update_post_meta($saved_id, '_clubflow_booking_enabled', $booking_enabled);
+		update_post_meta($saved_id, '_clubflow_max_spots', $max_spots);
+		if ($price !== '') {
+			update_post_meta($saved_id, '_clubflow_price', $price);
+		} else {
+			delete_post_meta($saved_id, '_clubflow_price');
+		}
+		if ($location !== '') {
+			update_post_meta($saved_id, '_clubflow_location', $location);
+		} else {
+			delete_post_meta($saved_id, '_clubflow_location');
+		}
+
+		if ($category_id > 0) {
+			wp_set_object_terms($saved_id, [$category_id], ClubFlow::TAX_CATEGORY, false);
+		} else {
+			wp_set_object_terms($saved_id, [], ClubFlow::TAX_CATEGORY, false);
+		}
+
+		if ($instructor_id > 0) {
+			wp_set_object_terms($saved_id, [$instructor_id], ClubFlow::TAX_TAG, false);
+		} else {
+			wp_set_object_terms($saved_id, [], ClubFlow::TAX_TAG, false);
+		}
+
+		$overlaps = $this->find_overlaps($start, $end !== '' ? $end : $start, $saved_id);
+
+		wp_send_json_success([
+			'eventId' => $saved_id,
+			'overlaps' => $overlaps,
+		]);
 	}
 
 	public function ajax_events(): void {
@@ -104,7 +453,7 @@ final class ClubFlow_Ajax {
 
 			$location = trim((string) get_post_meta($post->ID, '_clubflow_location', true));
 
-			$start_iso = $this->utils->format_datetime_for_iso($start_meta);
+			$start_iso = $this->format_stored_datetime_for_fullcalendar($start_meta);
 			if ($start_iso === '') {
 				continue;
 			}
@@ -118,7 +467,13 @@ final class ClubFlow_Ajax {
 			];
 
 			if ($has_end_date) {
-				$end_iso = $this->utils->format_datetime_for_iso($end_meta);
+				if ($is_all_day) {
+					$end_dt = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $end_meta, wp_timezone());
+					if ($end_dt instanceof \DateTimeImmutable && $end_dt->format('H:i:s') === '00:00:00') {
+						$end_meta = $end_dt->modify('+1 day')->format('Y-m-d H:i:s');
+					}
+				}
+				$end_iso = $this->format_stored_datetime_for_fullcalendar($end_meta);
 				if ($end_iso !== '') {
 					$event['end'] = $end_iso;
 				}

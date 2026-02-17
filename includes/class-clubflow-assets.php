@@ -129,6 +129,7 @@ final class ClubFlow_Assets {
 				'nonceEvents' => wp_create_nonce('clubflow_events'),
 				'nonceDetails' => wp_create_nonce('clubflow_event_details'),
 				'nonceBook' => wp_create_nonce('clubflow_book'),
+				'timeZone' => wp_timezone_string() ?: 'local',
 				'i18n' => [
 					'bookNow' => __('Book now', 'clubflow'),
 					'booking' => __('Booking...', 'clubflow'),
@@ -156,6 +157,57 @@ final class ClubFlow_Assets {
 	public function enqueue_admin_assets(string $hook_suffix): void {
 		$screen = function_exists('get_current_screen') ? get_current_screen() : null;
 		if (!$screen) {
+			return;
+		}
+
+		if (($screen->id ?? '') === 'club_event_page_clubflow-bookings-calendar') {
+			wp_enqueue_style(
+				'fullcalendar',
+				'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css',
+				[],
+				'6.1.15'
+			);
+
+			wp_enqueue_script(
+				'fullcalendar',
+				'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js',
+				[],
+				'6.1.15',
+				true
+			);
+
+			wp_enqueue_script(
+				'clubflow-admin',
+				plugins_url('assets/clubflow-admin.js', $this->plugin->plugin_file()),
+				['fullcalendar'],
+				ClubFlow::VERSION,
+				true
+			);
+
+			wp_localize_script(
+				'clubflow-admin',
+				'ClubFlowAdmin',
+				[
+					'ajaxUrl' => admin_url('admin-ajax.php'),
+					'nonce' => wp_create_nonce('clubflow_admin_calendar'),
+					'timeZone' => wp_timezone_string() ?: 'local',
+					'actions' => [
+						'events' => 'clubflow_admin_calendar_events',
+						'save' => 'clubflow_admin_calendar_save_event',
+					],
+					'i18n' => [
+						'newEvent' => __('New booking slot', 'clubflow'),
+						'editEvent' => __('Edit booking slot', 'clubflow'),
+						'save' => __('Save', 'clubflow'),
+						'cancel' => __('Cancel', 'clubflow'),
+						'delete' => __('Delete', 'clubflow'),
+						'overlapWarning' => __('Warning: overlaps with another slot.', 'clubflow'),
+						'saving' => __('Saving...', 'clubflow'),
+						'loadError' => __('Could not load calendar data.', 'clubflow'),
+						'saveError' => __('Could not save. Please try again.', 'clubflow'),
+					],
+				]
+			);
 			return;
 		}
 

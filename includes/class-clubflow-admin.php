@@ -65,6 +65,123 @@ final class ClubFlow_Admin {
 			'clubflow-guide',
 			[$this, 'render_settings_page']
 		);
+
+		add_submenu_page(
+			'edit.php?post_type=' . ClubFlow::POST_TYPE,
+			__( 'Bookings Calendar', 'clubflow' ),
+			__( 'Bookings Calendar', 'clubflow' ),
+			'edit_posts',
+			'clubflow-bookings-calendar',
+			[$this, 'render_bookings_calendar_page']
+		);
+	}
+
+	public function render_bookings_calendar_page(): void {
+		if (!current_user_can('edit_posts')) {
+			return;
+		}
+
+		$categories = get_terms([
+			'taxonomy' => ClubFlow::TAX_CATEGORY,
+			'hide_empty' => false,
+		]);
+		if (!is_array($categories) || is_wp_error($categories)) {
+			$categories = [];
+		}
+
+		$instructors = get_terms([
+			'taxonomy' => ClubFlow::TAX_TAG,
+			'hide_empty' => false,
+		]);
+		if (!is_array($instructors) || is_wp_error($instructors)) {
+			$instructors = [];
+		}
+		?>
+		<div class="wrap">
+			<h1><?php echo esc_html__('Bookings Calendar', 'clubflow'); ?></h1>
+			<style>
+			#clubflow-admin-calendar{background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:12px;margin-top:14px;}
+			#clubflow-admin-calendar-modal{position:fixed;inset:0;z-index:100000;}
+			#clubflow-admin-calendar-modal .clubflow-admin-calendar-modal__backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45);}
+			#clubflow-admin-calendar-modal .clubflow-admin-calendar-modal__panel{position:relative;max-width:560px;margin:6vh auto;background:#fff;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:16px;}
+			#clubflow-admin-calendar-modal .clubflow-admin-calendar-modal__header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+			#clubflow-admin-calendar-modal .clubflow-admin-calendar-modal__title{margin:0;font-size:18px;}
+			#clubflow-admin-calendar-modal .clubflow-admin-calendar-modal__actions{display:flex;gap:8px;align-items:center;margin-top:14px;}
+			#clubflow-admin-calendar-overlap{margin-top:10px;padding:10px 12px;border-left:4px solid #d63638;background:#fcf0f1;color:#1d2327;border-radius:6px;}
+			.clubflow-admin-cal__event{display:flex;justify-content:space-between;gap:8px;}
+			.clubflow-admin-cal__event-title{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+			.clubflow-admin-cal__event-counter{font-weight:700;font-size:12px;opacity:.9;}
+			</style>
+			<div id="clubflow-admin-calendar"></div>
+			<div id="clubflow-admin-calendar-modal" style="display:none;">
+				<div class="clubflow-admin-calendar-modal__backdrop"></div>
+				<div class="clubflow-admin-calendar-modal__panel" role="dialog" aria-modal="true">
+					<div class="clubflow-admin-calendar-modal__header">
+						<h2 class="clubflow-admin-calendar-modal__title"></h2>
+					</div>
+					<div class="clubflow-admin-calendar-modal__body">
+						<form id="clubflow-admin-calendar-form">
+							<input type="hidden" name="event_id" value="" />
+							<p>
+								<label><strong><?php echo esc_html__('Title', 'clubflow'); ?></strong></label><br />
+								<input type="text" name="title" value="" style="width:100%;" />
+							</p>
+							<p>
+								<label><strong><?php echo esc_html__('Category', 'clubflow'); ?></strong></label><br />
+								<select name="category_id" style="width:100%;">
+									<option value=""><?php echo esc_html__('Select', 'clubflow'); ?></option>
+									<?php foreach ($categories as $term) : ?>
+										<option value="<?php echo esc_attr((string) $term->term_id); ?>"><?php echo esc_html($term->name); ?></option>
+									<?php endforeach; ?>
+								</select>
+							</p>
+							<p>
+								<label><strong><?php echo esc_html__('Instructor', 'clubflow'); ?></strong></label><br />
+								<select name="instructor_id" style="width:100%;">
+									<option value=""><?php echo esc_html__('Select', 'clubflow'); ?></option>
+									<?php foreach ($instructors as $term) : ?>
+										<option value="<?php echo esc_attr((string) $term->term_id); ?>"><?php echo esc_html($term->name); ?></option>
+									<?php endforeach; ?>
+								</select>
+							</p>
+							<p>
+								<label><strong><?php echo esc_html__('Start', 'clubflow'); ?></strong></label><br />
+								<input type="datetime-local" name="start" value="" />
+							</p>
+							<p>
+								<label><strong><?php echo esc_html__('End', 'clubflow'); ?></strong></label><br />
+								<input type="datetime-local" name="end" value="" />
+							</p>
+							<p>
+								<label><input type="checkbox" name="all_day" value="1" /> <?php echo esc_html__('All day', 'clubflow'); ?></label>
+							</p>
+							<p>
+								<label><strong><?php echo esc_html__('Location', 'clubflow'); ?></strong></label><br />
+								<input type="text" name="location" value="" style="width:100%;" />
+							</p>
+							<p>
+								<label><input type="checkbox" name="booking_enabled" value="1" checked /> <?php echo esc_html__('Enable booking', 'clubflow'); ?></label>
+							</p>
+							<p>
+								<label><strong><?php echo esc_html__('Max spots', 'clubflow'); ?></strong></label><br />
+								<input type="number" name="max_spots" value="0" min="0" />
+							</p>
+							<p>
+								<label><strong><?php echo esc_html__('Price', 'clubflow'); ?></strong></label><br />
+								<input type="text" name="price" value="" placeholder="200 kr" />
+							</p>
+							<div id="clubflow-admin-calendar-overlap" style="display:none;"></div>
+							<div class="clubflow-admin-calendar-modal__actions">
+								<button type="button" class="button" data-action="cancel"><?php echo esc_html__('Cancel', 'clubflow'); ?></button>
+								<button type="submit" class="button button-primary" data-action="save"><?php echo esc_html__('Save', 'clubflow'); ?></button>
+								<button type="button" class="button button-link-delete" data-action="delete" style="display:none;"><?php echo esc_html__('Delete', 'clubflow'); ?></button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+		<?php
 	}
 
 	public function render_settings_page(): void {
