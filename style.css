@@ -446,7 +446,7 @@ body.is-dark .clubflow-hovercard .fc-list-event td,
 
 .fc-h-event .fc-event-title,
 .clubflow-hovercard .fc-event-title {
-	white-space: normal;
+	white-space: nowrap;
 	padding: 0.5em;
 }
 

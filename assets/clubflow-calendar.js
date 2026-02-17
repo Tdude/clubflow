@@ -206,14 +206,32 @@
       if (timeCell) {
         var startStr = info.event.startStr || '';
         var restText = (info.timeText || '').trim();
-        timeCell.textContent = '';
-        var strong = document.createElement('span');
-        strong.style.fontWeight = '600';
-        strong.textContent = restText || startStr.split('T')[0];
-        timeCell.appendChild(strong);
-        if (restText && startStr.split('T')[0]) {
-          timeCell.appendChild(document.createTextNode(' ' + startStr.split('T')[0]));
+        var startTimeText = '';
+        try {
+          if (info.event && info.event.start && !info.event.allDay) {
+            startTimeText = new Intl.DateTimeFormat('sv-SE', {
+              hour: '2-digit',
+              minute: '2-digit'
+            }).format(info.event.start);
+          }
+        } catch (e) {}
+
+        if (!restText && startTimeText) {
+          restText = startTimeText;
         }
+        timeCell.textContent = '';
+
+		var dateStr = startStr.split('T')[0];
+		var dateLine = document.createElement('div');
+		dateLine.style.fontWeight = '600';
+		dateLine.textContent = dateStr;
+		timeCell.appendChild(dateLine);
+
+		if (restText) {
+			var timeLine = document.createElement('div');
+			timeLine.textContent = restText;
+			timeCell.appendChild(timeLine);
+		}
       }
 
       var titleCell = qs('td.fc-list-event-title', tr) || qs('.fc-list-event-title', tr);

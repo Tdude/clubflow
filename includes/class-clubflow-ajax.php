@@ -609,10 +609,16 @@ final class ClubFlow_Ajax {
 			if ($badge_name !== '' && $badge_color !== '') {
 				$html .= '<span class="clubflow-event__badge" style="--clubflow-badge-color:' . esc_attr($badge_color) . '">' . esc_html($badge_name) . '</span>';
 			}
+			if ($all_day === '1') {
+				$html .= '<span class="clubflow-event__badge">' . esc_html__('Heldag', 'clubflow') . '</span>';
+			}
 			$html .= '</p>';
 		} else {
 			if ($badge_name !== '' && $badge_color !== '') {
 				$html .= '<p class="clubflow-event__badge-row"><span class="clubflow-event__badge" style="--clubflow-badge-color:' . esc_attr($badge_color) . '">' . esc_html($badge_name) . '</span></p>';
+			}
+			if ($all_day === '1') {
+				$html .= '<p class="clubflow-event__badge-row"><span class="clubflow-event__badge">' . esc_html__('Heldag', 'clubflow') . '</span></p>';
 			}
 		}
 
