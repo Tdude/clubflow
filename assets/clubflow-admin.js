@@ -214,16 +214,116 @@
         });
     }
 
+	function toDateTimeLocalForSave(date) {
+		return date ? toDatetimeLocalValue(date) : '';
+	}
+
+	function toAllDayEndForSave(eventStart, eventEnd) {
+		try {
+			if (!eventStart) {
+				return '';
+			}
+			// FullCalendar allDay end is exclusive. Our save endpoint expects an inclusive-style end
+			// and will store +1 day exclusive.
+			if (!eventEnd) {
+				return '';
+			}
+			var start = eventStart instanceof Date ? eventStart : new Date(eventStart);
+			var end = eventEnd instanceof Date ? eventEnd : new Date(eventEnd);
+			if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+				return '';
+			}
+
+			var adj = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+			adj.setDate(adj.getDate() - 1);
+			return toDatetimeLocalValue(adj);
+		} catch (e) {
+			return '';
+		}
+	}
+
+	function persistEventMoveResize(info) {
+		try {
+			if (!info || !info.event) {
+				return;
+			}
+			var ev = info.event;
+			var ext = ev.extendedProps || {};
+			var isAllDay = !!ev.allDay;
+
+			var startVal = toDateTimeLocalForSave(ev.start);
+			var endVal = '';
+			if (isAllDay) {
+				endVal = toAllDayEndForSave(ev.start, ev.end);
+			} else {
+				endVal = toDateTimeLocalForSave(ev.end);
+			}
+
+			ajax('POST', ClubFlowAdmin.actions.save, {
+				nonce: ClubFlowAdmin.nonce,
+				event_id: ev.id,
+				title: ev.title || '',
+				category_id: typeof ext.categoryId !== 'undefined' ? String(ext.categoryId || '') : '',
+				instructor_id: typeof ext.instructorId !== 'undefined' ? String(ext.instructorId || '') : '',
+				start: startVal,
+				end: endVal,
+				all_day: isAllDay ? '1' : '',
+				location: ext.location || '',
+				booking_enabled: ext.bookingEnabled ? '1' : '',
+				max_spots: typeof ext.maxSpots !== 'undefined' ? String(ext.maxSpots || 0) : '0',
+				price: typeof ext.price !== 'undefined' ? String(ext.price || '') : '',
+			})
+				.then(function (json) {
+					if (!json || !json.success) {
+						throw new Error('save failed');
+					}
+					calendar.refetchEvents();
+				})
+				.catch(function () {
+					try {
+						if (typeof info.revert === 'function') {
+							info.revert();
+						}
+					} catch (e) {}
+				});
+		} catch (e) {
+			try {
+				if (info && typeof info.revert === 'function') {
+					info.revert();
+				}
+			} catch (e2) {}
+		}
+	}
+
     var calendar = new FullCalendar.Calendar(root, {
       initialView: 'dayGridMonth',
       height: 'auto',
       timeZone: ClubFlowAdmin.timeZone || 'local',
+      locale: 'sv',
+      eventTimeFormat: {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      },
+      slotLabelFormat: {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      },
       eventDisplay: getShowBlocks() ? 'block' : 'list-item',
       headerToolbar: {
         left: 'prev,next today',
         center: 'title',
-        right: 'dayGridMonth',
+        right: 'dayGridMonth,timeGridWeek,timeGridDay',
       },
+      buttonText: {
+		month: 'Månad',
+		week: 'Vecka',
+		day: 'Dag'
+	  },
+	  slotDuration: '00:15:00',
+	  snapDuration: '00:15:00',
+	  defaultTimedEventDuration: '01:00:00',
       selectable: true,
       selectMirror: true,
       editable: true,
@@ -268,12 +368,8 @@
           maxSpots: 0,
         });
       },
-      eventDrop: function () {
-        calendar.refetchEvents();
-      },
-      eventResize: function () {
-        calendar.refetchEvents();
-      },
+	  eventDrop: persistEventMoveResize,
+	  eventResize: persistEventMoveResize,
     });
 
     calendar.render();

@@ -91,6 +91,9 @@ msgstr "Lämna tomt för endagsevenemang."
 msgid "All day"
 msgstr "Heldag"
 
+msgid "Show event blocks in month view"
+msgstr "Visa händelseblock i månadsvyn"
+
 msgid "Location"
 msgstr "Plats"
 
