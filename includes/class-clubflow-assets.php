@@ -78,6 +78,8 @@ final class ClubFlow_Assets {
 	}
 
 	private function enqueue_frontend_assets_internal(): void {
+		$show_blocks_month = get_option('clubflow_show_blocks_month', '1') !== '0';
+
 		wp_enqueue_style(
 			'clubflow',
 			plugins_url('style.css', $this->plugin->plugin_file()),
@@ -129,6 +131,7 @@ final class ClubFlow_Assets {
 				'nonceEvents' => wp_create_nonce('clubflow_events'),
 				'nonceDetails' => wp_create_nonce('clubflow_event_details'),
 				'nonceBook' => wp_create_nonce('clubflow_book'),
+				'showBlocksMonth' => $show_blocks_month,
 				'timeZone' => wp_timezone_string() ?: 'local',
 				'i18n' => [
 					'bookNow' => __('Book now', 'clubflow'),
@@ -190,10 +193,12 @@ final class ClubFlow_Assets {
 				[
 					'ajaxUrl' => admin_url('admin-ajax.php'),
 					'nonce' => wp_create_nonce('clubflow_admin_calendar'),
+					'showBlocksMonth' => get_option('clubflow_show_blocks_month', '1') !== '0',
 					'timeZone' => wp_timezone_string() ?: 'local',
 					'actions' => [
 						'events' => 'clubflow_admin_calendar_events',
 						'save' => 'clubflow_admin_calendar_save_event',
+						'savePref' => 'clubflow_admin_calendar_save_pref',
 					],
 					'i18n' => [
 						'newEvent' => __('New booking slot', 'clubflow'),

@@ -112,7 +112,14 @@ final class ClubFlow_Admin {
 			.clubflow-admin-cal__event-title{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 			.clubflow-admin-cal__event-counter{font-weight:700;font-size:12px;opacity:.9;}
 			</style>
+			<?php $show_blocks_month = get_option('clubflow_show_blocks_month', '1') !== '0'; ?>
 			<div id="clubflow-admin-calendar"></div>
+			<p style="margin:12px 0 0 0;">
+				<label>
+					<input type="checkbox" id="clubflow-admin-calendar-toggle-blocks" value="1" <?php checked($show_blocks_month, true); ?> />
+					<?php echo esc_html__( 'Show event blocks in month view', 'clubflow' ); ?>
+				</label>
+			</p>
 			<div id="clubflow-admin-calendar-modal" style="display:none;">
 				<div class="clubflow-admin-calendar-modal__backdrop"></div>
 				<div class="clubflow-admin-calendar-modal__panel" role="dialog" aria-modal="true">

@@ -756,8 +756,21 @@
       displayEventEnd: false,
       eventDataTransform: function (eventData) {
         try {
-          // In dayGridMonth, FullCalendar defaults timed events to "list-item" (dot).
-          // We want:
+          var showBlocksMonth = true;
+          try {
+            if (window.ClubFlow && typeof window.ClubFlow.showBlocksMonth !== 'undefined') {
+              showBlocksMonth = !!window.ClubFlow.showBlocksMonth;
+            }
+          } catch (e) {}
+
+          // If disabled, always render as dots in month grid.
+          if (!showBlocksMonth) {
+            eventData = eventData || {};
+            eventData.display = 'list-item';
+            return eventData;
+          }
+
+          // When enabled:
           // - start only => dot
           // - start + end => full block card
           var hasEnd = !!(eventData && eventData.end);

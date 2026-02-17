@@ -36,6 +36,15 @@ final class ClubFlow_Ajax {
 
 		add_action('wp_ajax_clubflow_admin_calendar_events', [$this, 'ajax_admin_calendar_events']);
 		add_action('wp_ajax_clubflow_admin_calendar_save_event', [$this, 'ajax_admin_calendar_save_event']);
+		add_action('wp_ajax_clubflow_admin_calendar_save_pref', [$this, 'ajax_admin_calendar_save_pref']);
+	}
+
+	public function ajax_admin_calendar_save_pref(): void {
+		$this->admin_calendar_auth_or_die();
+
+		$show_blocks = isset($_POST['show_blocks']) && sanitize_text_field(wp_unslash($_POST['show_blocks'])) === '1';
+		update_option('clubflow_show_blocks_month', $show_blocks ? '1' : '0');
+		wp_send_json_success(['showBlocksMonth' => $show_blocks]);
 	}
 
 	private function admin_calendar_auth_or_die(): void {

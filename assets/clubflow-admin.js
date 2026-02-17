@@ -83,12 +83,39 @@
       return;
     }
 
+	var blocksToggle = document.getElementById('clubflow-admin-calendar-toggle-blocks');
+
     var modal = document.getElementById('clubflow-admin-calendar-modal');
     var modalTitle = qs(modal, '.clubflow-admin-calendar-modal__title');
     var overlapBox = document.getElementById('clubflow-admin-calendar-overlap');
     var form = document.getElementById('clubflow-admin-calendar-form');
     var deleteBtn = qs(form, '[data-action="delete"]');
     var cancelBtn = qs(form, '[data-action="cancel"]');
+
+	function getShowBlocks() {
+		try {
+			if (!blocksToggle) {
+				return true;
+			}
+			if (typeof ClubFlowAdmin.showBlocksMonth !== 'undefined') {
+				return !!ClubFlowAdmin.showBlocksMonth;
+			}
+			return !!blocksToggle.checked;
+		} catch (e) {
+			return true;
+		}
+	}
+
+	function applyShowBlocks(calendar) {
+		try {
+			if (!calendar) {
+				return;
+			}
+			var showBlocks = getShowBlocks();
+			calendar.setOption('eventDisplay', showBlocks ? 'block' : 'list-item');
+			calendar.render();
+		} catch (e) {}
+	}
 
     function openModal(opts) {
       if (!modal || !form) {
@@ -191,6 +218,7 @@
       initialView: 'dayGridMonth',
       height: 'auto',
       timeZone: ClubFlowAdmin.timeZone || 'local',
+      eventDisplay: getShowBlocks() ? 'block' : 'list-item',
       headerToolbar: {
         left: 'prev,next today',
         center: 'title',
@@ -249,6 +277,28 @@
     });
 
     calendar.render();
+
+	if (blocksToggle) {
+		try {
+			if (typeof ClubFlowAdmin.showBlocksMonth !== 'undefined') {
+				blocksToggle.checked = !!ClubFlowAdmin.showBlocksMonth;
+			}
+		} catch (e) {}
+
+		blocksToggle.addEventListener('change', function () {
+			try {
+				ajax('POST', ClubFlowAdmin.actions.savePref, {
+					nonce: ClubFlowAdmin.nonce,
+					show_blocks: this.checked ? '1' : '0',
+				}).then(function (json) {
+					if (json && json.success && json.data && typeof json.data.showBlocksMonth !== 'undefined') {
+						ClubFlowAdmin.showBlocksMonth = !!json.data.showBlocksMonth;
+					}
+				});
+			} catch (e) {}
+			applyShowBlocks(calendar);
+		});
+	}
 
     if (cancelBtn) {
       cancelBtn.addEventListener('click', function () {
