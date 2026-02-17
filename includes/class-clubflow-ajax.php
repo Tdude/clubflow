@@ -123,11 +123,14 @@ final class ClubFlow_Ajax {
 				'title' => html_entity_decode(get_the_title($post), ENT_QUOTES | ENT_HTML5, 'UTF-8'),
 				'start' => $start_iso,
 				'allDay' => $is_all_day,
-				'display' => $has_end_date ? 'block' : 'list-item',
 				'extendedProps' => [
 					'postStatus' => (string) $post->post_status,
 				],
 			];
+
+			if ($has_end_date) {
+				$event['display'] = 'block';
+			}
 
 			if ($has_end_date) {
 				if ($is_all_day) {
@@ -263,7 +266,7 @@ final class ClubFlow_Ajax {
 		$title = isset($_POST['title']) ? sanitize_text_field(wp_unslash($_POST['title'])) : '';
 		$start_raw = isset($_POST['start']) ? sanitize_text_field(wp_unslash($_POST['start'])) : '';
 		$end_raw = isset($_POST['end']) ? sanitize_text_field(wp_unslash($_POST['end'])) : '';
-		$all_day = isset($_POST['all_day']) ? '1' : '0';
+		$all_day = (isset($_POST['all_day']) && sanitize_text_field(wp_unslash($_POST['all_day'])) === '1') ? '1' : '0';
 		$location = isset($_POST['location']) ? sanitize_text_field(wp_unslash($_POST['location'])) : '';
 		$booking_enabled = isset($_POST['booking_enabled']) ? '1' : '0';
 		$max_spots = isset($_POST['max_spots']) ? absint($_POST['max_spots']) : 0;
@@ -561,17 +564,23 @@ final class ClubFlow_Ajax {
 		$all_day = (string) get_post_meta($post->ID, '_clubflow_all_day', true);
 		$location = (string) get_post_meta($post->ID, '_clubflow_location', true);
 
-		$start_ts = strtotime($start_meta);
-		$end_ts = strtotime($end_meta);
+		$tz = wp_timezone();
+		$start_dt = $start_meta !== '' ? \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $start_meta, $tz) : null;
+		$end_dt = $end_meta !== '' ? \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $end_meta, $tz) : null;
 
 		$date_text = '';
-		if ($start_ts !== false) {
-			$has_end = ($end_meta !== '' && $end_ts !== false && $end_ts > $start_ts);
-			$start_text = ($all_day === '1') ? wp_date('Y-m-d', $start_ts) : wp_date('Y-m-d H:i', $start_ts);
+		if ($start_dt instanceof \DateTimeImmutable) {
+			$has_end = ($end_dt instanceof \DateTimeImmutable) && ($end_dt->getTimestamp() > $start_dt->getTimestamp());
+			$start_text = ($all_day === '1') ? wp_date('Y-m-d', $start_dt->getTimestamp()) : wp_date('Y-m-d H:i', $start_dt->getTimestamp());
 			$date_text = $start_text;
 
 			if ($has_end) {
-				$end_text = ($all_day === '1') ? wp_date('Y-m-d', $end_ts) : wp_date('Y-m-d H:i', $end_ts);
+				$display_end_dt = $end_dt;
+				if ($all_day === '1' && $end_dt->format('H:i:s') === '00:00:00') {
+					// Backwards-compat: many feeds store all-day end as exclusive (00:00 next day)
+					$display_end_dt = $end_dt->modify('-1 day');
+				}
+				$end_text = ($all_day === '1') ? wp_date('Y-m-d', $display_end_dt->getTimestamp()) : wp_date('Y-m-d H:i', $display_end_dt->getTimestamp());
 				if ($end_text !== $start_text) {
 					$date_text .= ' – ' . $end_text;
 				}

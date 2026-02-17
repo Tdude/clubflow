@@ -394,6 +394,19 @@ body.is-dark .clubflow-hovercard .fc-list-event td,
 	position: relative;
 }
 
+.clubflow-calendar .fc .fc-daygrid-event .fc-event-time {
+	flex-shrink: 0;
+	white-space: nowrap;
+}
+
+.clubflow-calendar .fc .fc-daygrid-event .fc-event-title {
+	display: block;
+	max-width: 35ch;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 /* FullCalendar list view hover - fully opaque background */
 .clubflow-calendar .fc .fc-list-event:hover td {
 	background-color: #f5f5f5;

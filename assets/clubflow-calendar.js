@@ -205,15 +205,14 @@
       var timeCell = qs('td.fc-list-event-time', tr);
       if (timeCell) {
         var startStr = info.event.startStr || '';
-        var dateStr = startStr.split('T')[0];
         var restText = (info.timeText || '').trim();
         timeCell.textContent = '';
         var strong = document.createElement('span');
         strong.style.fontWeight = '600';
-        strong.textContent = dateStr;
+        strong.textContent = restText || startStr.split('T')[0];
         timeCell.appendChild(strong);
-        if (restText) {
-          timeCell.appendChild(document.createTextNode(' ' + restText));
+        if (restText && startStr.split('T')[0]) {
+          timeCell.appendChild(document.createTextNode(' ' + startStr.split('T')[0]));
         }
       }
 
@@ -735,6 +734,22 @@
       timeZone: (window.ClubFlow && window.ClubFlow.timeZone) ? window.ClubFlow.timeZone : 'local',
       locale: 'sv',
       firstDay: 1,
+      displayEventTime: true,
+      displayEventEnd: false,
+      eventDataTransform: function (eventData) {
+        try {
+          // In dayGridMonth, FullCalendar defaults timed events to "list-item" (dot).
+          // We want:
+          // - start only => dot
+          // - start + end => full block card
+          var hasEnd = !!(eventData && eventData.end);
+          eventData = eventData || {};
+          eventData.display = hasEnd ? 'block' : 'list-item';
+          return eventData;
+        } catch (e) {
+          return eventData;
+        }
+      },
       views: {
         listRange: {
           type: 'list',
