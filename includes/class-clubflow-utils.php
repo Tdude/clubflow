@@ -16,6 +16,7 @@ final class ClubFlow_Utils {
 		'#be185d',
 	];
 
+
 	private function parse_datetime_local(string $value): ?\DateTimeImmutable {
 		$value = trim($value);
 		if ($value === '') {

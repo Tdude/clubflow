@@ -98,7 +98,7 @@ final class ClubFlow_Admin {
 		}
 		?>
 		<div class="wrap">
-			<h1><?php echo esc_html__('Bookings Calendar', 'clubflow'); ?></h1>
+			<h1><?php echo esc_html__('ClubFlow Bookings Calendar', 'clubflow'); ?></h1>
 			<style>
 			#clubflow-admin-calendar{background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:12px;margin-top:14px;}
 			#clubflow-admin-calendar-modal{position:fixed;inset:0;z-index:100000;}
@@ -108,7 +108,11 @@ final class ClubFlow_Admin {
 			#clubflow-admin-calendar-modal .clubflow-admin-calendar-modal__title{margin:0;font-size:18px;}
 			#clubflow-admin-calendar-modal .clubflow-admin-calendar-modal__actions{display:flex;gap:8px;align-items:center;margin-top:14px;}
 			#clubflow-admin-calendar-overlap{margin-top:10px;padding:10px 12px;border-left:4px solid #d63638;background:#fcf0f1;color:#1d2327;border-radius:6px;}
-			.clubflow-admin-cal__event{display:flex;justify-content:space-between;gap:8px;}
+			#clubflow-admin-calendar .fc .fc-timegrid-slots table > tbody > tr:nth-child(odd) > td.fc-timegrid-slot-label,
+			#clubflow-admin-calendar .fc .fc-timegrid-slots table > tbody > tr:nth-child(odd) > td.fc-timegrid-slot-lane{background-color:rgba(0,0,0,.02) !important;}
+			#clubflow-admin-calendar .fc-timegrid-col-bg tr:nth-child(odd) > td{background-color:rgba(0,0,0,.02) !important;}
+			#clubflow-admin-calendar .fc-timegrid-bg-harness:nth-child(odd) .fc-timegrid-bg-frame{background-color:rgba(0,0,0,.02) !important;}
+			.clubflow-admin-cal__event{display:flex;justify-content:space-between;gap:8px; padding:6px;}
 			.clubflow-admin-cal__event-title{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 			.clubflow-admin-cal__event-counter{font-weight:700;font-size:12px;opacity:.9;}
 			</style>

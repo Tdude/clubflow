@@ -214,29 +214,49 @@
         });
     }
 
-	function toDateTimeLocalForSave(date) {
-		return date ? toDatetimeLocalValue(date) : '';
+	function toValueFromFcStr(str) {
+		try {
+			str = String(str || '').trim();
+			if (!str) {
+				return '';
+			}
+			// timed: 2026-03-10T17:10:00 -> 2026-03-10T17:10
+			if (str.indexOf('T') !== -1) {
+				return str.slice(0, 16);
+			}
+			// all-day: 2026-03-10
+			return str;
+		} catch (e) {
+			return '';
+		}
 	}
 
-	function toAllDayEndForSave(eventStart, eventEnd) {
+	function formatDateOnly(d) {
 		try {
-			if (!eventStart) {
-				return '';
-			}
-			// FullCalendar allDay end is exclusive. Our save endpoint expects an inclusive-style end
-			// and will store +1 day exclusive.
-			if (!eventEnd) {
-				return '';
-			}
-			var start = eventStart instanceof Date ? eventStart : new Date(eventStart);
-			var end = eventEnd instanceof Date ? eventEnd : new Date(eventEnd);
-			if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-				return '';
-			}
+			var y = d.getFullYear();
+			var m = String(d.getMonth() + 1).padStart(2, '0');
+			var day = String(d.getDate()).padStart(2, '0');
+			return y + '-' + m + '-' + day;
+		} catch (e) {
+			return '';
+		}
+	}
 
-			var adj = new Date(end.getFullYear(), end.getMonth(), end.getDate());
-			adj.setDate(adj.getDate() - 1);
-			return toDatetimeLocalValue(adj);
+	function toAllDayInclusiveEndFromEndStr(endStr) {
+		try {
+			endStr = String(endStr || '').trim();
+			if (!endStr) {
+				return '';
+			}
+			// FullCalendar provides endStr as exclusive for all-day selections.
+			// Convert to inclusive end date for saving.
+			var endDateOnly = endStr.split('T')[0];
+			var d = new Date(endDateOnly + 'T00:00:00');
+			if (isNaN(d.getTime())) {
+				return '';
+			}
+			d.setDate(d.getDate() - 1);
+			return formatDateOnly(d);
 		} catch (e) {
 			return '';
 		}
@@ -251,12 +271,12 @@
 			var ext = ev.extendedProps || {};
 			var isAllDay = !!ev.allDay;
 
-			var startVal = toDateTimeLocalForSave(ev.start);
+			var startVal = toValueFromFcStr(ev.startStr);
 			var endVal = '';
 			if (isAllDay) {
-				endVal = toAllDayEndForSave(ev.start, ev.end);
+				endVal = toAllDayInclusiveEndFromEndStr(ev.endStr);
 			} else {
-				endVal = toDateTimeLocalForSave(ev.end);
+				endVal = toValueFromFcStr(ev.endStr);
 			}
 
 			ajax('POST', ClubFlowAdmin.actions.save, {
