@@ -40,6 +40,7 @@ ClubFlow plugin styles
 	--fc-event-bg-color: var(--clubflow-accent, #de6c40);
 	--fc-event-border-color: var(--clubflow-accent, #de6c40);
 	--fc-event-text-color: #fff;
+	--fc-list-event-dot-width: 14px;
 	--fc-more-link-bg-color: rgba(155, 117, 90, 0.18);
 	--fc-today-bg-color: rgba(222, 108, 64, 0.14);
 	--fc-now-indicator-color: var(--clubflow-accent, #de6c40);
@@ -472,6 +473,7 @@ body.is-dark .clubflow-hovercard .fc-list-event td,
 .clubflow-calendar .fc .fc-list-table td {
 	box-sizing: border-box;
 	padding: 10px 12px;
+	text-align: left;
 }
 
 .clubflow-calendar .fc .fc-list-event:hover td {
@@ -484,6 +486,7 @@ body.is-dark .clubflow-hovercard .fc-list-event td,
 
 .clubflow-calendar .fc .fc-list-event-time {
 	white-space: nowrap;
+	text-align: left;
 }
 
 /* FullCalendar list view: override any hover-specific td padding resets */
@@ -495,7 +498,7 @@ body.is-dark .clubflow-hovercard .fc-list-event td,
 
 .clubflow-calendar .fc td.fc-list-event-graphic,
 .clubflow-calendar .fc .fc-list-event:hover td.fc-list-event-graphic {
-	padding: 10px 10px !important;
+	padding: 8px !important;
 	vertical-align: top !important;
 }
 
@@ -547,20 +550,12 @@ body.is-dark .clubflow-hovercard .fc-list-event td,
 	padding: 10px 10px;
 }
 
+.clubflow-hovercard .fc-list-event-dot,
 .clubflow-calendar .fc .fc-list-event-dot {
 	display: inline-block;
-	width: 0;
-	height: 0;
-	border-width: 5px;
-	border-style: solid;
-	border-radius: 50%;
-}
-
-.clubflow-hovercard .fc-list-event-dot {
-	display: inline-block;
-	width: 0;
-	height: 0;
-	border-width: 5px;
+	width: 0px;
+	height: 0px;
+	border-width: 7px;
 	border-style: solid;
 	border-radius: 50%;
 }
@@ -626,7 +621,7 @@ body.is-dark .clubflow-hovercard .fc-list-event td,
 	display: inline-block;
 	width: 0;
 	height: 0;
-	border-width: 5px;
+	border-width: 7px;
 	border-style: solid;
 	border-radius: 50%;
 }
