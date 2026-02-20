@@ -27,6 +27,8 @@ final class ClubFlow_Booking {
 		add_filter('manage_' . ClubFlow::POST_TYPE . '_posts_columns', [$this, 'add_bookings_column']);
 		add_action('manage_' . ClubFlow::POST_TYPE . '_posts_custom_column', [$this, 'render_bookings_column'], 10, 2);
 		add_filter('manage_' . self::POST_TYPE . '_posts_columns', [$this, 'booking_admin_columns']);
+		add_filter('manage_edit-' . self::POST_TYPE . '_sortable_columns', [$this, 'booking_admin_sortable_columns']);
+		add_action('pre_get_posts', [$this, 'maybe_apply_booking_admin_sorting']);
 		add_action('manage_' . self::POST_TYPE . '_posts_custom_column', [$this, 'render_booking_admin_column'], 10, 2);
 		add_action('add_meta_boxes_' . self::POST_TYPE, [$this, 'register_booking_details_meta_box']);
 		add_action('admin_post_clubflow_confirm_payment', [$this, 'handle_confirm_payment']);
@@ -1024,6 +1026,45 @@ final class ClubFlow_Booking {
 		];
 	}
 
+	public function booking_admin_sortable_columns(array $columns): array {
+		$columns['event'] = 'clubflow_event';
+		$columns['email'] = 'clubflow_email';
+		$columns['phone'] = 'clubflow_phone';
+		$columns['status'] = 'clubflow_status';
+		return $columns;
+	}
+
+	public function maybe_apply_booking_admin_sorting(\WP_Query $query): void {
+		if (!is_admin() || !$query->is_main_query()) {
+			return;
+		}
+
+		$post_type = $query->get('post_type');
+		if ($post_type !== self::POST_TYPE) {
+			return;
+		}
+
+		$orderby = (string) $query->get('orderby');
+		switch ($orderby) {
+			case 'clubflow_event':
+				$query->set('meta_key', '_clubflow_booking_event_id');
+				$query->set('orderby', 'meta_value_num');
+				break;
+			case 'clubflow_email':
+				$query->set('meta_key', '_clubflow_booking_email');
+				$query->set('orderby', 'meta_value');
+				break;
+			case 'clubflow_phone':
+				$query->set('meta_key', '_clubflow_booking_phone');
+				$query->set('orderby', 'meta_value');
+				break;
+			case 'clubflow_status':
+				$query->set('meta_key', '_clubflow_booking_status');
+				$query->set('orderby', 'meta_value');
+				break;
+		}
+	}
+
 	/**
 	 * Render booking admin column
 	 */
@@ -1056,6 +1097,13 @@ final class ClubFlow_Booking {
 				$status = get_post_meta($post_id, '_clubflow_booking_status', true);
 				$color = $status === 'confirmed' ? '#2e7d32' : '#ff9800';
 				echo '<span style="color: ' . esc_attr($color) . ';">' . esc_html(ucfirst($status)) . '</span>';
+				if (in_array((string) $status, ['pending', 'pending_payment'], true)) {
+					$confirm_url = wp_nonce_url(
+						admin_url('admin-post.php?action=clubflow_confirm_payment&booking_id=' . $post_id),
+						'clubflow_confirm_payment_' . $post_id
+					);
+					echo '<br><a href="' . esc_url($confirm_url) . '" class="button button-small" style="margin-top: 6px;">' . esc_html__('Confirm payment received', 'clubflow') . '</a>';
+				}
 				break;
 		}
 	}
@@ -1188,8 +1236,8 @@ final class ClubFlow_Booking {
 						admin_url('admin-post.php?action=clubflow_confirm_payment&booking_id=' . $post->ID),
 						'clubflow_confirm_payment_' . $post->ID
 					);
-					echo '<br><a href="' . esc_url($confirm_url) . '" class="button button-small" style="margin-top: 8px;" onclick="return confirm(\'' . esc_js(__('Confirm this payment as received?', 'clubflow')) . '\');">';
-					echo esc_html__('✓ Confirm Payment Received', 'clubflow');
+					echo '<br><a href="' . esc_url($confirm_url) . '" class="button button-small" style="margin-top: 8px;">';
+					echo esc_html__('Confirm payment received', 'clubflow');
 					echo '</a>';
 				}
 				
@@ -1206,8 +1254,8 @@ final class ClubFlow_Booking {
 				'clubflow_confirm_payment_' . $post->ID
 			);
 			echo '<tr><th>' . esc_html__('Confirmation', 'clubflow') . '</th><td>';
-			echo '<a href="' . esc_url($confirm_url) . '" class="button button-small" onclick="return confirm(\'' . esc_js(__('Confirm this booking as received?', 'clubflow')) . '\');">';
-			echo esc_html__('✓ Confirm Booking', 'clubflow');
+			echo '<a href="' . esc_url($confirm_url) . '" class="button button-small">';
+			echo esc_html__('Confirm payment received', 'clubflow');
 			echo '</a>';
 			echo '</td></tr>';
 		}
