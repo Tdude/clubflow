@@ -128,9 +128,11 @@ final class ClubFlow_Assets {
 				'actionEvents' => ClubFlow::AJAX_ACTION_EVENTS,
 				'actionDetails' => ClubFlow::AJAX_ACTION_EVENT_DETAILS,
 				'actionBook' => ClubFlow::AJAX_ACTION_BOOK,
+				'actionKlippkortRemaining' => ClubFlow_Booking::AJAX_ACTION_KLIPPKORT_REMAINING,
 				'nonceEvents' => wp_create_nonce('clubflow_events'),
 				'nonceDetails' => wp_create_nonce('clubflow_event_details'),
 				'nonceBook' => wp_create_nonce('clubflow_book'),
+				'nonceKlippkortRemaining' => wp_create_nonce('clubflow_klippkort_remaining'),
 				'showBlocksMonth' => $show_blocks_month,
 				'timeZone' => wp_timezone_string() ?: 'local',
 				'i18n' => [

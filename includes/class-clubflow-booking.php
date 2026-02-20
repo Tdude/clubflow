@@ -12,6 +12,7 @@ if (!defined('ABSPATH')) {
 final class ClubFlow_Booking {
 	public const POST_TYPE = 'club_booking';
 	public const AJAX_ACTION_BOOK = 'clubflow_book';
+	public const AJAX_ACTION_KLIPPKORT_REMAINING = 'clubflow_klippkort_remaining';
 	private const META_KLIPPKORT_CODE = '_clubflow_klippkort_code';
 	private const META_KLIPPKORT_CREDITS_TOTAL = '_clubflow_klippkort_credits_total';
 	private const META_KLIPPKORT_CREDITS_REMAINING = '_clubflow_klippkort_credits_remaining';
@@ -23,6 +24,8 @@ final class ClubFlow_Booking {
 		add_action('init', [$this, 'register_booking_cpt']);
 		add_action('wp_ajax_' . self::AJAX_ACTION_BOOK, [$this, 'ajax_book']);
 		add_action('wp_ajax_nopriv_' . self::AJAX_ACTION_BOOK, [$this, 'ajax_book']);
+		add_action('wp_ajax_' . self::AJAX_ACTION_KLIPPKORT_REMAINING, [$this, 'ajax_klippkort_remaining']);
+		add_action('wp_ajax_nopriv_' . self::AJAX_ACTION_KLIPPKORT_REMAINING, [$this, 'ajax_klippkort_remaining']);
 		add_action('add_meta_boxes', [$this, 'register_bookings_meta_box']);
 		add_filter('manage_' . ClubFlow::POST_TYPE . '_posts_columns', [$this, 'add_bookings_column']);
 		add_action('manage_' . ClubFlow::POST_TYPE . '_posts_custom_column', [$this, 'render_bookings_column'], 10, 2);
@@ -854,6 +857,31 @@ final class ClubFlow_Booking {
 		} else {
 			wp_send_json_error($result['error'], 400);
 		}
+	}
+
+	public function ajax_klippkort_remaining(): void {
+		if (!check_ajax_referer('clubflow_klippkort_remaining', '_ajax_nonce', false)) {
+			wp_send_json_error(__('Säkerhetskontrollen misslyckades.', 'clubflow'), 403);
+		}
+
+		$email = isset($_POST['email']) ? sanitize_email((string) $_POST['email']) : '';
+		$code = isset($_POST['klippkort_code']) ? self::normalize_code((string) $_POST['klippkort_code']) : '';
+		if ($email === '' || $code === '') {
+			wp_send_json_error(__('Ogiltiga parametrar.', 'clubflow'), 400);
+		}
+
+		$purchase_booking_id = self::find_klippkort_purchase_booking_id($email, $code);
+		if ($purchase_booking_id <= 0) {
+			wp_send_json_success([
+				'remaining' => null,
+			]);
+		}
+
+		$remaining_raw = get_post_meta($purchase_booking_id, self::META_KLIPPKORT_CREDITS_REMAINING, true);
+		$remaining = $remaining_raw !== '' ? (int) $remaining_raw : null;
+		wp_send_json_success([
+			'remaining' => $remaining,
+		]);
 	}
 
 	/**

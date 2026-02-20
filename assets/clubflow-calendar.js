@@ -3,6 +3,36 @@
     return (root || document).querySelector(sel);
   }
 
+  function setCookie(name, value, days) {
+    try {
+      var expires = '';
+      if (typeof days === 'number') {
+        var d = new Date();
+        d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
+        expires = '; expires=' + d.toUTCString();
+      }
+      document.cookie = name + '=' + encodeURIComponent(value || '') + expires + '; path=/; samesite=lax';
+    } catch (e) {
+      // Ignore cookie failures
+    }
+  }
+
+  function getCookie(name) {
+    try {
+      var needle = name + '=';
+      var parts = (document.cookie || '').split(';');
+      for (var i = 0; i < parts.length; i++) {
+        var c = parts[i].trim();
+        if (c.indexOf(needle) === 0) {
+          return decodeURIComponent(c.substring(needle.length));
+        }
+      }
+    } catch (e) {
+      // Ignore cookie failures
+    }
+    return '';
+  }
+
   function qsa(sel, root) {
     return Array.prototype.slice.call((root || document).querySelectorAll(sel));
   }
@@ -514,6 +544,9 @@
             if (data.data && data.data.klippkort_code) {
               html += '<br>' + (window.ClubFlow.i18n.klippkortCode || 'Klippkortkod:') +
                 ' <strong>' + data.data.klippkort_code + '</strong>';
+
+              // Store as a convenience hint for later bookings on this device
+              setCookie('clubflow_klippkort_code', data.data.klippkort_code, 180);
             }
             
             // Show payment info if present
@@ -613,8 +646,42 @@
           }
           if (messageEl) {
             messageEl.className = 'clubflow-booking__message clubflow-booking__message--error';
-            messageEl.textContent = (data && data.data) ? data.data : (window.ClubFlow.i18n.bookingError || 'Bokningen misslyckades.');
+            var errMsg = (data && data.data) ? data.data : (window.ClubFlow.i18n.bookingError || 'Bokningen misslyckades.');
+            messageEl.textContent = errMsg;
             messageEl.style.display = 'block';
+
+            // If user already booked, show a helpful klippkort hint if we have a saved code cookie.
+            // This is informational only.
+            if (typeof errMsg === 'string' && errMsg.indexOf('Du har redan bokat detta event') !== -1) {
+              var savedCode = getCookie('clubflow_klippkort_code');
+              var emailInput = qs('input[name="email"]', form);
+              var emailVal = emailInput ? (emailInput.value || '') : '';
+
+              if (savedCode && emailVal && window.ClubFlow && window.ClubFlow.actionKlippkortRemaining && window.ClubFlow.nonceKlippkortRemaining) {
+                var fd = new FormData();
+                fd.append('action', window.ClubFlow.actionKlippkortRemaining);
+                fd.append('_ajax_nonce', window.ClubFlow.nonceKlippkortRemaining);
+                fd.append('email', emailVal);
+                fd.append('klippkort_code', savedCode);
+
+                fetch(window.ClubFlow.ajaxUrl, {
+                  method: 'POST',
+                  credentials: 'same-origin',
+                  body: fd
+                })
+                  .then(function (r) { return r.json(); })
+                  .then(function (resp) {
+                    if (!resp || !resp.success || !resp.data) return;
+                    if (resp.data.remaining === null || typeof resp.data.remaining === 'undefined') return;
+                    var n = parseInt(resp.data.remaining, 10);
+                    if (isNaN(n)) return;
+                    messageEl.textContent = errMsg + ' ' + 'Du verkar ha ' + n + ' klipp kvar.';
+                  })
+                  .catch(function () {
+                    // Ignore hint failures
+                  });
+              }
+            }
           }
         }
       })
@@ -965,6 +1032,16 @@
 		var codeField = qs('[data-clubflow-klippkort-code]', form);
 		if (!toggle || !codeField) return;
 		codeField.style.display = toggle.checked ? '' : 'none';
+
+		if (toggle.checked) {
+			var input = qs('input[name="klippkort_code"]', codeField);
+			if (input && !input.value) {
+				var saved = getCookie('clubflow_klippkort_code');
+				if (saved) {
+					input.value = saved;
+				}
+			}
+		}
 	}
 
   // Handle popup booking triggers [club_booking popup="true"]
