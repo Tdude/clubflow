@@ -541,10 +541,30 @@ final class ClubFlow_Payment {
 			'post_status'    => 'publish',
 			'posts_per_page' => 1,
 			'meta_query'     => [
+				'relation' => 'AND',
 				[
 					'key'   => '_payment_booking_id',
 					'value' => $booking_id,
 					'type'  => 'NUMERIC',
+				],
+				// Exclude non-payment bookkeeping entries
+				[
+					'key'     => '_payment_method',
+					'value'   => 'email',
+					'compare' => '!=',
+				],
+				// Exclude klippkort ledger rows which reuse the payment log CPT
+				[
+					'relation' => 'OR',
+					[
+						'key'     => '_clubflow_klippkort_action',
+						'compare' => 'NOT EXISTS',
+					],
+					[
+						'key'     => '_clubflow_klippkort_action',
+						'value'   => '',
+						'compare' => '=',
+					],
 				],
 			],
 		];

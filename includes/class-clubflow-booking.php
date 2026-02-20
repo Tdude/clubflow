@@ -187,17 +187,40 @@ final class ClubFlow_Booking {
 			'relation' => 'AND',
 			[
 				'key'   => '_clubflow_booking_status',
-				'value' => 'confirmed',
+				'value' => ['confirmed', 'pending_payment'],
+				'compare' => 'IN',
+			],
+			// Accept both issued klippkort and legacy/partially-initialized purchases
+			[
+				'relation' => 'OR',
+				[
+					'key'   => self::META_KLIPPKORT_ISSUED,
+					'value' => '1',
+				],
+				[
+					'key'     => self::META_KLIPPKORT_ISSUED,
+					'compare' => 'NOT EXISTS',
+				],
 			],
 			[
 				'key'   => '_clubflow_booking_email',
 				'value' => $email,
 			],
+			// Require at least some credits (remaining preferred, but total covers partially initialized purchases)
 			[
-				'key'     => self::META_KLIPPKORT_CREDITS_REMAINING,
-				'value'   => 1,
-				'compare' => '>=',
-				'type'    => 'NUMERIC',
+				'relation' => 'OR',
+				[
+					'key'     => self::META_KLIPPKORT_CREDITS_REMAINING,
+					'value'   => 1,
+					'compare' => '>=',
+					'type'    => 'NUMERIC',
+				],
+				[
+					'key'     => self::META_KLIPPKORT_CREDITS_TOTAL,
+					'value'   => 1,
+					'compare' => '>=',
+					'type'    => 'NUMERIC',
+				],
 			],
 		];
 		if ($code !== '') {
@@ -616,12 +639,10 @@ final class ClubFlow_Booking {
 		$payment_enabled = !empty($payment_settings['enabled']);
 		$payment_required = $payment_enabled && $amount > 0;
 		
-		// Set initial status: pending_payment if payment required, confirmed if free
-		$initial_status = $payment_required ? 'pending_payment' : 'confirmed';
+		// Set initial status: pending_payment if payment required, otherwise pending (manual confirmation)
+		$initial_status = $payment_required ? 'pending_payment' : 'pending';
 		update_post_meta($booking_id, '_clubflow_booking_status', $initial_status);
-		if (!$payment_required) {
-			$this->maybe_issue_klippkort_from_booking($booking_id, ['source' => 'create_booking']);
-		}
+
 
 		// Get payment settings and create payment request
 		$payment_info = null;
@@ -778,14 +799,12 @@ final class ClubFlow_Booking {
 			$result['klippkort_code'] = $issued_klippkort_code;
 		}
 
-		if (!$payment_required) {
-			$base_url = $return_url !== '' ? $return_url : home_url();
-			$base_url = strtok($base_url, '?');
-			$result['redirect_url'] = add_query_arg([
-				'booking_confirmed' => '1',
-				'code'              => $confirmation_code,
-			], $base_url);
-		}
+		$base_url = $return_url !== '' ? $return_url : home_url();
+		$base_url = strtok($base_url, '?');
+		$result['redirect_url'] = add_query_arg([
+			'booking_pending' => '1',
+			'code'            => $confirmation_code,
+		], $base_url);
 
 		if ($payment_info) {
 			$result['payment'] = $payment_info;
@@ -1118,6 +1137,35 @@ final class ClubFlow_Booking {
 		echo '<tr><th>' . esc_html__('Status', 'clubflow') . '</th><td><strong>' . esc_html(ucfirst(str_replace('_', ' ', $status))) . '</strong></td></tr>';
 		echo '<tr><th>' . esc_html__('Booked at', 'clubflow') . '</th><td>' . esc_html($created ? wp_date('Y-m-d H:i:s', strtotime($created)) : '—') . '</td></tr>';
 
+		// Klippkort details (only relevant for package-mode events)
+		if ($event_id > 0 && self::get_event_mode($event_id) === 'package') {
+			$klippkort_code = (string) get_post_meta($post->ID, self::META_KLIPPKORT_CODE, true);
+			$klippkort_code = self::normalize_code($klippkort_code);
+			$klippkort_issued = (string) get_post_meta($post->ID, self::META_KLIPPKORT_ISSUED, true);
+			$credits_total = (string) get_post_meta($post->ID, self::META_KLIPPKORT_CREDITS_TOTAL, true);
+			$credits_remaining = (string) get_post_meta($post->ID, self::META_KLIPPKORT_CREDITS_REMAINING, true);
+			$event_credits = (string) get_post_meta($event_id, '_clubflow_klippkort_credits', true);
+
+			echo '<tr><th>' . esc_html__('Klippkort code', 'clubflow') . '</th><td>';
+			echo $klippkort_code !== '' ? '<code style="font-size: 1.1em;">' . esc_html($klippkort_code) . '</code>' : '—';
+			echo '</td></tr>';
+			echo '<tr><th>' . esc_html__('Klippkort issued', 'clubflow') . '</th><td>' . esc_html($klippkort_issued !== '' ? $klippkort_issued : '—') . '</td></tr>';
+			echo '<tr><th>' . esc_html__('Klippkort credits (event)', 'clubflow') . '</th><td>' . esc_html($event_credits !== '' ? $event_credits : '—') . '</td></tr>';
+			echo '<tr><th>' . esc_html__('Klippkort credits total', 'clubflow') . '</th><td>' . esc_html($credits_total !== '' ? $credits_total : '—') . '</td></tr>';
+			echo '<tr><th>' . esc_html__('Klippkort credits remaining', 'clubflow') . '</th><td>' . esc_html($credits_remaining !== '' ? $credits_remaining : '—') . '</td></tr>';
+
+			if ($klippkort_issued !== '1') {
+				$confirm_url = wp_nonce_url(
+					admin_url('admin-post.php?action=clubflow_confirm_payment&booking_id=' . $post->ID),
+					'clubflow_confirm_payment_' . $post->ID
+				);
+				echo '<tr><th>' . esc_html__('Klippkort issuance', 'clubflow') . '</th><td>';
+				echo '<a href="' . esc_url($confirm_url) . '" class="button button-small">' . esc_html__('↻ Issue Klippkort Credits', 'clubflow') . '</a>';
+				echo '<br><small style="color:#666;">' . esc_html__('Use after setting “Klippkort credits” on the event.', 'clubflow') . '</small>';
+				echo '</td></tr>';
+			}
+		}
+
 		// Show payment info if exists
 		if (class_exists('ClubFlow_Payment')) {
 			$payment = ClubFlow_Payment::get_booking_payment($post->ID);
@@ -1149,6 +1197,21 @@ final class ClubFlow_Booking {
 			}
 		}
 
+		// Show manual confirm button even if there is no payment record (e.g. free/manual flows)
+		$booking_status = (string) get_post_meta($post->ID, '_clubflow_booking_status', true);
+		$event_mode = $event_id > 0 ? self::get_event_mode($event_id) : '';
+		if ($event_mode !== 'package' && in_array($booking_status, ['pending', 'pending_payment'], true)) {
+			$confirm_url = wp_nonce_url(
+				admin_url('admin-post.php?action=clubflow_confirm_payment&booking_id=' . $post->ID),
+				'clubflow_confirm_payment_' . $post->ID
+			);
+			echo '<tr><th>' . esc_html__('Confirmation', 'clubflow') . '</th><td>';
+			echo '<a href="' . esc_url($confirm_url) . '" class="button button-small" onclick="return confirm(\'' . esc_js(__('Confirm this booking as received?', 'clubflow')) . '\');">';
+			echo esc_html__('✓ Confirm Booking', 'clubflow');
+			echo '</a>';
+			echo '</td></tr>';
+		}
+
 		echo '</table>';
 	}
 
@@ -1177,15 +1240,22 @@ final class ClubFlow_Booking {
 		}
 
 		// Update booking status
-		$current_status = get_post_meta($booking_id, '_clubflow_booking_status', true);
-		if ($current_status === 'pending_payment') {
+		$current_status = (string) get_post_meta($booking_id, '_clubflow_booking_status', true);
+		if (in_array($current_status, ['pending', 'pending_payment'], true)) {
 			update_post_meta($booking_id, '_clubflow_booking_status', 'confirmed');
 			
-			// Fire action for email confirmation
+			// Fire action for email confirmation / downstream actions
 			do_action('clubflow_payment_completed', $booking_id, [
 				'status' => 'completed',
+				'source' => 'manual_admin_confirmation',
 			]);
 		}
+
+		// Ensure klippkort issuance happens even if the booking was already confirmed
+		// (e.g. klippkort credits were configured on the event after the initial confirmation)
+		$this->maybe_issue_klippkort_from_booking($booking_id, [
+			'source' => 'manual_admin_confirmation',
+		]);
 
 		// Redirect back
 		wp_redirect(get_edit_post_link($booking_id, 'raw'));
@@ -1311,13 +1381,16 @@ final class ClubFlow_Booking {
 		}
 
 		$confirmed = isset($_GET['booking_confirmed']) ? sanitize_text_field($_GET['booking_confirmed']) : '';
+		$pending = isset($_GET['booking_pending']) ? sanitize_text_field($_GET['booking_pending']) : '';
 		$code = isset($_GET['code']) ? sanitize_text_field($_GET['code']) : '';
 
-		if ($confirmed !== '1' || empty($code)) {
+		if (($confirmed !== '1' && $pending !== '1') || empty($code)) {
 			return;
 		}
 
-		$booking_text = esc_html__('Bokning bekräftad!', 'clubflow');
+		$booking_text = $confirmed === '1'
+			? esc_html__('Bokning bekräftad!', 'clubflow')
+			: esc_html__('Bokning mottagen!', 'clubflow');
 		$code_text = esc_html__('Bekräftelsekod:', 'clubflow');
 		$code_escaped = esc_html($code);
 
