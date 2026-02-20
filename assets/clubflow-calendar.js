@@ -478,7 +478,7 @@
     
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.textContent = window.ClubFlow.i18n.booking || 'Booking...';
+      submitBtn.textContent = window.ClubFlow.i18n.booking || 'Bokar...';
     }
 
     if (messageEl) {
@@ -507,9 +507,14 @@
           if (messageEl) {
             messageEl.className = 'clubflow-booking__message clubflow-booking__message--success';
             
-            var html = '<strong>' + (window.ClubFlow.i18n.booked || 'Booked!') + '</strong><br>' +
-              (window.ClubFlow.i18n.bookingSuccess || 'Your booking is confirmed! Confirmation code:') + 
+            var html = '<strong>' + (window.ClubFlow.i18n.booked || 'Bokad!') + '</strong><br>' +
+              (window.ClubFlow.i18n.bookingSuccess || 'Din bokning är bekräftad! Bekräftelsekod:') + 
               ' <strong>' + (data.data.confirmation_code || '') + '</strong>';
+
+            if (data.data && data.data.klippkort_code) {
+              html += '<br>' + (window.ClubFlow.i18n.klippkortCode || 'Klippkortkod:') +
+                ' <strong>' + data.data.klippkort_code + '</strong>';
+            }
             
             // Show payment info if present
             if (data.data.payment) {
@@ -604,11 +609,11 @@
           // Error
           if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.textContent = window.ClubFlow.i18n.bookNow || 'Book now';
+            submitBtn.textContent = window.ClubFlow.i18n.bookNow || 'Boka nu';
           }
           if (messageEl) {
             messageEl.className = 'clubflow-booking__message clubflow-booking__message--error';
-            messageEl.textContent = (data && data.data) ? data.data : (window.ClubFlow.i18n.bookingError || 'Booking failed.');
+            messageEl.textContent = (data && data.data) ? data.data : (window.ClubFlow.i18n.bookingError || 'Bokningen misslyckades.');
             messageEl.style.display = 'block';
           }
         }
@@ -616,11 +621,11 @@
       .catch(function () {
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.textContent = window.ClubFlow.i18n.bookNow || 'Book now';
+          submitBtn.textContent = window.ClubFlow.i18n.bookNow || 'Boka nu';
         }
         if (messageEl) {
           messageEl.className = 'clubflow-booking__message clubflow-booking__message--error';
-          messageEl.textContent = window.ClubFlow.i18n.bookingError || 'Booking failed.';
+          messageEl.textContent = window.ClubFlow.i18n.bookingError || 'Bokningen misslyckades.';
           messageEl.style.display = 'block';
         }
       });
@@ -940,12 +945,27 @@
         if (!form) return;
         updateFreeFields(form);
       }
+
+		if (t && t.hasAttribute && t.hasAttribute('data-clubflow-klippkort-toggle')) {
+			var form = t.closest('[data-clubflow-booking-form]');
+			if (!form) return;
+			updateKlippkortFields(form);
+		}
     });
 
     qsa('[data-clubflow-booking-form]').forEach(function (form) {
       updateFreeFields(form);
+		updateKlippkortFields(form);
     });
   }
+
+	function updateKlippkortFields(form) {
+		if (!form) return;
+		var toggle = qs('[data-clubflow-klippkort-toggle]', form);
+		var codeField = qs('[data-clubflow-klippkort-code]', form);
+		if (!toggle || !codeField) return;
+		codeField.style.display = toggle.checked ? '' : 'none';
+	}
 
   // Handle popup booking triggers [club_booking popup="true"]
   function initPopupTriggers() {

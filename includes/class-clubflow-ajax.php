@@ -645,7 +645,7 @@ final class ClubFlow_Ajax {
 
 		$html .= '<div class="clubflow-event__content">' . wp_kses_post($content_html) . '</div>';
 		$html .= '<p class="clubflow-event__link"><a href="' . esc_url($permalink) . '">'
-			. esc_html__('Open event page', 'clubflow')
+			. esc_html__('Öppna eventsida', 'clubflow')
 			. ' <svg class="clubflow-icon clubflow-icon--external" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'
 			. '</a></p>';
 
@@ -666,6 +666,8 @@ final class ClubFlow_Ajax {
 			return '';
 		}
 
+		$event_mode = get_post_meta($event_id, '_clubflow_event_mode', true) ?: 'calendar';
+
 		$price = get_post_meta($event_id, '_clubflow_price', true);
 		$member_price = get_post_meta($event_id, '_clubflow_member_price', true);
 		$max_spots = (int) get_post_meta($event_id, '_clubflow_max_spots', true);
@@ -683,32 +685,32 @@ final class ClubFlow_Ajax {
 
 		$html = '<div class="clubflow-booking" data-event-id="' . esc_attr($event_id) . '">';
 		$html .= '<hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;" />';
-		$html .= '<h4 class="clubflow-booking__title">' . esc_html__('Book this event', 'clubflow') . '</h4>';
+		$html .= '<h4 class="clubflow-booking__title">' . esc_html__('Boka detta event', 'clubflow') . '</h4>';
 
 		// Show price and spots
 		$html .= '<p class="clubflow-booking__meta">';
 		if ($has_member_pricing) {
 			$html .= '<span class="clubflow-booking__price">';
-			$html .= esc_html__('Member:', 'clubflow') . ' <strong>' . esc_html($member_price) . '</strong>';
+			$html .= esc_html__('Medlem:', 'clubflow') . ' <strong>' . esc_html($member_price) . '</strong>';
 			$html .= ' &bull; ';
-			$html .= esc_html__('Non-member:', 'clubflow') . ' <strong>' . esc_html($price) . '</strong>';
+			$html .= esc_html__('Icke medlem:', 'clubflow') . ' <strong>' . esc_html($price) . '</strong>';
 			$html .= '</span>';
 		} elseif ($price) {
-			$html .= '<span class="clubflow-booking__price">' . esc_html__('Price:', 'clubflow') . ' <strong>' . esc_html($price) . ' SEK</strong></span>';
+			$html .= '<span class="clubflow-booking__price">' . esc_html__('Pris:', 'clubflow') . ' <strong>' . esc_html($price) . ' SEK</strong></span>';
 		}
 		if ($spots_remaining !== null) {
 			if ($price || $has_member_pricing) {
 				$html .= ' &bull; ';
 			}
 			$spots_text = $is_fully_booked
-				? __('Fully booked', 'clubflow')
-				: sprintf(__('%d spots left', 'clubflow'), $spots_remaining);
+				? __('Fullbokat', 'clubflow')
+				: sprintf(__('%d platser kvar', 'clubflow'), $spots_remaining);
 			$html .= '<span class="clubflow-booking__spots' . ($is_fully_booked ? ' clubflow-booking__spots--full' : '') . '">' . esc_html($spots_text) . '</span>';
 		}
 		$html .= '</p>';
 
 		if ($is_fully_booked) {
-			$html .= '<p class="clubflow-booking__full">' . esc_html__('This event is fully booked. Please check back later or contact us.', 'clubflow') . '</p>';
+			$html .= '<p class="clubflow-booking__full">' . esc_html__('Detta event är fullbokat. Vänligen försök igen senare eller kontakta oss.', 'clubflow') . '</p>';
 		} else {
 			// Booking form
 			$html .= '<form class="clubflow-booking__form" data-clubflow-booking-form '
@@ -717,48 +719,58 @@ final class ClubFlow_Ajax {
 			$html .= '<input type="hidden" name="event_id" value="' . esc_attr($event_id) . '" />';
 			
 			$html .= '<p class="clubflow-booking__field">';
-			$html .= '<label for="clubflow_book_name">' . esc_html__('Name', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<label for="clubflow_book_name">' . esc_html__('Namn', 'clubflow') . ' <span class="required">*</span></label>';
 			$html .= '<input type="text" id="clubflow_book_name" name="name" required />';
 			$html .= '</p>';
 
 			$html .= '<p class="clubflow-booking__field">';
-			$html .= '<label for="clubflow_book_email">' . esc_html__('Email', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<label for="clubflow_book_email">' . esc_html__('E-post', 'clubflow') . ' <span class="required">*</span></label>';
 			$html .= '<input type="email" id="clubflow_book_email" name="email" required />';
 			$html .= '</p>';
 
 			$html .= '<p class="clubflow-booking__field">';
-			$html .= '<label for="clubflow_book_phone">' . esc_html__('Phone', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<label for="clubflow_book_phone">' . esc_html__('Telefon', 'clubflow') . ' <span class="required">*</span></label>';
 			$html .= '<input type="tel" id="clubflow_book_phone" name="phone" required />';
 			$html .= '</p>';
 
 			$html .= '<p class="clubflow-booking__field" data-clubflow-free-field style="display:none">';
-			$html .= '<label for="clubflow_book_street">' . esc_html__('Street', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<label for="clubflow_book_street">' . esc_html__('Gatuadress', 'clubflow') . ' <span class="required">*</span></label>';
 			$html .= '<input type="text" id="clubflow_book_street" name="street" data-clubflow-free-required />';
 			$html .= '</p>';
 
 			$html .= '<p class="clubflow-booking__field" data-clubflow-free-field style="display:none">';
-			$html .= '<label for="clubflow_book_postal_code">' . esc_html__('Postal code', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<label for="clubflow_book_postal_code">' . esc_html__('Postnummer', 'clubflow') . ' <span class="required">*</span></label>';
 			$html .= '<input type="text" id="clubflow_book_postal_code" name="postal_code" data-clubflow-free-required />';
 			$html .= '</p>';
 
 			$html .= '<p class="clubflow-booking__field" data-clubflow-free-field style="display:none">';
-			$html .= '<label for="clubflow_book_city">' . esc_html__('City', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<label for="clubflow_book_city">' . esc_html__('Ort', 'clubflow') . ' <span class="required">*</span></label>';
 			$html .= '<input type="text" id="clubflow_book_city" name="city" data-clubflow-free-required />';
 			$html .= '</p>';
 
 			// Member selection if both prices exist
 			if ($has_member_pricing) {
 				$html .= '<p class="clubflow-booking__field clubflow-booking__field--member">';
-				$html .= '<label>' . esc_html__('I am a', 'clubflow') . '</label>';
+				$html .= '<label>' . esc_html__('Jag är', 'clubflow') . '</label>';
 				$html .= '<span class="clubflow-booking__radio-group">';
-				$html .= '<label class="clubflow-booking__radio"><input type="radio" name="is_member" value="1" /> ' . esc_html__('Member', 'clubflow') . ' <span class="clubflow-booking__radio-price">(' . esc_html($member_price) . ')</span></label>';
-				$html .= '<label class="clubflow-booking__radio"><input type="radio" name="is_member" value="0" checked /> ' . esc_html__('Non-member', 'clubflow') . ' <span class="clubflow-booking__radio-price">(' . esc_html($price) . ')</span></label>';
+				$html .= '<label class="clubflow-booking__radio"><input type="radio" name="is_member" value="1" /> ' . esc_html__('Medlem', 'clubflow') . ' <span class="clubflow-booking__radio-price">(' . esc_html($member_price) . ')</span></label>';
+				$html .= '<label class="clubflow-booking__radio"><input type="radio" name="is_member" value="0" checked /> ' . esc_html__('Icke medlem', 'clubflow') . ' <span class="clubflow-booking__radio-price">(' . esc_html($price) . ')</span></label>';
 				$html .= '</span>';
 				$html .= '</p>';
 			}
 
+			if ($event_mode !== 'package') {
+				$html .= '<p class="clubflow-booking__field clubflow-booking__field--klippkort">';
+				$html .= '<label class="clubflow-checkline"><input type="checkbox" name="use_klippkort" value="1" data-clubflow-klippkort-toggle /> ' . esc_html__('Använd klippkort', 'clubflow') . '</label>';
+				$html .= '</p>';
+				$html .= '<p class="clubflow-booking__field clubflow-booking__field--klippkort" data-clubflow-klippkort-code style="display:none; margin-top: -8px;">';
+				$html .= '<label for="clubflow_book_klippkort_code">' . esc_html__('Klippkort kod (valfritt)', 'clubflow') . '</label>';
+				$html .= '<input type="text" id="clubflow_book_klippkort_code" name="klippkort_code" placeholder="KLIPPKORT-ABC123" />';
+				$html .= '</p>';
+			}
+
 			$html .= '<p class="clubflow-booking__submit">';
-			$html .= '<button type="submit" class="clubflow-booking__button">' . esc_html__('Book now', 'clubflow') . '</button>';
+			$html .= '<button type="submit" class="clubflow-booking__button">' . esc_html__('Boka nu', 'clubflow') . '</button>';
 			$html .= '</p>';
 
 			$html .= '<p class="clubflow-booking__message" data-clubflow-booking-message style="display: none;"></p>';

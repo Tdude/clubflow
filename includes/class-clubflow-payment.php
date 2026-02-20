@@ -578,6 +578,7 @@ final class ClubFlow_Payment {
 		return [
 			'cb'        => $columns['cb'],
 			'title'     => __('Payment', 'clubflow'),
+			'klippkort' => __('Klippkort', 'clubflow'),
 			'amount'    => __('Amount', 'clubflow'),
 			'method'    => __('Method', 'clubflow'),
 			'status'    => __('Status', 'clubflow'),
@@ -591,11 +592,33 @@ final class ClubFlow_Payment {
 	 * Render payment log column
 	 */
 	public function render_payment_log_column(string $column, int $post_id): void {
+		$klippkort_action = (string) get_post_meta($post_id, '_clubflow_klippkort_action', true);
+		$klippkort_code = (string) get_post_meta($post_id, '_clubflow_klippkort_code', true);
+		$is_klippkort_ledger = $klippkort_action !== '';
+
 		switch ($column) {
+			case 'klippkort':
+				if (!$is_klippkort_ledger) {
+					echo '—';
+					break;
+				}
+				$label = $klippkort_action === 'issued'
+					? __('Issued', 'clubflow')
+					: ($klippkort_action === 'redeemed' ? __('Redeemed', 'clubflow') : ucfirst($klippkort_action));
+				$icon = $klippkort_action === 'issued' ? '➕' : '✂️';
+				$tooltip = trim('Klippkort: ' . $label . ($klippkort_code !== '' ? ' (' . $klippkort_code . ')' : ''));
+				echo '<span title="' . esc_attr($tooltip) . '" style="font-size: 16px; line-height: 1; cursor: help;">' . esc_html($icon) . '</span>';
+				break;
+
 			case 'amount':
 				$amount = get_post_meta($post_id, '_payment_amount', true);
 				$currency = get_post_meta($post_id, '_payment_currency', true) ?: 'SEK';
-				echo esc_html($amount ? $amount . ' ' . $currency : '—');
+				if ($is_klippkort_ledger && $klippkort_code !== '') {
+					echo esc_html($amount ? $amount . ' ' . $currency : '0 ' . $currency);
+					echo '<br><small><code>' . esc_html($klippkort_code) . '</code></small>';
+				} else {
+					echo esc_html($amount ? $amount . ' ' . $currency : '—');
+				}
 				break;
 
 			case 'method':
@@ -604,8 +627,13 @@ final class ClubFlow_Payment {
 					'swish'  => 'Swish',
 					'stripe' => 'Stripe',
 					'manual' => __('Manual', 'clubflow'),
+					'klippkort' => __('Klippkort', 'clubflow'),
 				];
-				echo esc_html($methods[$method] ?? ucfirst($method));
+				if ($is_klippkort_ledger) {
+					echo esc_html($methods['klippkort']);
+				} else {
+					echo esc_html($methods[$method] ?? ucfirst($method));
+				}
 				break;
 
 			case 'status':

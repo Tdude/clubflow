@@ -134,24 +134,24 @@ final class ClubFlow_Assets {
 				'showBlocksMonth' => $show_blocks_month,
 				'timeZone' => wp_timezone_string() ?: 'local',
 				'i18n' => [
-					'bookNow' => __('Book now', 'clubflow'),
-					'booking' => __('Booking...', 'clubflow'),
-					'booked' => __('Booked!', 'clubflow'),
-					'bookingSuccess' => __('Your booking is confirmed! Confirmation code:', 'clubflow'),
-					'bookingError' => __('Booking failed. Please try again.', 'clubflow'),
-					'payWithSwish' => __('Pay with Swish:', 'clubflow'),
-					'swishMessage' => __('Message:', 'clubflow'),
-					'amount' => __('Amount:', 'clubflow'),
-					'openSwish' => __('Open Swish', 'clubflow'),
-					'scanQR' => __('Scan the QR code with the Swish app:', 'clubflow'),
-					'orPayManually' => __('Or pay manually to:', 'clubflow'),
-					'payToNumber' => __('Pay to:', 'clubflow'),
-					'awaitingPayment' => __('Awaiting payment...', 'clubflow'),
-					'paymentConfirmed' => __('Payment confirmed!', 'clubflow'),
-					'paymentFailed' => __('Payment failed', 'clubflow'),
-					'paymentTimeout' => __('Payment could not be confirmed. Contact us if you have paid.', 'clubflow'),
-					'redirectingToPayment' => __('Redirecting to payment...', 'clubflow'),
-					'proceedToPayment' => __('Proceed to Payment', 'clubflow'),
+					'bookNow' => __('Boka nu', 'clubflow'),
+					'booking' => __('Bokar...', 'clubflow'),
+					'booked' => __('Bokad!', 'clubflow'),
+					'bookingSuccess' => __('Din bokning är bekräftad! Bekräftelsekod:', 'clubflow'),
+					'bookingError' => __('Bokningen misslyckades. Försök igen.', 'clubflow'),
+					'payWithSwish' => __('Betala med Swish:', 'clubflow'),
+					'swishMessage' => __('Meddelande:', 'clubflow'),
+					'amount' => __('Belopp:', 'clubflow'),
+					'openSwish' => __('Öppna Swish', 'clubflow'),
+					'scanQR' => __('Skanna QR-koden med Swish-appen:', 'clubflow'),
+					'orPayManually' => __('Eller betala manuellt till:', 'clubflow'),
+					'payToNumber' => __('Betala till:', 'clubflow'),
+					'awaitingPayment' => __('Inväntar betalning...', 'clubflow'),
+					'paymentConfirmed' => __('Betalning bekräftad!', 'clubflow'),
+					'paymentFailed' => __('Betalningen misslyckades', 'clubflow'),
+					'paymentTimeout' => __('Betalningen kunde inte bekräftas. Kontakta oss om du har betalat.', 'clubflow'),
+					'redirectingToPayment' => __('Skickar dig till betalning...', 'clubflow'),
+					'proceedToPayment' => __('Gå till betalning', 'clubflow'),
 				],
 			]
 		);
@@ -162,6 +162,11 @@ final class ClubFlow_Assets {
 		if (!$screen) {
 			return;
 		}
+
+		wp_register_style('clubflow-admin', false, [], ClubFlow::VERSION);
+		wp_enqueue_style('clubflow-admin');
+		// Make the calendar icon behave in admin rightbar
+		wp_add_inline_style('clubflow-admin', '.wp-core-ui select{padding-right:0;}');
 
 		if (($screen->id ?? '') === 'club_event_page_clubflow-bookings-calendar') {
 			wp_enqueue_style(

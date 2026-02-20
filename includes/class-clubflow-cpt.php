@@ -48,7 +48,7 @@ final class ClubFlow_Cpt {
 				$mode_labels = [
 					'calendar' => ['📅', __('Calendar', 'clubflow')],
 					'product'  => ['🛒', __('Product', 'clubflow')],
-					'package'  => ['📦', __('Package', 'clubflow')],
+					'package'  => ['📦', __('Klippkort', 'clubflow')],
 				];
 				$label = $mode_labels[$mode] ?? $mode_labels['calendar'];
 				echo '<span title="' . esc_attr($label[1]) . '">' . esc_html($label[0]) . '</span>';

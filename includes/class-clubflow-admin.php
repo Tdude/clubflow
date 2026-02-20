@@ -439,9 +439,9 @@ final class ClubFlow_Admin {
 		echo '<select id="clubflow_event_mode" name="clubflow_event_mode" style="width: 100%;">';
 		echo '<option value="calendar" ' . selected($event_mode, 'calendar', false) . '>📅 ' . esc_html__('Calendar', 'clubflow') . '</option>';
 		echo '<option value="product" ' . selected($event_mode, 'product', false) . '>🛒 ' . esc_html__('Product', 'clubflow') . '</option>';
-		echo '<option value="package" ' . selected($event_mode, 'package', false) . '>📦 ' . esc_html__('Package', 'clubflow') . '</option>';
+		echo '<option value="package" ' . selected($event_mode, 'package', false) . '>📦 ' . esc_html__('Klippkort', 'clubflow') . '</option>';
 		echo '</select>';
-		echo '<span class="clubflow-info-icon" title="' . esc_attr__('Calendar = shows in calendar. Product/Package = hidden, use shortcode.', 'clubflow') . '" style="display: inline-block; margin-left: 6px; cursor: help; color: #2271b1; font-size: 16px; vertical-align: middle;">ⓘ</span>';
+		echo '<span class="clubflow-info-icon" title="' . esc_attr__('Calendar = shows in calendar. Product/Klippkort = hidden, use shortcode.', 'clubflow') . '" style="display: inline-block; margin-left: 6px; cursor: help; color: #2271b1; font-size: 16px; vertical-align: middle;">ⓘ</span>';
 
 		// Shortcode helper
 		echo '<div id="clubflow-shortcode-helper" style="' . ($event_mode !== 'calendar' ? '' : 'display: none;') . 'background: #e7f3ff; padding: 8px; border-radius: 4px; margin-top: 10px; font-size: 12px;">';
@@ -519,6 +519,8 @@ final class ClubFlow_Admin {
 		$max_spots = get_post_meta($post->ID, '_clubflow_max_spots', true);
 		$price = get_post_meta($post->ID, '_clubflow_price', true);
 		$member_price = get_post_meta($post->ID, '_clubflow_member_price', true);
+		$event_mode = get_post_meta($post->ID, '_clubflow_event_mode', true) ?: 'calendar';
+		$klippkort_credits = get_post_meta($post->ID, '_clubflow_klippkort_credits', true);
 		
 		if ($post->post_status === 'auto-draft' && $booking_enabled === '') {
 			$booking_enabled = '1';
@@ -543,6 +545,13 @@ final class ClubFlow_Admin {
 		echo '<label for="clubflow_member_price">' . esc_html__('Member price', 'clubflow') . ' <span style="color: #666;">(' . esc_html__('optional', 'clubflow') . ')</span></label><br />';
 		echo '<input type="text" id="clubflow_member_price" name="clubflow_member_price" value="' . esc_attr((string) $member_price) . '" placeholder="150 kr" style="width: 100px;" />';
 		echo '</p>';
+
+		if ($event_mode === 'package') {
+			echo '<p>';
+			echo '<label for="clubflow_klippkort_credits">' . esc_html__('Klippkort credits', 'clubflow') . '</label><br />';
+			echo '<input type="number" id="clubflow_klippkort_credits" name="clubflow_klippkort_credits" value="' . esc_attr((string) $klippkort_credits) . '" min="0" style="width: 80px;" />';
+			echo '</p>';
+		}
 
 		// Current bookings
 		if (class_exists('ClubFlow_Booking') && $post->post_status !== 'auto-draft') {
@@ -733,6 +742,13 @@ final class ClubFlow_Admin {
 			update_post_meta($post_id, '_clubflow_member_price', $member_price);
 		} else {
 			delete_post_meta($post_id, '_clubflow_member_price');
+		}
+
+		$klippkort_credits = isset($_POST['clubflow_klippkort_credits']) ? absint($_POST['clubflow_klippkort_credits']) : 0;
+		if ($klippkort_credits > 0) {
+			update_post_meta($post_id, '_clubflow_klippkort_credits', $klippkort_credits);
+		} else {
+			delete_post_meta($post_id, '_clubflow_klippkort_credits');
 		}
 
 		// Save event mode

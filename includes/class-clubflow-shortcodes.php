@@ -135,7 +135,7 @@ final class ClubFlow_Shortcodes {
 		$query = new \WP_Query($args);
 
 		if (!$query->have_posts()) {
-			return '<p class="clubflow-list__empty">' . esc_html__('No upcoming events.', 'clubflow') . '</p>';
+			return '<p class="clubflow-list__empty">' . esc_html__('Inga kommande events.', 'clubflow') . '</p>';
 		}
 
 		$html = '<div class="clubflow-list">';
@@ -215,7 +215,7 @@ final class ClubFlow_Shortcodes {
 			$html .= '</div>';
 			$html .= '<div class="clubflow-list__content" data-clubflow-list-content aria-hidden="true">';
 			$html .= '<div class="clubflow-list__content-inner">' . wp_kses_post($full_content) . '</div>';
-			$html .= '<p class="clubflow-list__link"><a href="' . esc_url(get_permalink()) . '">' . esc_html__('Open event page', 'clubflow') . '</a></p>';
+			$html .= '<p class="clubflow-list__link"><a href="' . esc_url(get_permalink()) . '">' . esc_html__('Öppna eventsida', 'clubflow') . '</a></p>';
 			$html .= '</div>';
 			$html .= '</article>';
 		}
@@ -250,12 +250,12 @@ final class ClubFlow_Shortcodes {
 
 		$event_id = absint($atts['id']);
 		if ($event_id <= 0) {
-			return '<p class="clubflow-booking-error">' . esc_html__('Invalid event ID.', 'clubflow') . '</p>';
+			return '<p class="clubflow-booking-error">' . esc_html__('Ogiltigt event-ID.', 'clubflow') . '</p>';
 		}
 
 		$post = get_post($event_id);
 		if (!$post || $post->post_type !== ClubFlow::POST_TYPE) {
-			return '<p class="clubflow-booking-error">' . esc_html__('Event not found.', 'clubflow') . '</p>';
+			return '<p class="clubflow-booking-error">' . esc_html__('Eventet hittades inte.', 'clubflow') . '</p>';
 		}
 
 		// Enqueue assets (force because shortcode may be on non-singular pages)
@@ -285,7 +285,7 @@ final class ClubFlow_Shortcodes {
 		$show_price = filter_var($atts['show_price'], FILTER_VALIDATE_BOOLEAN);
 		$show_spots = filter_var($atts['show_spots'], FILTER_VALIDATE_BOOLEAN);
 		$show_includes = filter_var($atts['show_includes'], FILTER_VALIDATE_BOOLEAN);
-		$button_text = $atts['button_text'] ?: __('Book now', 'clubflow');
+		$button_text = $atts['button_text'] ?: __('Boka nu', 'clubflow');
 
 		$html = '<div class="clubflow-booking-widget" data-event-id="' . esc_attr($event_id) . '">';
 
@@ -304,8 +304,8 @@ final class ClubFlow_Shortcodes {
 					$html .= ' <span class="clubflow-booking-widget__sep">•</span> ';
 				}
 				$spots_text = $is_fully_booked
-					? __('Fully booked', 'clubflow')
-					: sprintf(__('%d spots left', 'clubflow'), $spots_remaining);
+					? __('Fullbokat', 'clubflow')
+					: sprintf(__('%d platser kvar', 'clubflow'), $spots_remaining);
 				$spots_class = $is_fully_booked ? ' clubflow-booking-widget__spots--full' : '';
 				$html .= '<span class="clubflow-booking-widget__spots' . $spots_class . '">' . esc_html($spots_text) . '</span>';
 			}
@@ -316,7 +316,7 @@ final class ClubFlow_Shortcodes {
 		// For packages: show included events
 		if ($event_mode === 'package' && $show_includes && !empty($linked_events)) {
 			$html .= '<div class="clubflow-booking-widget__includes">';
-			$html .= '<p class="clubflow-booking-widget__includes-label"><strong>' . esc_html__('Includes:', 'clubflow') . '</strong></p>';
+			$html .= '<p class="clubflow-booking-widget__includes-label"><strong>' . esc_html__('Inkluderar:', 'clubflow') . '</strong></p>';
 			$html .= '<ul class="clubflow-booking-widget__includes-list">';
 			foreach ($linked_events as $linked_id) {
 				$linked_post = get_post($linked_id);
@@ -336,7 +336,7 @@ final class ClubFlow_Shortcodes {
 		// Fully booked message
 		if ($is_fully_booked) {
 			$html .= '<div class="clubflow-booking-widget__full">';
-			$html .= '<p>' . esc_html__('This event is fully booked. Please check back later or contact us.', 'clubflow') . '</p>';
+			$html .= '<p>' . esc_html__('Detta event är fullbokat. Vänligen försök igen senare eller kontakta oss.', 'clubflow') . '</p>';
 			$html .= '</div>';
 		} else {
 			// Booking form
@@ -347,36 +347,45 @@ final class ClubFlow_Shortcodes {
 			$html .= '<input type="hidden" name="return_url" value="' . esc_attr(home_url($_SERVER['REQUEST_URI'] ?? '')) . '" />';
 
 			$html .= '<div class="clubflow-booking-widget__field">';
-			$html .= '<label for="clubflow_widget_name_' . $event_id . '">' . esc_html__('Name', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<label for="clubflow_widget_name_' . $event_id . '">' . esc_html__('Namn', 'clubflow') . ' <span class="required">*</span></label>';
 			$html .= '<input type="text" id="clubflow_widget_name_' . $event_id . '" name="name" required />';
 			$html .= '</div>';
 
 			$html .= '<div class="clubflow-booking-widget__field">';
-			$html .= '<label for="clubflow_widget_email_' . $event_id . '">' . esc_html__('Email', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<label for="clubflow_widget_email_' . $event_id . '">' . esc_html__('E-post', 'clubflow') . ' <span class="required">*</span></label>';
 			$html .= '<input type="email" id="clubflow_widget_email_' . $event_id . '" name="email" required />';
 			$html .= '</div>';
 
 			$html .= '<div class="clubflow-booking-widget__field">';
-			$html .= '<label for="clubflow_widget_phone_' . $event_id . '">' . esc_html__('Phone', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<label for="clubflow_widget_phone_' . $event_id . '">' . esc_html__('Telefon', 'clubflow') . ' <span class="required">*</span></label>';
 			$html .= '<input type="tel" id="clubflow_widget_phone_' . $event_id . '" name="phone" required />';
 			$html .= '</div>';
 
 			$html .= '<div class="clubflow-booking-widget__field" data-clubflow-free-field style="display:none">';
-			$html .= '<label for="clubflow_widget_street_' . $event_id . '">' . esc_html__('Street', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<label for="clubflow_widget_street_' . $event_id . '">' . esc_html__('Gatuadress', 'clubflow') . ' <span class="required">*</span></label>';
 			$html .= '<input type="text" id="clubflow_widget_street_' . $event_id . '" name="street" data-clubflow-free-required />';
 			$html .= '</div>';
 
 			$html .= '<div class="clubflow-booking-widget__field" data-clubflow-free-field style="display:none">';
-			$html .= '<label for="clubflow_widget_postal_code_' . $event_id . '">' . esc_html__('Postal code', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<label for="clubflow_widget_postal_code_' . $event_id . '">' . esc_html__('Postnummer', 'clubflow') . ' <span class="required">*</span></label>';
 			$html .= '<input type="text" id="clubflow_widget_postal_code_' . $event_id . '" name="postal_code" data-clubflow-free-required />';
 			$html .= '</div>';
 
 			$html .= '<div class="clubflow-booking-widget__field" data-clubflow-free-field style="display:none">';
-			$html .= '<label for="clubflow_widget_city_' . $event_id . '">' . esc_html__('City', 'clubflow') . ' <span class="required">*</span></label>';
+			$html .= '<label for="clubflow_widget_city_' . $event_id . '">' . esc_html__('Ort', 'clubflow') . ' <span class="required">*</span></label>';
 			$html .= '<input type="text" id="clubflow_widget_city_' . $event_id . '" name="city" data-clubflow-free-required />';
 			$html .= '</div>';
 
 			// TODO: Clip card field will go here in Phase 3
+			if ($event_mode !== 'package') {
+				$html .= '<div class="clubflow-booking-widget__field clubflow-booking-widget__field--klippkort">';
+				$html .= '<label class="clubflow-checkline"><input type="checkbox" name="use_klippkort" value="1" data-clubflow-klippkort-toggle /> ' . esc_html__('Använd klippkort', 'clubflow') . '</label>';
+				$html .= '</div>';
+				$html .= '<div class="clubflow-booking-widget__field clubflow-booking-widget__field--klippkort" data-clubflow-klippkort-code style="display:none; margin-top: -8px;">';
+				$html .= '<label for="clubflow_widget_klippkort_code_' . $event_id . '">' . esc_html__('Klippkort kod (valfritt)', 'clubflow') . '</label>';
+				$html .= '<input type="text" id="clubflow_widget_klippkort_code_' . $event_id . '" name="klippkort_code" placeholder="KLIPPKORT-ABC123" />';
+				$html .= '</div>';
+			}
 
 			$html .= '<div class="clubflow-booking-widget__submit">';
 			$html .= '<button type="submit" class="clubflow-booking-widget__button">' . esc_html($button_text) . '</button>';
@@ -413,7 +422,7 @@ final class ClubFlow_Shortcodes {
 
 		// Custom label or fall back to event title
 		$label = $atts['label'] ?: get_the_title($event_id);
-		$button_text = $atts['button_text'] ?: __('Book now', 'clubflow');
+		$button_text = $atts['button_text'] ?: __('Boka nu', 'clubflow');
 
 		// For packages, count included events
 		$includes_count = ($event_mode === 'package' && !empty($linked_events)) ? count($linked_events) : 0;
@@ -438,22 +447,22 @@ final class ClubFlow_Shortcodes {
 		if ($show_price && $price) {
 			$price_text = esc_html($price);
 			if ($member_price) {
-				$price_text .= ' / ' . esc_html($member_price) . ' ' . __('(member)', 'clubflow');
+				$price_text .= ' / ' . esc_html($member_price) . ' ' . __('(medlem)', 'clubflow');
 			}
 			$meta_parts[] = '<span class="clubflow-booking-popup__price">' . $price_text . '</span>';
 		}
 		if ($includes_count > 0) {
 			$meta_parts[] = '<span class="clubflow-booking-popup__includes">' . 
-				sprintf(_n('%d class', '%d classes', $includes_count, 'clubflow'), $includes_count) . 
+				sprintf(_n('%d klass', '%d klasser', $includes_count, 'clubflow'), $includes_count) . 
 				'</span>';
 		}
 		if ($show_spots && $spots_remaining !== null) {
 			if ($is_fully_booked) {
 				$meta_parts[] = '<span class="clubflow-booking-popup__spots clubflow-booking-popup__spots--full">' . 
-					esc_html__('Fully booked', 'clubflow') . '</span>';
+					esc_html__('Fullbokat', 'clubflow') . '</span>';
 			} else {
 				$meta_parts[] = '<span class="clubflow-booking-popup__spots">' . 
-					sprintf(__('%d spots', 'clubflow'), $spots_remaining) . '</span>';
+					sprintf(__('%d platser', 'clubflow'), $spots_remaining) . '</span>';
 			}
 		}
 

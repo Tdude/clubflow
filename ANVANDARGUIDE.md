@@ -29,9 +29,16 @@ ClubFlow har tre typer av "produkter" som du kan sälja:
 
 **Så här fungerar det:**
 1. Kunden köper klippkortet (en engångsbetalning)
-2. Får en **klippkortskod** (t.ex. `POLE-A7B3C9`)
+2. Får en **klippkortskod** (t.ex. `KLIPPKORT-A7B3C9`)
 3. När kunden vill gå på en klass, bokar de i kalendern och anger sin kod
 4. Systemet drar av ett klipp från kortet
+
+**Uppdatering (implementation):**
+- Klippkortskoden har formatet `KLIPPKORT-XXXXXX` och hör till själva köpet.
+- Antal klipp sätts på klippkortseventet i admin (fält: **Klippkort credits**).
+- Klipp utfärdas automatiskt när betalningen bekräftas.
+- Vid bokning av en vanlig klass kan kunden kryssa i **Använd klippkort**. Systemet hittar klippkort via e-post automatiskt, men om flera delar samma e-post kan kunden ange sin kod.
+- Alla utfärdanden och varje förbrukat klipp loggas i **Payment Log** (spårbart även om e-post skulle fallera).
 
 **Viktigt för kunden:**
 - Spara koden! (Den sparas också i en cookie för bekvämlighet)

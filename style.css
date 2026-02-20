@@ -194,6 +194,17 @@ body.clubflow-modal-open .clubflow-calendar * {
 	flex-shrink: 0;
 }
 
+.clubflow-checkline {
+	display: inline-flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 8px;
+}
+
+.clubflow-checkline input[type="checkbox"] {
+	margin: 0;
+}
+
 @media (max-width: 480px) {
 	.clubflow-event__thumbnail {
 		width: 72px;
@@ -980,6 +991,22 @@ body.is-dark .clubflow-list__link a,
 	font-size: 0.9375rem;
 }
 
+.clubflow-booking__field label.clubflow-checkline,
+.clubflow-booking-widget__field label.clubflow-checkline {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 8px;
+	margin-bottom: 0;
+}
+
+.clubflow-booking__field label.clubflow-checkline input[type="checkbox"],
+.clubflow-booking-widget__field label.clubflow-checkline input[type="checkbox"] {
+	flex: 0 0 auto;
+	align-self: center;
+}
+
 .clubflow-booking__field label .required {
 	color: #c65728;
 }
@@ -995,8 +1022,13 @@ body.is-dark .clubflow-list__link a,
 	padding: 0.625rem 0.75rem;
 	font-size: 1rem;
 	border: 1px solid #ccc;
-	border-radius: 6px;
+	border-radius: 10px;
 	transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.clubflow-booking__field input[type="checkbox"] {
+	width: auto;
+	padding: 0;
 }
 
 .clubflow-booking__field input:focus {

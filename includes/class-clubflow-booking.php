@@ -12,6 +12,12 @@ if (!defined('ABSPATH')) {
 final class ClubFlow_Booking {
 	public const POST_TYPE = 'club_booking';
 	public const AJAX_ACTION_BOOK = 'clubflow_book';
+	private const META_KLIPPKORT_CODE = '_clubflow_klippkort_code';
+	private const META_KLIPPKORT_CREDITS_TOTAL = '_clubflow_klippkort_credits_total';
+	private const META_KLIPPKORT_CREDITS_REMAINING = '_clubflow_klippkort_credits_remaining';
+	private const META_KLIPPKORT_ISSUED = '_clubflow_klippkort_issued';
+	private const META_USED_KLIPPKORT_CODE = '_clubflow_klippkort_used_code';
+	private const META_USED_KLIPPKORT_PURCHASE_BOOKING_ID = '_clubflow_klippkort_purchase_booking_id';
 
 	public function register(): void {
 		add_action('init', [$this, 'register_booking_cpt']);
@@ -27,6 +33,239 @@ final class ClubFlow_Booking {
 		add_action('admin_post_clubflow_view_receipt', [$this, 'handle_view_receipt']);
 		add_action('manage_posts_extra_tablenav', [$this, 'render_receipt_controls']);
 		add_action('wp_footer', [$this, 'maybe_show_confirmation_toast']);
+		add_action('clubflow_payment_completed', [$this, 'maybe_issue_klippkort_from_booking'], 10, 2);
+		add_action('clubflow_booking_payment_confirmed', [$this, 'maybe_issue_klippkort_from_stripe_booking'], 10, 3);
+	}
+
+	private static function normalize_code(string $code): string {
+		$code = strtoupper(trim($code));
+		$code = preg_replace('/[^A-Z0-9\-]/', '', $code) ?: '';
+		return $code;
+	}
+
+	private static function generate_klippkort_code(): string {
+		$rand = strtoupper(wp_generate_password(6, false, false));
+		return 'KLIPPKORT-' . $rand;
+	}
+
+	private static function ensure_unique_klippkort_code(string $preferred = ''): string {
+		$preferred = self::normalize_code($preferred);
+		if ($preferred !== '') {
+			$existing = get_posts([
+				'post_type'      => self::POST_TYPE,
+				'post_status'    => 'publish',
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+				'meta_query'     => [
+					[
+						'key'   => self::META_KLIPPKORT_CODE,
+						'value' => $preferred,
+					],
+				],
+			]);
+			if (empty($existing)) {
+				return $preferred;
+			}
+		}
+
+		for ($i = 0; $i < 20; $i++) {
+			$candidate = self::generate_klippkort_code();
+			$existing = get_posts([
+				'post_type'      => self::POST_TYPE,
+				'post_status'    => 'publish',
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+				'meta_query'     => [
+					[
+						'key'   => self::META_KLIPPKORT_CODE,
+						'value' => $candidate,
+					],
+				],
+			]);
+			if (empty($existing)) {
+				return $candidate;
+			}
+		}
+
+		return self::generate_klippkort_code();
+	}
+
+	private static function get_event_mode(int $event_id): string {
+		$mode = get_post_meta($event_id, '_clubflow_event_mode', true) ?: 'calendar';
+		return in_array($mode, ['calendar', 'product', 'package'], true) ? $mode : 'calendar';
+	}
+
+	public function maybe_issue_klippkort_from_stripe_booking(int $booking_id, string $method, array $session): void {
+		$this->maybe_issue_klippkort_from_booking($booking_id, [
+			'method' => $method,
+			'session' => $session,
+		]);
+	}
+
+	public function maybe_issue_klippkort_from_booking(int $booking_id, array $context = []): void {
+		$booking_id = absint($booking_id);
+		if ($booking_id <= 0 || get_post_type($booking_id) !== self::POST_TYPE) {
+			return;
+		}
+
+		$issued = get_post_meta($booking_id, self::META_KLIPPKORT_ISSUED, true);
+		if ($issued === '1') {
+			return;
+		}
+
+		$booking_status = (string) get_post_meta($booking_id, '_clubflow_booking_status', true);
+		if ($booking_status !== 'confirmed') {
+			return;
+		}
+
+		$event_id = (int) get_post_meta($booking_id, '_clubflow_booking_event_id', true);
+		if ($event_id <= 0) {
+			return;
+		}
+
+		if (self::get_event_mode($event_id) !== 'package') {
+			return;
+		}
+
+		$credits_total = (int) get_post_meta($event_id, '_clubflow_klippkort_credits', true);
+		if ($credits_total <= 0) {
+			return;
+		}
+
+		$existing_code = (string) get_post_meta($booking_id, self::META_KLIPPKORT_CODE, true);
+		$existing_code = self::normalize_code($existing_code);
+		if ($existing_code === '') {
+			$existing_code = self::ensure_unique_klippkort_code();
+			update_post_meta($booking_id, self::META_KLIPPKORT_CODE, $existing_code);
+		}
+
+		update_post_meta($booking_id, self::META_KLIPPKORT_CREDITS_TOTAL, (string) $credits_total);
+		$remaining = get_post_meta($booking_id, self::META_KLIPPKORT_CREDITS_REMAINING, true);
+		if ($remaining === '') {
+			update_post_meta($booking_id, self::META_KLIPPKORT_CREDITS_REMAINING, (string) $credits_total);
+		}
+		update_post_meta($booking_id, self::META_KLIPPKORT_ISSUED, '1');
+
+		if (class_exists('ClubFlow_Payment')) {
+			$customer_email = (string) get_post_meta($booking_id, '_clubflow_booking_email', true);
+			$customer_name = (string) get_post_meta($booking_id, '_clubflow_booking_name', true);
+			$booking_price = (string) get_post_meta($booking_id, '_clubflow_booking_price', true);
+			$amount = $booking_price !== '' ? (float) preg_replace('/[^0-9.]/', '', $booking_price) : 0;
+			$method = isset($context['method']) ? sanitize_text_field((string) $context['method']) : '';
+			if ($method === '') {
+				$payment = ClubFlow_Payment::get_booking_payment($booking_id);
+				$method = is_array($payment) ? (string) ($payment['method'] ?? '') : '';
+			}
+			$log_id = ClubFlow_Payment::log_payment([
+				'booking_id' => $booking_id,
+				'event_id'   => $event_id,
+				'amount'     => $amount,
+				'currency'   => 'SEK',
+				'method'     => $method !== '' ? $method : 'manual',
+				'status'     => 'completed',
+				'reference'  => $existing_code,
+				'email'      => $customer_email,
+				'name'       => $customer_name,
+				'notes'      => 'KLIPPKORT ISSUED: ' . $existing_code . ', credits=' . $credits_total,
+			]);
+			if ($log_id > 0) {
+				update_post_meta($log_id, '_clubflow_klippkort_action', 'issued');
+				update_post_meta($log_id, '_clubflow_klippkort_code', $existing_code);
+				update_post_meta($log_id, '_clubflow_klippkort_purchase_booking_id', (string) $booking_id);
+			}
+		}
+	}
+
+	private static function find_klippkort_purchase_booking_id(string $email, string $code = ''): int {
+		$email = sanitize_email($email);
+		$code = self::normalize_code($code);
+		if ($email === '') {
+			return 0;
+		}
+
+		$meta_query = [
+			'relation' => 'AND',
+			[
+				'key'   => '_clubflow_booking_status',
+				'value' => 'confirmed',
+			],
+			[
+				'key'   => '_clubflow_booking_email',
+				'value' => $email,
+			],
+			[
+				'key'     => self::META_KLIPPKORT_CREDITS_REMAINING,
+				'value'   => 1,
+				'compare' => '>=',
+				'type'    => 'NUMERIC',
+			],
+		];
+		if ($code !== '') {
+			$meta_query[] = [
+				'key'   => self::META_KLIPPKORT_CODE,
+				'value' => $code,
+			];
+		}
+
+		$purchase_booking_ids = get_posts([
+			'post_type'      => self::POST_TYPE,
+			'post_status'    => 'publish',
+			'posts_per_page' => 1,
+			'orderby'        => 'date',
+			'order'          => 'DESC',
+			'fields'         => 'ids',
+			'meta_query'     => $meta_query,
+		]);
+
+		if (empty($purchase_booking_ids)) {
+			return 0;
+		}
+
+		return (int) $purchase_booking_ids[0];
+	}
+
+	private static function redeem_one_klippkort_credit(int $purchase_booking_id, int $redeem_booking_id = 0): bool {
+		$purchase_booking_id = absint($purchase_booking_id);
+		if ($purchase_booking_id <= 0) {
+			return false;
+		}
+
+		$remaining = (int) get_post_meta($purchase_booking_id, self::META_KLIPPKORT_CREDITS_REMAINING, true);
+		if ($remaining <= 0) {
+			return false;
+		}
+
+		$next_remaining = (string) max(0, $remaining - 1);
+		update_post_meta($purchase_booking_id, self::META_KLIPPKORT_CREDITS_REMAINING, $next_remaining);
+
+		if ($redeem_booking_id > 0 && class_exists('ClubFlow_Payment')) {
+			$redeem_booking_id = absint($redeem_booking_id);
+			$event_id = (int) get_post_meta($redeem_booking_id, '_clubflow_booking_event_id', true);
+			$customer_email = (string) get_post_meta($redeem_booking_id, '_clubflow_booking_email', true);
+			$customer_name = (string) get_post_meta($redeem_booking_id, '_clubflow_booking_name', true);
+			$code = (string) get_post_meta($purchase_booking_id, self::META_KLIPPKORT_CODE, true);
+			$code = self::normalize_code($code);
+			$log_id = ClubFlow_Payment::log_payment([
+				'booking_id' => $redeem_booking_id,
+				'event_id'   => $event_id,
+				'amount'     => 0,
+				'currency'   => 'SEK',
+				'method'     => 'klippkort',
+				'status'     => 'completed',
+				'reference'  => $code,
+				'email'      => $customer_email,
+				'name'       => $customer_name,
+				'notes'      => 'KLIPPKORT REDEEMED: ' . $code . ', purchase_booking_id=' . $purchase_booking_id . ', remaining=' . $next_remaining,
+			]);
+			if ($log_id > 0) {
+				update_post_meta($log_id, '_clubflow_klippkort_action', 'redeemed');
+				if ($code !== '') {
+					update_post_meta($log_id, '_clubflow_klippkort_code', $code);
+				}
+				update_post_meta($log_id, '_clubflow_klippkort_purchase_booking_id', (string) $purchase_booking_id);
+			}
+		}
+		return true;
 	}
 
 	public function render_receipt_controls(string $which): void {
@@ -229,12 +468,14 @@ final class ClubFlow_Booking {
 		// Validate event exists
 		$event = get_post($event_id);
 		if (!$event || $event->post_type !== ClubFlow::POST_TYPE) {
-			return ['success' => false, 'error' => __('Event not found.', 'clubflow')];
+			return ['success' => false, 'error' => __('Eventet hittades inte.', 'clubflow')];
 		}
+
+		$event_mode = self::get_event_mode($event_id);
 
 		// Check if fully booked
 		if (self::is_fully_booked($event_id)) {
-			return ['success' => false, 'error' => __('This event is fully booked.', 'clubflow')];
+			return ['success' => false, 'error' => __('Detta event är fullbokat.', 'clubflow')];
 		}
 
 		// Sanitize input
@@ -246,14 +487,16 @@ final class ClubFlow_Booking {
 		$city = sanitize_text_field($data['city'] ?? '');
 		$address = sanitize_text_field($data['address'] ?? '');
 		$is_member = !empty($data['is_member']);
+		$use_klippkort = !empty($data['use_klippkort']);
+		$klippkort_code = self::normalize_code((string) ($data['klippkort_code'] ?? ''));
 		$return_url = esc_url_raw($data['return_url'] ?? '');
 
 		if (empty($name) || empty($email) || empty($phone)) {
-			return ['success' => false, 'error' => __('Name, email and phone are required.', 'clubflow')];
+			return ['success' => false, 'error' => __('Namn, e-post och telefon är obligatoriskt.', 'clubflow')];
 		}
 
 		if (!is_email($email)) {
-			return ['success' => false, 'error' => __('Please enter a valid email address.', 'clubflow')];
+			return ['success' => false, 'error' => __('Ange en giltig e-postadress.', 'clubflow')];
 		}
 
 		// Check for duplicate booking (same email, same event)
@@ -275,7 +518,7 @@ final class ClubFlow_Booking {
 		]);
 
 		if (!empty($existing)) {
-			return ['success' => false, 'error' => __('You have already booked this event.', 'clubflow')];
+			return ['success' => false, 'error' => __('Du har redan bokat detta event.', 'clubflow')];
 		}
 
 		$payment_settings = class_exists('ClubFlow_Payment') ? get_option(ClubFlow_Payment::OPTION_KEY, []) : [];
@@ -284,10 +527,25 @@ final class ClubFlow_Booking {
 
 		$applicable_price = ($is_member && $member_price !== '') ? $member_price : $price;
 		$amount = $applicable_price ? (float) preg_replace('/[^0-9.]/', '', $applicable_price) : 0;
+		$redeemed_purchase_booking_id = 0;
+		$redeemed_code = '';
+		if ($use_klippkort && $event_mode !== 'package') {
+			$redeemed_purchase_booking_id = self::find_klippkort_purchase_booking_id($email, $klippkort_code);
+			if ($redeemed_purchase_booking_id <= 0) {
+				return ['success' => false, 'error' => __('Inget giltigt klippkort hittades för denna e-post. Om ni delar e-post i hushållet, ange din klippkortskod.', 'clubflow')];
+			}
+			$remaining = (int) get_post_meta($redeemed_purchase_booking_id, self::META_KLIPPKORT_CREDITS_REMAINING, true);
+			if ($remaining <= 0) {
+				return ['success' => false, 'error' => __('Klippkortet har inga klipp kvar.', 'clubflow')];
+			}
+			$redeemed_code = (string) get_post_meta($redeemed_purchase_booking_id, self::META_KLIPPKORT_CODE, true);
+			$amount = 0;
+			$applicable_price = '0';
+		}
 
-		if ($amount <= 0) {
+		if ($amount <= 0 && !$use_klippkort) {
 			if (empty($street) || empty($postal_code) || empty($city)) {
-				return ['success' => false, 'error' => __('Street, postal code and city are required for free bookings.', 'clubflow')];
+				return ['success' => false, 'error' => __('Gatuadress, postnummer och ort är obligatoriskt för gratisbokningar.', 'clubflow')];
 			}
 		}
 
@@ -311,7 +569,14 @@ final class ClubFlow_Booking {
 		]);
 
 		if (is_wp_error($booking_id)) {
-			return ['success' => false, 'error' => __('Could not create booking.', 'clubflow')];
+			return ['success' => false, 'error' => __('Kunde inte skapa bokning.', 'clubflow')];
+		}
+
+		if ($redeemed_purchase_booking_id > 0) {
+			if (!self::redeem_one_klippkort_credit($redeemed_purchase_booking_id, (int) $booking_id)) {
+				wp_delete_post($booking_id, true);
+				return ['success' => false, 'error' => __('Klippkortet har inga klipp kvar.', 'clubflow')];
+			}
 		}
 
 		// Save booking meta
@@ -326,6 +591,19 @@ final class ClubFlow_Booking {
 		update_post_meta($booking_id, '_clubflow_booking_is_member', $is_member ? '1' : '0');
 		update_post_meta($booking_id, '_clubflow_booking_confirmation_code', $confirmation_code);
 		update_post_meta($booking_id, '_clubflow_booking_created', current_time('mysql'));
+		if ($redeemed_purchase_booking_id > 0) {
+			update_post_meta($booking_id, self::META_USED_KLIPPKORT_PURCHASE_BOOKING_ID, (string) $redeemed_purchase_booking_id);
+			update_post_meta($booking_id, self::META_USED_KLIPPKORT_CODE, (string) $redeemed_code);
+		}
+		$issued_klippkort_code = '';
+		if ($event_mode === 'package') {
+			$issued_klippkort_code = (string) get_post_meta($booking_id, self::META_KLIPPKORT_CODE, true);
+			$issued_klippkort_code = self::normalize_code($issued_klippkort_code);
+			if ($issued_klippkort_code === '') {
+				$issued_klippkort_code = self::ensure_unique_klippkort_code();
+				update_post_meta($booking_id, self::META_KLIPPKORT_CODE, $issued_klippkort_code);
+			}
+		}
 
 		// Get event details for response
 		$event_title = get_the_title($event_id);
@@ -341,6 +619,9 @@ final class ClubFlow_Booking {
 		// Set initial status: pending_payment if payment required, confirmed if free
 		$initial_status = $payment_required ? 'pending_payment' : 'confirmed';
 		update_post_meta($booking_id, '_clubflow_booking_status', $initial_status);
+		if (!$payment_required) {
+			$this->maybe_issue_klippkort_from_booking($booking_id, ['source' => 'create_booking']);
+		}
 
 		// Get payment settings and create payment request
 		$payment_info = null;
@@ -356,7 +637,7 @@ final class ClubFlow_Booking {
 					if (!ClubFlow_Stripe::is_configured()) {
 						// Delete the booking - can't proceed without payment
 						wp_delete_post($booking_id, true);
-						return ['success' => false, 'error' => __('Payment system not configured. Please contact the administrator.', 'clubflow')];
+						return ['success' => false, 'error' => __('Betalsystemet är inte konfigurerat. Kontakta administratören.', 'clubflow')];
 					}
 					
 					// Use Stripe Checkout (redirect)
@@ -396,7 +677,7 @@ final class ClubFlow_Booking {
 					} else {
 						// Stripe session creation failed - delete booking and return error
 						wp_delete_post($booking_id, true);
-						$error_msg = $stripe_result['error'] ?? __('Could not create payment session.', 'clubflow');
+						$error_msg = $stripe_result['error'] ?? __('Kunde inte skapa en betalningssession.', 'clubflow');
 						return ['success' => false, 'error' => $error_msg];
 					}
 				} elseif ($payment_method === 'klarna' && $amount > 0 && class_exists('ClubFlow_Klarna')) {
@@ -493,6 +774,9 @@ final class ClubFlow_Booking {
 			'name'              => $name,
 			'email'             => $email,
 		];
+		if ($issued_klippkort_code !== '') {
+			$result['klippkort_code'] = $issued_klippkort_code;
+		}
 
 		if (!$payment_required) {
 			$base_url = $return_url !== '' ? $return_url : home_url();
@@ -519,23 +803,25 @@ final class ClubFlow_Booking {
 	public function ajax_book(): void {
 		// Verify nonce
 		if (!check_ajax_referer('clubflow_book', '_ajax_nonce', false)) {
-			wp_send_json_error(__('Security check failed.', 'clubflow'), 403);
+			wp_send_json_error(__('Säkerhetskontrollen misslyckades.', 'clubflow'), 403);
 		}
 
 		$event_id = isset($_POST['event_id']) ? absint($_POST['event_id']) : 0;
 		if ($event_id <= 0) {
-			wp_send_json_error(__('Invalid event.', 'clubflow'), 400);
+			wp_send_json_error(__('Ogiltigt event.', 'clubflow'), 400);
 		}
 
 		$result = $this->create_booking($event_id, [
-			'name'       => $_POST['name'] ?? '',
-			'email'      => $_POST['email'] ?? '',
-			'phone'      => $_POST['phone'] ?? '',
-			'street'     => $_POST['street'] ?? '',
-			'postal_code'=> $_POST['postal_code'] ?? '',
-			'city'       => $_POST['city'] ?? '',
-			'is_member'  => isset($_POST['is_member']) ? $_POST['is_member'] === '1' : false,
-			'return_url' => $_POST['return_url'] ?? '',
+			'name'          => $_POST['name'] ?? '',
+			'email'         => $_POST['email'] ?? '',
+			'phone'         => $_POST['phone'] ?? '',
+			'street'        => $_POST['street'] ?? '',
+			'postal_code'   => $_POST['postal_code'] ?? '',
+			'city'          => $_POST['city'] ?? '',
+			'is_member'     => isset($_POST['is_member']) ? $_POST['is_member'] === '1' : false,
+			'use_klippkort' => isset($_POST['use_klippkort']) ? $_POST['use_klippkort'] === '1' : false,
+			'klippkort_code'=> $_POST['klippkort_code'] ?? '',
+			'return_url'    => $_POST['return_url'] ?? '',
 		]);
 
 		if ($result['success']) {
