@@ -232,12 +232,16 @@ final class ClubFlow_Booking {
 			];
 		}
 
+		// If customer didn't specify a code, prefer the oldest remaining klippkort first
+		// so older credits are consumed before newer purchases.
+		$order = $code === '' ? 'ASC' : 'DESC';
+
 		$purchase_booking_ids = get_posts([
 			'post_type'      => self::POST_TYPE,
 			'post_status'    => 'publish',
 			'posts_per_page' => 1,
 			'orderby'        => 'date',
-			'order'          => 'DESC',
+			'order'          => $order,
 			'fields'         => 'ids',
 			'meta_query'     => $meta_query,
 		]);
