@@ -140,6 +140,8 @@ final class ClubFlow_Mailchimp {
 		$to = $booking_data['email'];
 		$name = $booking_data['name'];
 		$confirmation_code = $booking_data['confirmation_code'] ?? get_post_meta($booking_id, '_clubflow_booking_confirmation_code', true);
+		$discount_code = (string) ($booking_data['discount_code'] ?? get_post_meta($booking_id, '_clubflow_booking_discount_code', true));
+		$discount_percent = (string) ($booking_data['discount_percent'] ?? get_post_meta($booking_id, '_clubflow_booking_discount_percent', true));
 
 		// Format date
 		$date_formatted = $event_start ? wp_date('l j F Y, H:i', strtotime($event_start)) : '';
@@ -158,6 +160,16 @@ final class ClubFlow_Mailchimp {
 			$body .= sprintf(__('Location: %s', 'clubflow'), $event_location) . "\n";
 		}
 		$body .= sprintf(__('Confirmation Code: %s', 'clubflow'), $confirmation_code) . "\n\n";
+		if ($discount_code !== '' || $discount_percent !== '') {
+			$disc = '';
+			if ($discount_percent !== '') {
+				$disc .= $discount_percent . '%';
+			}
+			if ($discount_code !== '') {
+				$disc .= ($disc !== '' ? ' ' : '') . $discount_code;
+			}
+			$body .= sprintf(__('Discount: %s', 'clubflow'), $disc) . "\n\n";
+		}
 		$body .= "---\n\n";
 		$body .= __('See you there!', 'clubflow') . "\n";
 		$body .= get_bloginfo('name');

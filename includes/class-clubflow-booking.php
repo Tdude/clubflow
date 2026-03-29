@@ -19,6 +19,8 @@ final class ClubFlow_Booking {
 	private const META_KLIPPKORT_ISSUED = '_clubflow_klippkort_issued';
 	private const META_USED_KLIPPKORT_CODE = '_clubflow_klippkort_used_code';
 	private const META_USED_KLIPPKORT_PURCHASE_BOOKING_ID = '_clubflow_klippkort_purchase_booking_id';
+	private const COURSE_DISCOUNT_CATEGORY_TOKEN = 'rabatt_ok';
+	private const COURSE_DISCOUNT_PERCENT = 10;
 
 	public function register(): void {
 		add_action('init', [$this, 'register_booking_cpt']);
@@ -98,6 +100,112 @@ final class ClubFlow_Booking {
 	private static function get_event_mode(int $event_id): string {
 		$mode = get_post_meta($event_id, '_clubflow_event_mode', true) ?: 'calendar';
 		return in_array($mode, ['calendar', 'product', 'package'], true) ? $mode : 'calendar';
+	}
+
+	private static function is_course_category(
+		\WP_Term $term
+	): bool {
+		$desc = (string) ($term->description ?? '');
+		$desc = strtolower($desc);
+		return strpos($desc, self::COURSE_DISCOUNT_CATEGORY_TOKEN) !== false;
+	}
+
+	private static function is_course_event(int $event_id): bool {
+		$terms = wp_get_post_terms($event_id, ClubFlow::TAX_CATEGORY);
+		if (is_wp_error($terms) || empty($terms)) {
+			return false;
+		}
+		foreach ($terms as $term) {
+			if ($term instanceof \WP_Term && self::is_course_category($term)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static function find_prior_course_booking_count(string $email, string $phone, int $exclude_booking_id = 0): int {
+		$email = sanitize_email($email);
+		$phone = trim(sanitize_text_field($phone));
+		if ($email === '' && $phone === '') {
+			return 0;
+		}
+
+		$meta_or = ['relation' => 'OR'];
+		if ($email !== '') {
+			$meta_or[] = [
+				'key'   => '_clubflow_booking_email',
+				'value' => $email,
+			];
+		}
+		if ($phone !== '') {
+			$meta_or[] = [
+				'key'   => '_clubflow_booking_phone',
+				'value' => $phone,
+			];
+		}
+
+		$args = [
+			'post_type'      => self::POST_TYPE,
+			'post_status'    => 'publish',
+			'posts_per_page' => 50,
+			'fields'         => 'ids',
+			'orderby'        => 'date',
+			'order'          => 'DESC',
+			'meta_query'     => [
+				'relation' => 'AND',
+				$meta_or,
+				[
+					'key'     => '_clubflow_booking_status',
+					'value'   => ['confirmed', 'pending', 'pending_payment'],
+					'compare' => 'IN',
+				],
+			],
+		];
+		if ($exclude_booking_id > 0) {
+			$args['post__not_in'] = [$exclude_booking_id];
+		}
+
+		$ids = get_posts($args);
+		if (empty($ids)) {
+			return 0;
+		}
+
+		$count = 0;
+		foreach ($ids as $booking_id) {
+			$event_id = (int) get_post_meta((int) $booking_id, '_clubflow_booking_event_id', true);
+			if ($event_id > 0 && self::is_course_event($event_id)) {
+				$count++;
+			}
+		}
+		return $count;
+	}
+
+	private static function generate_discount_code(): string {
+		$rand = strtoupper(wp_generate_password(6, false, false));
+		$rand = preg_replace('/[^A-Z0-9]/', '', $rand) ?: '';
+		return 'RABATT-' . $rand;
+	}
+
+	private static function ensure_unique_discount_code(): string {
+		for ($i = 0; $i < 20; $i++) {
+			$code = self::generate_discount_code();
+			$existing = get_posts([
+				'post_type'      => self::POST_TYPE,
+				'post_status'    => 'publish',
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+				'meta_query'     => [
+					[
+						'key'   => '_clubflow_booking_discount_code',
+						'value' => $code,
+					],
+				],
+			]);
+			if (empty($existing)) {
+				return $code;
+			}
+		}
+		return self::generate_discount_code();
 	}
 
 	public function maybe_issue_klippkort_from_stripe_booking(int $booking_id, string $method, array $session): void {
@@ -520,8 +628,11 @@ final class ClubFlow_Booking {
 		$address = sanitize_text_field($data['address'] ?? '');
 		$is_member = !empty($data['is_member']);
 		$use_klippkort = !empty($data['use_klippkort']);
+		$pay_later = !empty($data['pay_later']);
+		$instructor_student = !empty($data['instructor_student']);
 		$klippkort_code = self::normalize_code((string) ($data['klippkort_code'] ?? ''));
 		$return_url = esc_url_raw($data['return_url'] ?? '');
+		$order_notes = sanitize_textarea_field($data['order_notes'] ?? '');
 
 		if (empty($name) || empty($email) || empty($phone)) {
 			return ['success' => false, 'error' => __('Namn, e-post och telefon är obligatoriskt.', 'clubflow')];
@@ -559,6 +670,25 @@ final class ClubFlow_Booking {
 
 		$applicable_price = ($is_member && $member_price !== '') ? $member_price : $price;
 		$amount = $applicable_price ? (float) preg_replace('/[^0-9.]/', '', $applicable_price) : 0;
+		$discount_percent = 0;
+		$discount_code = '';
+		$discount_reason = '';
+		if ($amount > 0 && !$use_klippkort && self::is_course_event($event_id)) {
+			$prior_courses = self::find_prior_course_booking_count($email, $phone);
+			if ($instructor_student) {
+				$discount_percent = self::COURSE_DISCOUNT_PERCENT;
+				$discount_reason = 'instructor_student';
+			} elseif ($prior_courses >= 1) {
+				$discount_percent = self::COURSE_DISCOUNT_PERCENT;
+				$discount_reason = 'course_repeat';
+			}
+
+			if ($discount_percent > 0) {
+				$discount_code = self::ensure_unique_discount_code();
+				$amount = round($amount * (1 - ($discount_percent / 100)), 2);
+				$applicable_price = (string) $amount;
+			}
+		}
 		$redeemed_purchase_booking_id = 0;
 		$redeemed_code = '';
 		if ($use_klippkort && $event_mode !== 'package') {
@@ -623,6 +753,16 @@ final class ClubFlow_Booking {
 		update_post_meta($booking_id, '_clubflow_booking_is_member', $is_member ? '1' : '0');
 		update_post_meta($booking_id, '_clubflow_booking_confirmation_code', $confirmation_code);
 		update_post_meta($booking_id, '_clubflow_booking_created', current_time('mysql'));
+		update_post_meta($booking_id, '_clubflow_booking_pay_later', $pay_later ? '1' : '0');
+		update_post_meta($booking_id, '_clubflow_booking_instructor_student', $instructor_student ? '1' : '0');
+		if ($discount_percent > 0 && $discount_code !== '') {
+			update_post_meta($booking_id, '_clubflow_booking_discount_percent', (string) $discount_percent);
+			update_post_meta($booking_id, '_clubflow_booking_discount_code', $discount_code);
+			update_post_meta($booking_id, '_clubflow_booking_discount_reason', $discount_reason);
+		}
+		if ($order_notes !== '') {
+			update_post_meta($booking_id, '_clubflow_booking_order_notes', $order_notes);
+		}
 		if ($redeemed_purchase_booking_id > 0) {
 			update_post_meta($booking_id, self::META_USED_KLIPPKORT_PURCHASE_BOOKING_ID, (string) $redeemed_purchase_booking_id);
 			update_post_meta($booking_id, self::META_USED_KLIPPKORT_CODE, (string) $redeemed_code);
@@ -646,7 +786,7 @@ final class ClubFlow_Booking {
 		// Store the price used for this booking
 		update_post_meta($booking_id, '_clubflow_booking_price', $applicable_price);
 		$payment_enabled = !empty($payment_settings['enabled']);
-		$payment_required = $payment_enabled && $amount > 0;
+		$payment_required = !$pay_later && $payment_enabled && $amount > 0;
 		
 		// Set initial status: pending_payment if payment required, otherwise pending (manual confirmation)
 		$initial_status = $payment_required ? 'pending_payment' : 'pending';
@@ -804,6 +944,10 @@ final class ClubFlow_Booking {
 			'name'              => $name,
 			'email'             => $email,
 		];
+		if ($discount_code !== '') {
+			$result['discount_code'] = $discount_code;
+			$result['discount_percent'] = (string) $discount_percent;
+		}
 		if ($issued_klippkort_code !== '') {
 			$result['klippkort_code'] = $issued_klippkort_code;
 		}
@@ -848,8 +992,11 @@ final class ClubFlow_Booking {
 			'city'          => $_POST['city'] ?? '',
 			'is_member'     => isset($_POST['is_member']) ? $_POST['is_member'] === '1' : false,
 			'use_klippkort' => isset($_POST['use_klippkort']) ? $_POST['use_klippkort'] === '1' : false,
+			'pay_later'     => isset($_POST['pay_later']) ? $_POST['pay_later'] === '1' : false,
+			'instructor_student' => isset($_POST['instructor_student']) ? $_POST['instructor_student'] === '1' : false,
 			'klippkort_code'=> $_POST['klippkort_code'] ?? '',
 			'return_url'    => $_POST['return_url'] ?? '',
+			'order_notes'   => $_POST['order_notes'] ?? '',
 		]);
 
 		if ($result['success']) {
@@ -919,6 +1066,10 @@ final class ClubFlow_Booking {
 				'status'            => get_post_meta($post->ID, '_clubflow_booking_status', true),
 				'confirmation_code' => get_post_meta($post->ID, '_clubflow_booking_confirmation_code', true),
 				'created'           => get_post_meta($post->ID, '_clubflow_booking_created', true),
+				'order_notes'       => get_post_meta($post->ID, '_clubflow_booking_order_notes', true),
+				'pay_later'         => get_post_meta($post->ID, '_clubflow_booking_pay_later', true),
+				'instructor_student' => get_post_meta($post->ID, '_clubflow_booking_instructor_student', true),
+				'discount_code'     => get_post_meta($post->ID, '_clubflow_booking_discount_code', true),
 			];
 		}
 
@@ -968,6 +1119,10 @@ final class ClubFlow_Booking {
 		echo '<th>' . esc_html__('Phone', 'clubflow') . '</th>';
 		echo '<th>' . esc_html__('Street', 'clubflow') . '</th>';
 		echo '<th>' . esc_html__('Post address', 'clubflow') . '</th>';
+		echo '<th>' . esc_html__('Faktura/Epassi', 'clubflow') . '</th>';
+		echo '<th>' . esc_html__('Instruktör/Student', 'clubflow') . '</th>';
+		echo '<th>' . esc_html__('Rabattkod', 'clubflow') . '</th>';
+		echo '<th>' . esc_html__('Notes', 'clubflow') . '</th>';
 		echo '<th>' . esc_html__('Code', 'clubflow') . '</th>';
 		echo '<th>' . esc_html__('Status', 'clubflow') . '</th>';
 		echo '<th>' . esc_html__('Booked', 'clubflow') . '</th>';
@@ -993,6 +1148,19 @@ final class ClubFlow_Booking {
 			echo '<td>' . esc_html($booking['phone'] ?: '—') . '</td>';
 			echo '<td>' . esc_html($street_display ?: '—') . '</td>';
 			echo '<td>' . esc_html($post_display ?: '—') . '</td>';
+			$pay_later = (string) ($booking['pay_later'] ?? '');
+			echo '<td>' . ($pay_later === '1' ? esc_html__('Yes', 'clubflow') : '—') . '</td>';
+			$instructor_student = (string) ($booking['instructor_student'] ?? '');
+			echo '<td>' . ($instructor_student === '1' ? esc_html__('Yes', 'clubflow') : '—') . '</td>';
+			$discount_code = (string) ($booking['discount_code'] ?? '');
+			echo '<td>' . ($discount_code !== '' ? '<code>' . esc_html($discount_code) . '</code>' : '—') . '</td>';
+			$notes = $booking['order_notes'] ?? '';
+			if ($notes) {
+				$short_notes = mb_strlen($notes) > 40 ? mb_substr($notes, 0, 40) . '…' : $notes;
+				echo '<td title="' . esc_attr($notes) . '">' . esc_html($short_notes) . '</td>';
+			} else {
+				echo '<td>—</td>';
+			}
 			echo '<td><code>' . esc_html($booking['confirmation_code']) . '</code></td>';
 			echo '<td>' . esc_html(ucfirst($booking['status'])) . '</td>';
 			echo '<td>' . esc_html($booking['created'] ? wp_date('Y-m-d H:i', strtotime($booking['created'])) : '—') . '</td>';
@@ -1052,6 +1220,10 @@ final class ClubFlow_Booking {
 			'event'      => __('Event', 'clubflow'),
 			'email'      => __('Email', 'clubflow'),
 			'phone'      => __('Phone', 'clubflow'),
+			'order_notes' => __('Notes', 'clubflow'),
+			'pay_later'  => __('Faktura/Epassi', 'clubflow'),
+			'instructor_student' => __('Instruktör/Student', 'clubflow'),
+			'discount_code' => __('Rabattkod', 'clubflow'),
 			'code'       => __('Code', 'clubflow'),
 			'status'     => __('Status', 'clubflow'),
 			'date'       => __('Date', 'clubflow'),
@@ -1112,6 +1284,27 @@ final class ClubFlow_Booking {
 						echo '<span style="color: #999;">' . esc_html__('Deleted', 'clubflow') . '</span>';
 					}
 				}
+				break;
+			case 'order_notes':
+				$notes = get_post_meta($post_id, '_clubflow_booking_order_notes', true);
+				if ($notes) {
+					$short = mb_strlen($notes) > 50 ? mb_substr($notes, 0, 50) . '…' : $notes;
+					echo '<span title="' . esc_attr($notes) . '">' . esc_html($short) . '</span>';
+				} else {
+					echo '—';
+				}
+				break;
+			case 'pay_later':
+				$pay_later = (string) get_post_meta($post_id, '_clubflow_booking_pay_later', true);
+				echo $pay_later === '1' ? esc_html__('Yes', 'clubflow') : '—';
+				break;
+			case 'instructor_student':
+				$instructor_student = (string) get_post_meta($post_id, '_clubflow_booking_instructor_student', true);
+				echo $instructor_student === '1' ? esc_html__('Yes', 'clubflow') : '—';
+				break;
+			case 'discount_code':
+				$discount_code = (string) get_post_meta($post_id, '_clubflow_booking_discount_code', true);
+				echo $discount_code !== '' ? '<code>' . esc_html($discount_code) . '</code>' : '—';
 				break;
 			case 'email':
 				$email = get_post_meta($post_id, '_clubflow_booking_email', true);
@@ -1216,6 +1409,26 @@ final class ClubFlow_Booking {
 		echo '<tr><th>' . esc_html__('Confirmation Code', 'clubflow') . '</th><td><code style="font-size: 1.1em;">' . esc_html($code) . '</code></td></tr>';
 		echo '<tr><th>' . esc_html__('Status', 'clubflow') . '</th><td><strong>' . esc_html(ucfirst(str_replace('_', ' ', $status))) . '</strong></td></tr>';
 		echo '<tr><th>' . esc_html__('Booked at', 'clubflow') . '</th><td>' . esc_html($created ? wp_date('Y-m-d H:i:s', strtotime($created)) : '—') . '</td></tr>';
+
+		$pay_later = (string) get_post_meta($post->ID, '_clubflow_booking_pay_later', true);
+		echo '<tr><th>' . esc_html__('Faktura/Epassi', 'clubflow') . '</th><td>' . ($pay_later === '1' ? esc_html__('Yes', 'clubflow') : '—') . '</td></tr>';
+		$instructor_student = (string) get_post_meta($post->ID, '_clubflow_booking_instructor_student', true);
+		echo '<tr><th>' . esc_html__('Instruktör/Student', 'clubflow') . '</th><td>' . ($instructor_student === '1' ? esc_html__('Yes', 'clubflow') : '—') . '</td></tr>';
+		$discount_percent = (string) get_post_meta($post->ID, '_clubflow_booking_discount_percent', true);
+		$discount_code = (string) get_post_meta($post->ID, '_clubflow_booking_discount_code', true);
+		if ($discount_code !== '' || $discount_percent !== '') {
+			$discount_display = '';
+			if ($discount_percent !== '') {
+				$discount_display .= esc_html($discount_percent) . '%';
+			}
+			if ($discount_code !== '') {
+				$discount_display .= ($discount_display !== '' ? ' ' : '') . '<code>' . esc_html($discount_code) . '</code>';
+			}
+			echo '<tr><th>' . esc_html__('Rabatt', 'clubflow') . '</th><td>' . ($discount_display !== '' ? $discount_display : '—') . '</td></tr>';
+		}
+
+		$order_notes = get_post_meta($post->ID, '_clubflow_booking_order_notes', true);
+		echo '<tr><th>' . esc_html__('Order notes', 'clubflow') . '</th><td>' . ($order_notes ? esc_html($order_notes) : '—') . '</td></tr>';
 
 		// Klippkort details (only relevant for package-mode events)
 		if ($event_id > 0 && self::get_event_mode($event_id) === 'package') {

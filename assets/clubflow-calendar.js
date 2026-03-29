@@ -548,6 +548,20 @@
               // Store as a convenience hint for later bookings on this device
               setCookie('clubflow_klippkort_code', data.data.klippkort_code, 180);
             }
+
+            if (data.data && (data.data.discount_code || data.data.discount_percent)) {
+              var dp = data.data.discount_percent || '';
+              var dc = data.data.discount_code || '';
+              var discText = '';
+              if (dp) {
+                discText += dp + '%';
+              }
+              if (dc) {
+                discText += (discText ? ' ' : '') + dc;
+              }
+              html += '<br>' + (window.ClubFlow.i18n.discount || 'Rabatt:') +
+                ' <strong>' + discText + '</strong>';
+            }
             
             // Show payment info if present
             if (data.data.payment) {

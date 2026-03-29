@@ -1026,12 +1026,29 @@ body.is-dark .clubflow-list__link a,
 	transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
+.clubflow-booking__field textarea {
+	width: 100%;
+	padding: 0.625rem 0.75rem;
+	font-size: 1rem;
+	border: 1px solid #ccc;
+	border-radius: 10px;
+	transition: border-color 150ms ease, box-shadow 150ms ease;
+	font-family: inherit;
+	resize: vertical;
+}
+
 .clubflow-booking__field input[type="checkbox"] {
 	width: auto;
 	padding: 0;
 }
 
 .clubflow-booking__field input:focus {
+	outline: none;
+	border-color: var(--clubflow-accent, #d87237);
+	box-shadow: 0 0 0 3px rgba(216, 119, 55, 0.15);
+}
+
+.clubflow-booking__field textarea:focus {
 	outline: none;
 	border-color: var(--clubflow-accent, #d87237);
 	box-shadow: 0 0 0 3px rgba(216, 119, 55, 0.15);
@@ -1160,7 +1177,18 @@ body.is-dark .clubflow-list__link a,
 		color: var(--clubflow-text, #e6eaf2);
 	}
 
+	.clubflow-booking__field textarea {
+		background: var(--clubflow-bg, #0f1115);
+		border-color: var(--clubflow-border, rgba(230, 234, 242, 0.12));
+		color: var(--clubflow-text, #e6eaf2);
+	}
+
 	.clubflow-booking__field input:focus {
+		border-color: var(--clubflow-accent, #4da3ff);
+		box-shadow: 0 0 0 3px rgba(77, 163, 255, 0.2);
+	}
+
+	.clubflow-booking__field textarea:focus {
 		border-color: var(--clubflow-accent, #4da3ff);
 		box-shadow: 0 0 0 3px rgba(77, 163, 255, 0.2);
 	}
@@ -1656,7 +1684,8 @@ body.is-dark .clubflow-list__link a,
 /* Form inputs - basic styling that works with theme */
 .clubflow-booking-widget__field input[type="text"],
 .clubflow-booking-widget__field input[type="email"],
-.clubflow-booking-widget__field input[type="tel"] {
+.clubflow-booking-widget__field input[type="tel"],
+.clubflow-booking-widget__field textarea {
 	width: 100%;
 	padding: 14px 16px;
 	border: 1px solid rgba(45, 30, 18, 0.18);
@@ -1667,9 +1696,16 @@ body.is-dark .clubflow-list__link a,
 	color: var(--text-dark, inherit);
 	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
 	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+	resize: vertical;
 }
 
 .clubflow-booking-widget__field input:focus {
+	outline: none;
+	border-color: var(--accent-red, rgba(155, 45, 48, 0.65));
+	box-shadow: 0 14px 40px rgba(155, 45, 48, 0.16);
+}
+
+.clubflow-booking-widget__field textarea:focus {
 	outline: none;
 	border-color: var(--accent-red, rgba(155, 45, 48, 0.65));
 	box-shadow: 0 14px 40px rgba(155, 45, 48, 0.16);

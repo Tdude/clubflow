@@ -763,11 +763,22 @@ final class ClubFlow_Ajax {
 				$html .= '<p class="clubflow-booking__field clubflow-booking__field--klippkort">';
 				$html .= '<label class="clubflow-checkline"><input type="checkbox" name="use_klippkort" value="1" data-clubflow-klippkort-toggle /> ' . esc_html__('Använd klippkort', 'clubflow') . '</label>';
 				$html .= '</p>';
+				$html .= '<p class="clubflow-booking__field clubflow-booking__field--klippkort">';
+				$html .= '<label class="clubflow-checkline"><input type="checkbox" name="pay_later" value="1" /> ' . esc_html__('Faktura/Epassi', 'clubflow') . '</label>';
+				$html .= '</p>';
+				$html .= '<p class="clubflow-booking__field clubflow-booking__field--klippkort">';
+				$html .= '<label class="clubflow-checkline"><input type="checkbox" name="instructor_student" value="1" /> ' . esc_html__('Instruktör/Student (10%)', 'clubflow') . '</label>';
+				$html .= '</p>';
 				$html .= '<p class="clubflow-booking__field clubflow-booking__field--klippkort" data-clubflow-klippkort-code style="display:none; margin-top: -8px;">';
 				$html .= '<label for="clubflow_book_klippkort_code">' . esc_html__('Klippkort kod (valfritt)', 'clubflow') . '</label>';
 				$html .= '<input type="text" id="clubflow_book_klippkort_code" name="klippkort_code" placeholder="KLIPPKORT-ABC123" />';
 				$html .= '</p>';
 			}
+
+			$html .= '<p class="clubflow-booking__field">';
+			$html .= '<label for="clubflow_book_notes">' . esc_html__('Kommentar / önskemål', 'clubflow') . '</label>';
+			$html .= '<textarea id="clubflow_book_notes" name="order_notes" rows="3" maxlength="1000" placeholder="' . esc_attr__('Valfri kommentar till din bokning...', 'clubflow') . '"></textarea>';
+			$html .= '</p>';
 
 			$html .= '<p class="clubflow-booking__submit">';
 			$html .= '<button type="submit" class="clubflow-booking__button">' . esc_html__('Boka nu', 'clubflow') . '</button>';
