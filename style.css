@@ -274,7 +274,7 @@ body.clubflow-modal-open .clubflow-calendar * {
 		--clubflow-hover-surface: #2e231e;
 		--clubflow-hovercard-bg: #221915;
 		--clubflow-link: #ff854d;
-		--clubflow-button-active-text: rgba(98, 60, 42, 0.30);
+		--clubflow-button-active-text: #ffffff;
 		--clubflow-focus-border: #d87237;
 		--clubflow-backdrop: rgba(0, 0, 0, 0.7);
 	}
@@ -297,7 +297,7 @@ body.is-dark .clubflow-modal,
 	--clubflow-hover-surface: #2e231e;
 	--clubflow-hovercard-bg: #221915;
 	--clubflow-link: #ff854d;
-	--clubflow-button-active-text: rgba(248, 222, 209, 0.979);
+	--clubflow-button-active-text: #ffffff;
 	--clubflow-focus-border: #d87237;
 	--clubflow-backdrop: rgba(0, 0, 0, 0.7);
 }
