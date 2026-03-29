@@ -94,7 +94,7 @@ final class ClubFlow_Assets {
 		$text = sanitize_hex_color( $text ) ?: '#2d1e12';
 		$bg = sanitize_hex_color( $bg ) ?: '#f5f0e6';
 
-		$inline_css = ".clubflow-calendar,.clubflow-modal,.clubflow-booking-widget{--clubflow-bg:{$bg};--clubflow-surface:rgba(255,255,255,.90);--clubflow-text:{$text};--clubflow-muted:rgba(45,30,18,.65);--clubflow-border:rgba(45,30,18,.12);--clubflow-accent:{$accent};--clubflow-backdrop:rgba(0,0,0,.55);--accent-red:{$accent};--text-dark:{$text};--text-light:rgba(45,30,18,.65);--bg-primary:{$bg};} .clubflow-event__link a{color:var(--clubflow-accent);}";
+		$inline_css = ".clubflow-calendar,.clubflow-modal,.clubflow-booking-widget{--clubflow-bg:{$bg};--clubflow-surface:rgba(255,255,255,.97);--clubflow-text:{$text};--clubflow-muted:rgba(45,30,18,.65);--clubflow-border:rgba(45,30,18,.12);--clubflow-accent:{$accent};--clubflow-backdrop:rgba(0,0,0,.55);--accent-red:{$accent};--text-dark:{$text};--text-light:rgba(45,30,18,.65);--bg-primary:{$bg};} .clubflow-event__link a{color:var(--clubflow-accent);}";
 		wp_add_inline_style( 'clubflow', $inline_css );
 
 		wp_enqueue_style(

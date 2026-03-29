@@ -1119,8 +1119,8 @@ final class ClubFlow_Booking {
 		echo '<th>' . esc_html__('Phone', 'clubflow') . '</th>';
 		echo '<th>' . esc_html__('Street', 'clubflow') . '</th>';
 		echo '<th>' . esc_html__('Post address', 'clubflow') . '</th>';
-		echo '<th>' . esc_html__('Faktura/Epassi', 'clubflow') . '</th>';
-		echo '<th>' . esc_html__('Instruktör/Student', 'clubflow') . '</th>';
+		echo '<th>' . esc_html__('Faktura', 'clubflow') . '<br>' . esc_html__('Epassi', 'clubflow') . '</th>';
+		echo '<th>' . esc_html__('Instruktör', 'clubflow') . '<br>' . esc_html__('Student', 'clubflow') . '</th>';
 		echo '<th>' . esc_html__('Rabattkod', 'clubflow') . '</th>';
 		echo '<th>' . esc_html__('Notes', 'clubflow') . '</th>';
 		echo '<th>' . esc_html__('Code', 'clubflow') . '</th>';
@@ -1226,7 +1226,7 @@ final class ClubFlow_Booking {
 			'discount_code' => __('Rabattkod', 'clubflow'),
 			'code'       => __('Code', 'clubflow'),
 			'status'     => __('Status', 'clubflow'),
-			'date'       => __('Date', 'clubflow'),
+			'created'    => __('Created', 'clubflow'),
 		];
 	}
 
@@ -1279,7 +1279,9 @@ final class ClubFlow_Booking {
 				if ($event_id > 0) {
 					$event = get_post($event_id);
 					if ($event) {
-						echo '<a href="' . esc_url(get_edit_post_link($event_id)) . '">' . esc_html(get_the_title($event_id)) . '</a>';
+						$title = (string) get_the_title($event_id);
+						$short = mb_strlen($title) > 20 ? mb_substr($title, 0, 20) . '…' : $title;
+						echo '<a href="' . esc_url(get_edit_post_link($event_id)) . '" title="' . esc_attr($title) . '">' . esc_html($short) . '</a>';
 					} else {
 						echo '<span style="color: #999;">' . esc_html__('Deleted', 'clubflow') . '</span>';
 					}
@@ -1288,7 +1290,7 @@ final class ClubFlow_Booking {
 			case 'order_notes':
 				$notes = get_post_meta($post_id, '_clubflow_booking_order_notes', true);
 				if ($notes) {
-					$short = mb_strlen($notes) > 50 ? mb_substr($notes, 0, 50) . '…' : $notes;
+					$short = mb_strlen($notes) > 20 ? mb_substr($notes, 0, 20) . '…' : $notes;
 					echo '<span title="' . esc_attr($notes) . '">' . esc_html($short) . '</span>';
 				} else {
 					echo '—';
@@ -1308,15 +1310,31 @@ final class ClubFlow_Booking {
 				break;
 			case 'email':
 				$email = get_post_meta($post_id, '_clubflow_booking_email', true);
-				echo '<a href="mailto:' . esc_attr($email) . '">' . esc_html($email) . '</a>';
+				$short = mb_strlen($email) > 20 ? mb_substr($email, 0, 20) . '…' : $email;
+				echo '<a href="mailto:' . esc_attr($email) . '" title="' . esc_attr($email) . '">' . esc_html($short) . '</a>';
 				break;
 			case 'phone':
 				$phone = get_post_meta($post_id, '_clubflow_booking_phone', true);
-				echo esc_html($phone ?: '—');
+				$phone = (string) $phone;
+				if ($phone === '') {
+					echo '—';
+					break;
+				}
+				$short = mb_strlen($phone) > 20 ? mb_substr($phone, 0, 20) . '…' : $phone;
+				echo '<span title="' . esc_attr($phone) . '">' . esc_html($short) . '</span>';
 				break;
 			case 'code':
 				$code = get_post_meta($post_id, '_clubflow_booking_confirmation_code', true);
 				echo '<code>' . esc_html($code) . '</code>';
+				break;
+			case 'created':
+				$created = (string) get_post_meta($post_id, '_clubflow_booking_created', true);
+				if ($created !== '') {
+					echo '<span title="' . esc_attr($created) . '">' . esc_html(wp_date('Y-m-d H:i', strtotime($created))) . '</span>';
+				} else {
+					$dt = get_post_datetime($post_id);
+					echo $dt ? esc_html(wp_date('Y-m-d H:i', $dt->getTimestamp())) : '—';
+				}
 				break;
 			case 'status':
 				$status = get_post_meta($post_id, '_clubflow_booking_status', true);
@@ -1327,7 +1345,7 @@ final class ClubFlow_Booking {
 						admin_url('admin-post.php?action=clubflow_confirm_payment&booking_id=' . $post_id),
 						'clubflow_confirm_payment_' . $post_id
 					);
-					echo '<br><a href="' . esc_url($confirm_url) . '" class="button button-small" style="margin-top: 6px;">' . esc_html__('Confirm payment received', 'clubflow') . '</a>';
+					echo '<br><a href="' . esc_url($confirm_url) . '" class="button button-small" style="margin-top: 6px;">' . esc_html__('Bekräfta', 'clubflow') . '</a>';
 				}
 				break;
 		}
@@ -1411,9 +1429,9 @@ final class ClubFlow_Booking {
 		echo '<tr><th>' . esc_html__('Booked at', 'clubflow') . '</th><td>' . esc_html($created ? wp_date('Y-m-d H:i:s', strtotime($created)) : '—') . '</td></tr>';
 
 		$pay_later = (string) get_post_meta($post->ID, '_clubflow_booking_pay_later', true);
-		echo '<tr><th>' . esc_html__('Faktura/Epassi', 'clubflow') . '</th><td>' . ($pay_later === '1' ? esc_html__('Yes', 'clubflow') : '—') . '</td></tr>';
+		echo '<tr><th>' . esc_html__('Faktura', 'clubflow') . '<br>' . esc_html__('Epassi', 'clubflow') . '</th><td>' . ($pay_later === '1' ? esc_html__('Yes', 'clubflow') : '—') . '</td></tr>';
 		$instructor_student = (string) get_post_meta($post->ID, '_clubflow_booking_instructor_student', true);
-		echo '<tr><th>' . esc_html__('Instruktör/Student', 'clubflow') . '</th><td>' . ($instructor_student === '1' ? esc_html__('Yes', 'clubflow') : '—') . '</td></tr>';
+		echo '<tr><th>' . esc_html__('Instruktör', 'clubflow') . '<br>' . esc_html__('Student', 'clubflow') . '</th><td>' . ($instructor_student === '1' ? esc_html__('Yes', 'clubflow') : '—') . '</td></tr>';
 		$discount_percent = (string) get_post_meta($post->ID, '_clubflow_booking_discount_percent', true);
 		$discount_code = (string) get_post_meta($post->ID, '_clubflow_booking_discount_code', true);
 		if ($discount_code !== '' || $discount_percent !== '') {
