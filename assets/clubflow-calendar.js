@@ -642,7 +642,8 @@
 
             // If server provided a redirect URL (e.g. free bookings), navigate there
             // so the PHP confirmation toast can show.
-            if (data.data && data.data.redirect_url) {
+            // Important: don't override payment redirects (Stripe/Klarna/Swish).
+            if (data.data && data.data.redirect_url && !data.data.payment) {
               window.location.href = data.data.redirect_url;
               return;
             }
