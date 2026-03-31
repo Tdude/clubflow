@@ -396,6 +396,7 @@ class ClubFlow_Stripe {
 
         // Update booking status (using ClubCal Lite meta keys)
         update_post_meta( $booking_id, '_clubflow_booking_status', 'confirmed' );
+        update_post_meta( $booking_id, '_clubflow_confirmed_via', 'stripe' );
         update_post_meta( $booking_id, '_stripe_payment_intent', $session['payment_intent'] ?? '' );
         update_post_meta( $booking_id, '_payment_completed_at', current_time( 'mysql' ) );
 

@@ -789,6 +789,7 @@ final class ClubFlow_Booking {
 		if ($redeemed_purchase_booking_id > 0) {
 			update_post_meta($booking_id, self::META_USED_KLIPPKORT_PURCHASE_BOOKING_ID, (string) $redeemed_purchase_booking_id);
 			update_post_meta($booking_id, self::META_USED_KLIPPKORT_CODE, (string) $redeemed_code);
+			update_post_meta($booking_id, '_clubflow_confirmed_via', 'klippkort');
 		}
 		$issued_klippkort_code = '';
 		if ($event_mode === 'package') {
@@ -1392,8 +1393,21 @@ final class ClubFlow_Booking {
 				break;
 			case 'status':
 				$status = get_post_meta($post_id, '_clubflow_booking_status', true);
+				$confirmed_via = get_post_meta($post_id, '_clubflow_confirmed_via', true);
 				$color = $status === 'confirmed' ? '#2e7d32' : '#ff9800';
-				echo '<span style="color: ' . esc_attr($color) . ';">' . esc_html(ucfirst($status)) . '</span>';
+				$label = ucfirst($status);
+				if ($status === 'confirmed' && $confirmed_via) {
+					$via_labels = [
+						'stripe'    => 'Stripe',
+						'swish'     => 'Swish',
+						'klarna'    => 'Klarna',
+						'klippkort' => 'Klippkort',
+						'manual'    => 'Manuellt',
+					];
+					$via_label = $via_labels[$confirmed_via] ?? $confirmed_via;
+					$label = __('Bekräftad', 'clubflow') . ' (' . $via_label . ')';
+				}
+				echo '<span style="color: ' . esc_attr($color) . ';">' . esc_html($label) . '</span>';
 				if (in_array((string) $status, ['pending', 'pending_payment'], true)) {
 					echo '<br><button type="button" class="button button-small clubflow-confirm-payment-btn" data-booking-id="' . esc_attr($post_id) . '" style="margin-top: 6px;">' . esc_html__('Bekräfta', 'clubflow') . '</button>';
 				}
@@ -1604,7 +1618,8 @@ final class ClubFlow_Booking {
 		$current_status = (string) get_post_meta($booking_id, '_clubflow_booking_status', true);
 		if (in_array($current_status, ['pending', 'pending_payment'], true)) {
 			update_post_meta($booking_id, '_clubflow_booking_status', 'confirmed');
-			
+			update_post_meta($booking_id, '_clubflow_confirmed_via', 'manual');
+
 			// Fire action for email confirmation / downstream actions
 			do_action('clubflow_payment_completed', $booking_id, [
 				'status' => 'completed',
@@ -1660,6 +1675,7 @@ final class ClubFlow_Booking {
 		$current_status = (string) get_post_meta($booking_id, '_clubflow_booking_status', true);
 		if (in_array($current_status, ['pending', 'pending_payment'], true)) {
 			update_post_meta($booking_id, '_clubflow_booking_status', 'confirmed');
+			update_post_meta($booking_id, '_clubflow_confirmed_via', 'manual');
 
 			do_action('clubflow_payment_completed', $booking_id, [
 				'status' => 'completed',
@@ -1716,6 +1732,7 @@ final class ClubFlow_Booking {
 				}
 
 				update_post_meta($post_id, '_clubflow_booking_status', 'confirmed');
+				update_post_meta($post_id, '_clubflow_confirmed_via', 'manual');
 				do_action('clubflow_payment_completed', $post_id, [
 					'status' => 'completed',
 					'source' => 'bulk_admin_confirmation',

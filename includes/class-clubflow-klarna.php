@@ -292,6 +292,7 @@ final class ClubFlow_Klarna {
 
 			// Update booking status
 			update_post_meta($booking_id, '_clubflow_booking_status', 'confirmed');
+			update_post_meta($booking_id, '_clubflow_confirmed_via', 'klarna');
 
 			// Update payment log
 			if (class_exists('ClubFlow_Payment')) {

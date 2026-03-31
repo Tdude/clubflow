@@ -412,6 +412,7 @@ final class ClubFlow_Swish {
 
 			// Payment successful!
 			update_post_meta($booking_id, '_clubflow_booking_status', 'confirmed');
+			update_post_meta($booking_id, '_clubflow_confirmed_via', 'swish');
 
 			// Update payment log
 			if (class_exists('ClubFlow_Payment')) {
@@ -474,6 +475,7 @@ final class ClubFlow_Swish {
 		// Update status
 		update_post_meta($booking_id, '_clubflow_swish_status', 'PAID');
 		update_post_meta($booking_id, '_clubflow_booking_status', 'confirmed');
+		update_post_meta($booking_id, '_clubflow_confirmed_via', 'swish');
 
 		// Update transient
 		$payment_data = get_transient('clubflow_swish_' . $reference);
