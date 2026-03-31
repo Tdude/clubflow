@@ -297,12 +297,18 @@ class ClubFlow_Stripe {
         $sig_header = $request->get_header( 'stripe-signature' );
         $settings   = self::get_settings();
 
-        // Verify webhook signature if secret is configured
-        if ( ! empty( $settings['webhook_secret'] ) && ! empty( $sig_header ) ) {
-            $verified = self::verify_webhook_signature( $payload, $sig_header, $settings['webhook_secret'] );
-            if ( ! $verified ) {
-                return new WP_REST_Response( array( 'error' => 'Invalid signature' ), 400 );
-            }
+        // Webhook must be verified. Without a configured secret we cannot trust incoming events.
+        if ( empty( $settings['webhook_secret'] ) ) {
+            return new WP_REST_Response( array( 'error' => 'Webhook secret not configured' ), 400 );
+        }
+
+        if ( empty( $sig_header ) ) {
+            return new WP_REST_Response( array( 'error' => 'Missing signature header' ), 400 );
+        }
+
+        $verified = self::verify_webhook_signature( $payload, $sig_header, $settings['webhook_secret'] );
+        if ( ! $verified ) {
+            return new WP_REST_Response( array( 'error' => 'Invalid signature' ), 400 );
         }
 
         $event = json_decode( $payload, true );
@@ -313,10 +319,20 @@ class ClubFlow_Stripe {
 
         // Handle checkout.session.completed
         if ( $event['type'] === 'checkout.session.completed' ) {
-            $session    = $event['data']['object'];
-            $booking_id = isset( $session['metadata']['booking_id'] ) ? intval( $session['metadata']['booking_id'] ) : 0;
+            $session_from_event = $event['data']['object'] ?? array();
+            $session_id = $session_from_event['id'] ?? '';
+            if ( empty( $session_id ) ) {
+                return new WP_REST_Response( array( 'error' => 'Missing session id' ), 400 );
+            }
 
-            if ( $booking_id && $session['payment_status'] === 'paid' ) {
+            // Verify the session directly with Stripe API to avoid trusting any forged payload.
+            $session = self::api_request( '/checkout/sessions/' . $session_id, array(), 'GET' );
+            if ( is_wp_error( $session ) ) {
+                return new WP_REST_Response( array( 'error' => $session->get_error_message() ), 400 );
+            }
+
+            $booking_id = isset( $session['metadata']['booking_id'] ) ? intval( $session['metadata']['booking_id'] ) : 0;
+            if ( $booking_id && ( $session['payment_status'] ?? '' ) === 'paid' ) {
                 self::confirm_booking_payment( $booking_id, $session );
             }
         }
