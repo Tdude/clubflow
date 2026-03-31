@@ -176,9 +176,17 @@ final class ClubFlow_Payment {
 		$sanitized['swish_cert_pass'] = $this->preserve_or_sanitize($input, $existing, 'swish_cert_pass');
 		$sanitized['swish_test_mode'] = array_key_exists('swish_test_mode', $input) ? !empty($input['swish_test_mode']) : ($existing['swish_test_mode'] ?? false);
 		
-		// Stripe settings - preserve existing if not in input
+		// Stripe settings - preserve existing if not in input, validate key format
 		$sanitized['stripe_publishable'] = $this->preserve_or_sanitize($input, $existing, 'stripe_publishable');
+		if ( ! empty( $sanitized['stripe_publishable'] ) && ! preg_match( '/^pk_(test|live)_/', $sanitized['stripe_publishable'] ) ) {
+			add_settings_error( self::OPTION_KEY, 'invalid_stripe_pk', __( 'Stripe publishable key must start with pk_test_ or pk_live_.', 'clubflow' ) );
+			$sanitized['stripe_publishable'] = $existing['stripe_publishable'] ?? '';
+		}
 		$sanitized['stripe_secret'] = $this->preserve_or_sanitize($input, $existing, 'stripe_secret');
+		if ( ! empty( $sanitized['stripe_secret'] ) && ! preg_match( '/^sk_(test|live)_/', $sanitized['stripe_secret'] ) ) {
+			add_settings_error( self::OPTION_KEY, 'invalid_stripe_sk', __( 'Stripe secret key must start with sk_test_ or sk_live_.', 'clubflow' ) );
+			$sanitized['stripe_secret'] = $existing['stripe_secret'] ?? '';
+		}
 		$sanitized['stripe_webhook_secret'] = $this->preserve_or_sanitize($input, $existing, 'stripe_webhook_secret');
 		
 		// Mailchimp settings - preserve existing if not in input
@@ -278,6 +286,7 @@ final class ClubFlow_Payment {
 					</tr>
 				</table>
 
+				<div data-clubflow-provider="klarna">
 				<details class="clubflow-settings-section">
 				<summary class="clubflow-settings-summary"><h2 class="title" style="display:inline; cursor:pointer;"><?php esc_html_e('Klarna Settings', 'clubflow'); ?> <span style="font-size:12px;color:#666;">▼</span></h2></summary>
 				<table class="form-table">
@@ -314,7 +323,9 @@ final class ClubFlow_Payment {
 					4. <?php esc_html_e('Generate new API credentials', 'clubflow'); ?>
 				</p>
 				</details>
+				</div>
 
+				<div data-clubflow-provider="swish">
 				<details class="clubflow-settings-section">
 				<summary class="clubflow-settings-summary"><h2 class="title" style="display:inline; cursor:pointer;"><?php esc_html_e('Swish Settings', 'clubflow'); ?> <span style="font-size:12px;color:#666;">▼</span></h2></summary>
 				<table class="form-table">
@@ -364,7 +375,9 @@ final class ClubFlow_Payment {
 					<?php esc_html_e('For automatic payment confirmation, you need a Swish for Merchants agreement with your bank and the merchant certificate.', 'clubflow'); ?>
 				</p>
 				</details>
+				</div>
 
+				<div data-clubflow-provider="stripe">
 				<h2 class="title"><?php esc_html_e('Stripe Settings', 'clubflow'); ?></h2>
 				<table class="form-table">
 					<tr>
@@ -441,6 +454,8 @@ final class ClubFlow_Payment {
 					4. <?php esc_html_e('Select event:', 'clubflow'); ?> <code>checkout.session.completed</code>
 				</p>
 
+				</div>
+
 				<h2 class="title"><?php esc_html_e('Mailchimp Settings', 'clubflow'); ?></h2>
 				<table class="form-table">
 					<tr>
@@ -467,6 +482,22 @@ final class ClubFlow_Payment {
 						</td>
 					</tr>
 				</table>
+
+
+				<script>
+				(function() {
+					var select = document.querySelector('select[name="clubflow_payment_settings[payment_method]"]');
+					var providers = document.querySelectorAll('[data-clubflow-provider]');
+					function toggleProviders() {
+						var selected = select.value;
+						providers.forEach(function(el) {
+							el.style.display = (el.getAttribute('data-clubflow-provider') === selected) ? '' : 'none';
+						});
+					}
+					select.addEventListener('change', toggleProviders);
+					toggleProviders();
+				})();
+				</script>
 
 				<?php submit_button(); ?>
 			</form>

@@ -35,6 +35,9 @@ final class ClubFlow_Admin {
 		// Instructor color column in list
 		add_filter('manage_edit-' . ClubFlow::TAX_TAG . '_columns', [$this, 'taxonomy_color_column']);
 		add_filter('manage_' . ClubFlow::TAX_TAG . '_custom_column', [$this, 'render_taxonomy_color_column'], 10, 3);
+
+		// Dashboard widget
+		add_action('wp_dashboard_setup', [$this, 'register_dashboard_widget']);
 	}
 	
 	public function taxonomy_color_column(array $columns): array {
@@ -766,5 +769,274 @@ final class ClubFlow_Admin {
 		} else {
 			delete_post_meta($post_id, '_clubflow_linked_events');
 		}
+	}
+
+	/**
+	 * Register the ClubFlow dashboard widget
+	 */
+	public function register_dashboard_widget(): void {
+		if (!current_user_can('edit_posts')) {
+			return;
+		}
+
+		wp_add_dashboard_widget(
+			'clubflow_dashboard_overview',
+			'ClubFlow — Oversikt',
+			[$this, 'render_dashboard_widget']
+		);
+	}
+
+	/**
+	 * Render the dashboard widget content
+	 */
+	public function render_dashboard_widget(): void {
+		$today     = wp_date('Y-m-d\TH:i:s');
+		$next_week = wp_date('Y-m-d\T23:59:59', strtotime('+7 days'));
+
+		// --- Upcoming events this week ---
+		$events_query = new \WP_Query([
+			'post_type'      => ClubFlow::POST_TYPE,
+			'post_status'    => 'publish',
+			'posts_per_page' => 10,
+			'meta_key'       => '_clubflow_start',
+			'orderby'        => 'meta_value',
+			'order'          => 'ASC',
+			'meta_query'     => [
+				[
+					'key'     => '_clubflow_start',
+					'value'   => [$today, $next_week],
+					'compare' => 'BETWEEN',
+					'type'    => 'DATETIME',
+				],
+			],
+		]);
+
+		// --- Pending bookings count ---
+		$pending_query = new \WP_Query([
+			'post_type'      => ClubFlow_Booking::POST_TYPE,
+			'post_status'    => 'publish',
+			'posts_per_page' => 1,
+			'meta_query'     => [
+				[
+					'key'     => '_clubflow_booking_status',
+					'value'   => ['pending', 'pending_payment'],
+					'compare' => 'IN',
+				],
+			],
+		]);
+		$pending_count = $pending_query->found_posts;
+
+		// --- Revenue this month ---
+		$month_start = wp_date('Y-m-01\T00:00:00');
+		$month_end   = wp_date('Y-m-t\T23:59:59');
+
+		$payments_query = new \WP_Query([
+			'post_type'      => ClubFlow_Payment::LOG_POST_TYPE,
+			'post_status'    => 'publish',
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+			'meta_query'     => [
+				'relation' => 'AND',
+				[
+					'key'     => '_payment_status',
+					'value'   => 'completed',
+				],
+				[
+					'key'     => '_payment_timestamp',
+					'value'   => [$month_start, $month_end],
+					'compare' => 'BETWEEN',
+					'type'    => 'DATETIME',
+				],
+			],
+		]);
+
+		$monthly_revenue = 0;
+		if ($payments_query->have_posts()) {
+			foreach ($payments_query->posts as $log_id) {
+				$amount = (float) get_post_meta($log_id, '_payment_amount', true);
+				$monthly_revenue += $amount;
+			}
+		}
+
+		// Swedish day names for display
+		$swedish_days = [
+			'Monday'    => 'Mandag',
+			'Tuesday'   => 'Tisdag',
+			'Wednesday' => 'Onsdag',
+			'Thursday'  => 'Torsdag',
+			'Friday'    => 'Fredag',
+			'Saturday'  => 'Lordag',
+			'Sunday'    => 'Sondag',
+		];
+
+		$month_name = wp_date('F');
+		$swedish_months = [
+			'January'   => 'Januari',
+			'February'  => 'Februari',
+			'March'     => 'Mars',
+			'April'     => 'April',
+			'May'       => 'Maj',
+			'June'      => 'Juni',
+			'July'      => 'Juli',
+			'August'    => 'Augusti',
+			'September' => 'September',
+			'October'   => 'Oktober',
+			'November'  => 'November',
+			'December'  => 'December',
+		];
+		$current_month_sv = $swedish_months[$month_name] ?? $month_name;
+
+		// Admin URLs
+		$bookings_url  = admin_url('edit.php?post_type=' . ClubFlow_Booking::POST_TYPE);
+		$payments_url  = admin_url('edit.php?post_type=' . ClubFlow_Payment::LOG_POST_TYPE);
+		$new_event_url = admin_url('post-new.php?post_type=' . ClubFlow::POST_TYPE);
+		$calendar_url  = admin_url('edit.php?post_type=' . ClubFlow::POST_TYPE . '&page=clubflow-bookings-calendar');
+		?>
+		<style>
+			#clubflow_dashboard_overview .inside { padding: 0 !important; }
+			.clubflow-dash { font-size: 13px; line-height: 1.5; }
+			.clubflow-dash-section { padding: 12px 16px; border-bottom: 1px solid #e0e0e0; }
+			.clubflow-dash-section:last-child { border-bottom: none; }
+			.clubflow-dash-heading {
+				font-size: 11px;
+				font-weight: 600;
+				text-transform: uppercase;
+				letter-spacing: 0.5px;
+				color: #7b1fa2;
+				margin: 0 0 8px 0;
+			}
+			.clubflow-dash-event {
+				display: flex;
+				justify-content: space-between;
+				align-items: baseline;
+				padding: 4px 0;
+			}
+			.clubflow-dash-event-name {
+				font-weight: 500;
+				color: #1d2327;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+				max-width: 60%;
+			}
+			.clubflow-dash-event-meta {
+				color: #757575;
+				font-size: 12px;
+				white-space: nowrap;
+			}
+			.clubflow-dash-stat {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 6px 0;
+			}
+			.clubflow-dash-stat-value {
+				font-size: 20px;
+				font-weight: 700;
+				color: #7b1fa2;
+			}
+			.clubflow-dash-stat-label {
+				color: #50575e;
+			}
+			.clubflow-dash-links {
+				display: flex;
+				gap: 12px;
+				flex-wrap: wrap;
+			}
+			.clubflow-dash-links a {
+				color: #7b1fa2;
+				text-decoration: none;
+				font-weight: 500;
+				font-size: 12px;
+			}
+			.clubflow-dash-links a:hover {
+				text-decoration: underline;
+				color: #4a148c;
+			}
+			.clubflow-dash-badge {
+				display: inline-block;
+				background: #ff9800;
+				color: #fff;
+				font-size: 11px;
+				font-weight: 600;
+				padding: 1px 7px;
+				border-radius: 10px;
+				margin-left: 6px;
+			}
+			.clubflow-dash-empty {
+				color: #999;
+				font-style: italic;
+				font-size: 12px;
+			}
+		</style>
+		<div class="clubflow-dash">
+
+			<!-- Upcoming events -->
+			<div class="clubflow-dash-section">
+				<p class="clubflow-dash-heading">Kommande event (7 dagar)</p>
+				<?php if ($events_query->have_posts()) : ?>
+					<?php while ($events_query->have_posts()) : $events_query->the_post();
+						$event_id  = get_the_ID();
+						$start_raw = get_post_meta($event_id, '_clubflow_start', true);
+						$booked    = ClubFlow_Booking::get_booking_count($event_id);
+						$max_spots = (int) get_post_meta($event_id, '_clubflow_max_spots', true);
+						$day_en    = date('l', strtotime($start_raw));
+						$day_sv    = $swedish_days[$day_en] ?? $day_en;
+						$day_num   = date('j', strtotime($start_raw));
+						$mon_en    = date('F', strtotime($start_raw));
+						$mon_sv    = strtolower($swedish_months[$mon_en] ?? $mon_en);
+						// Abbreviate month to 3 chars
+						$mon_short = mb_substr($mon_sv, 0, 3);
+						$spots_text = $max_spots > 0
+							? $booked . '/' . $max_spots . ' bokade'
+							: $booked . ' bokade';
+					?>
+						<div class="clubflow-dash-event">
+							<a href="<?php echo esc_url(get_edit_post_link($event_id)); ?>" class="clubflow-dash-event-name" title="<?php echo esc_attr(get_the_title()); ?>">
+								<?php echo esc_html(get_the_title()); ?>
+							</a>
+							<span class="clubflow-dash-event-meta">
+								<?php echo esc_html($spots_text . ', ' . $day_sv . ' ' . $day_num . ' ' . $mon_short); ?>
+							</span>
+						</div>
+					<?php endwhile; wp_reset_postdata(); ?>
+				<?php else : ?>
+					<p class="clubflow-dash-empty">Inga kommande event de narmaste 7 dagarna.</p>
+				<?php endif; ?>
+			</div>
+
+			<!-- Stats row -->
+			<div class="clubflow-dash-section" style="display: flex; gap: 24px;">
+				<div class="clubflow-dash-stat" style="flex: 1;">
+					<div>
+						<div class="clubflow-dash-stat-value"><?php echo (int) $pending_count; ?></div>
+						<div class="clubflow-dash-stat-label">
+							Vantande bokningar
+							<?php if ($pending_count > 0) : ?>
+								<span class="clubflow-dash-badge"><?php echo (int) $pending_count; ?></span>
+							<?php endif; ?>
+						</div>
+					</div>
+				</div>
+				<div class="clubflow-dash-stat" style="flex: 1;">
+					<div>
+						<div class="clubflow-dash-stat-value"><?php echo esc_html(number_format($monthly_revenue, 0, ',', ' ')); ?> kr</div>
+						<div class="clubflow-dash-stat-label">Intakter <?php echo esc_html(strtolower($current_month_sv)); ?></div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Quick links -->
+			<div class="clubflow-dash-section">
+				<p class="clubflow-dash-heading">Snabbllankar</p>
+				<div class="clubflow-dash-links">
+					<a href="<?php echo esc_url($bookings_url); ?>">Alla bokningar</a>
+					<a href="<?php echo esc_url($payments_url); ?>">Betalningslogg</a>
+					<a href="<?php echo esc_url($new_event_url); ?>">+ Nytt event</a>
+					<a href="<?php echo esc_url($calendar_url); ?>">Bokningskalender</a>
+				</div>
+			</div>
+		</div>
+		<?php
 	}
 }
