@@ -64,8 +64,14 @@ final class ClubFlow_Assets {
 		if (is_singular()) {
 			$post = get_post();
 			if ($post instanceof \WP_Post) {
-				$should_enqueue = has_shortcode($post->post_content, 'club_calendar') 
+				$should_enqueue = has_shortcode($post->post_content, 'club_calendar')
 					|| has_shortcode($post->post_content, 'club_booking');
+
+				// Load only the stylesheet (not calendar JS) for WPCF7 form pages
+				if (!$should_enqueue && has_shortcode($post->post_content, 'contact-form-7')) {
+					$this->enqueue_wpcf7_styles();
+					return;
+				}
 			}
 		}
 
@@ -75,6 +81,28 @@ final class ClubFlow_Assets {
 
 		$this->frontend_assets_enqueued = true;
 		$this->enqueue_frontend_assets_internal();
+	}
+
+	/**
+	 * Enqueue only the stylesheet + CSS variables for WPCF7 pages (no calendar JS).
+	 */
+	private function enqueue_wpcf7_styles(): void {
+		wp_enqueue_style(
+			'clubflow',
+			plugins_url('style.css', $this->plugin->plugin_file()),
+			[],
+			ClubFlow::VERSION
+		);
+
+		$accent = get_theme_mod( 'upaif_color_accent_red', '#9b2d30' );
+		$text = get_theme_mod( 'upaif_color_text_dark', '#2d1e12' );
+		$bg = get_theme_mod( 'upaif_color_bg_primary', '#f5f0e6' );
+		$accent = sanitize_hex_color( $accent ) ?: '#9b2d30';
+		$text = sanitize_hex_color( $text ) ?: '#2d1e12';
+		$bg = sanitize_hex_color( $bg ) ?: '#f5f0e6';
+
+		$inline_css = ".wpcf7-form{--clubflow-accent:{$accent};--clubflow-text:{$text};--clubflow-surface:rgba(255,255,255,.97);--clubflow-border:rgba(45,30,18,.12);}";
+		wp_add_inline_style( 'clubflow', $inline_css );
 	}
 
 	private function enqueue_frontend_assets_internal(): void {
