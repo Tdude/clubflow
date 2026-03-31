@@ -439,6 +439,9 @@
         if (!eventId) {
           return;
         }
+        if (!confirm('Är du säker på att du vill radera detta event?')) {
+          return;
+        }
         ajax('POST', ClubFlowAdmin.actions.save, {
           nonce: ClubFlowAdmin.nonce,
           event_id: eventId,

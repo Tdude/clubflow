@@ -796,9 +796,6 @@ final class ClubFlow_Booking {
 		// Get payment settings and create payment request
 		$payment_info = null;
 		
-		// Debug: log payment settings
-		error_log('ClubFlow: payment_required=' . ($payment_required ? 'yes' : 'no') . ', method=' . ($payment_settings['payment_method'] ?? 'none') . ', amount=' . $amount);
-		
 		if ($payment_required) {
 				$payment_method = $payment_settings['payment_method'] ?? 'manual';
 				
@@ -818,9 +815,6 @@ final class ClubFlow_Booking {
 						$event_title,
 						$return_url
 					);
-					
-					// Debug log
-					error_log('ClubFlow Stripe result: ' . print_r($stripe_result, true));
 					
 					if (!empty($stripe_result['success'])) {
 						$payment_info = [
@@ -965,6 +959,12 @@ final class ClubFlow_Booking {
 
 		// Fire action for other integrations (e.g., Mailchimp)
 		do_action('clubflow_booking_created', $booking_id, $result);
+
+		// Send email notifications (customer fallback when Mailchimp is inactive + admin)
+		if (class_exists('ClubFlow_Notifications')) {
+			ClubFlow_Notifications::send_booking_confirmation($booking_id);
+			ClubFlow_Notifications::send_admin_notification($booking_id);
+		}
 
 		return $result;
 	}
@@ -1560,6 +1560,12 @@ final class ClubFlow_Booking {
 				'status' => 'completed',
 				'source' => 'manual_admin_confirmation',
 			]);
+
+			// Send email notifications (customer fallback when Mailchimp is inactive + admin)
+			if (class_exists('ClubFlow_Notifications')) {
+				ClubFlow_Notifications::send_booking_confirmation($booking_id);
+				ClubFlow_Notifications::send_admin_notification($booking_id);
+			}
 		}
 
 		// Ensure klippkort issuance happens even if the booking was already confirmed

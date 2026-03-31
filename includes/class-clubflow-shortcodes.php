@@ -346,6 +346,10 @@ final class ClubFlow_Shortcodes {
 			$html .= '<input type="hidden" name="event_id" value="' . esc_attr($event_id) . '" />';
 			$html .= '<input type="hidden" name="return_url" value="' . esc_attr(home_url($_SERVER['REQUEST_URI'] ?? '')) . '" />';
 
+			// Section 1: Personal details (always visible)
+			$html .= '<fieldset class="clubflow-form-section clubflow-form-section--details">';
+			$html .= '<legend class="clubflow-form-section__legend">' . esc_html__('Dina uppgifter', 'clubflow') . '</legend>';
+
 			$html .= '<div class="clubflow-booking-widget__field">';
 			$html .= '<label for="clubflow_widget_name_' . $event_id . '">' . esc_html__('Namn', 'clubflow') . ' <span class="required">*</span></label>';
 			$html .= '<input type="text" id="clubflow_widget_name_' . $event_id . '" name="name" required />';
@@ -376,10 +380,19 @@ final class ClubFlow_Shortcodes {
 			$html .= '<input type="text" id="clubflow_widget_city_' . $event_id . '" name="city" data-clubflow-free-required />';
 			$html .= '</div>';
 
-			// TODO: Clip card field will go here in Phase 3
+			$html .= '</fieldset>'; // end Section 1
+
+			// Section 2: Payment options (visually distinct)
 			if ($event_mode !== 'package') {
+				$html .= '<fieldset class="clubflow-form-section clubflow-form-section--options">';
+				$html .= '<legend class="clubflow-form-section__legend">' . esc_html__('Betalningsalternativ', 'clubflow') . '</legend>';
+
 				$html .= '<div class="clubflow-booking-widget__field clubflow-booking-widget__field--klippkort">';
 				$html .= '<label class="clubflow-checkline"><input type="checkbox" name="use_klippkort" value="1" data-clubflow-klippkort-toggle /> ' . esc_html__('Använd klippkort', 'clubflow') . '</label>';
+				$html .= '</div>';
+				$html .= '<div class="clubflow-booking-widget__field clubflow-booking-widget__field--klippkort" data-clubflow-klippkort-code style="display:none; margin-top: -8px;">';
+				$html .= '<label for="clubflow_widget_klippkort_code_' . $event_id . '">' . esc_html__('Klippkort kod (valfritt)', 'clubflow') . '</label>';
+				$html .= '<input type="text" id="clubflow_widget_klippkort_code_' . $event_id . '" name="klippkort_code" placeholder="KLIPPKORT-ABC123" />';
 				$html .= '</div>';
 				$html .= '<div class="clubflow-booking-widget__field clubflow-booking-widget__field--klippkort">';
 				$html .= '<label class="clubflow-checkline"><input type="checkbox" name="pay_later" value="1" /> ' . esc_html__('Faktura/Epassi', 'clubflow') . '</label>';
@@ -387,16 +400,20 @@ final class ClubFlow_Shortcodes {
 				$html .= '<div class="clubflow-booking-widget__field clubflow-booking-widget__field--klippkort">';
 				$html .= '<label class="clubflow-checkline"><input type="checkbox" name="instructor_student" value="1" /> ' . esc_html__('Instruktör/Student (10%)', 'clubflow') . '</label>';
 				$html .= '</div>';
-				$html .= '<div class="clubflow-booking-widget__field clubflow-booking-widget__field--klippkort" data-clubflow-klippkort-code style="display:none; margin-top: -8px;">';
-				$html .= '<label for="clubflow_widget_klippkort_code_' . $event_id . '">' . esc_html__('Klippkort kod (valfritt)', 'clubflow') . '</label>';
-				$html .= '<input type="text" id="clubflow_widget_klippkort_code_' . $event_id . '" name="klippkort_code" placeholder="KLIPPKORT-ABC123" />';
+
+				$html .= '<div class="clubflow-booking-widget__field">';
+				$html .= '<label for="clubflow_widget_notes_' . $event_id . '">' . esc_html__('Kommentar / önskemål', 'clubflow') . '</label>';
+				$html .= '<textarea id="clubflow_widget_notes_' . $event_id . '" name="order_notes" rows="3" maxlength="1000" placeholder="' . esc_attr__('Valfri kommentar till din bokning...', 'clubflow') . '"></textarea>';
+				$html .= '</div>';
+
+				$html .= '</fieldset>'; // end Section 2
+			} else {
+				// Package mode: no payment options, just the notes field
+				$html .= '<div class="clubflow-booking-widget__field">';
+				$html .= '<label for="clubflow_widget_notes_' . $event_id . '">' . esc_html__('Kommentar / önskemål', 'clubflow') . '</label>';
+				$html .= '<textarea id="clubflow_widget_notes_' . $event_id . '" name="order_notes" rows="3" maxlength="1000" placeholder="' . esc_attr__('Valfri kommentar till din bokning...', 'clubflow') . '"></textarea>';
 				$html .= '</div>';
 			}
-
-			$html .= '<div class="clubflow-booking-widget__field">';
-			$html .= '<label for="clubflow_widget_notes_' . $event_id . '">' . esc_html__('Kommentar / önskemål', 'clubflow') . '</label>';
-			$html .= '<textarea id="clubflow_widget_notes_' . $event_id . '" name="order_notes" rows="3" maxlength="1000" placeholder="' . esc_attr__('Valfri kommentar till din bokning...', 'clubflow') . '"></textarea>';
-			$html .= '</div>';
 
 			$html .= '<div class="clubflow-booking-widget__submit">';
 			$html .= '<button type="submit" class="clubflow-booking-widget__button">' . esc_html($button_text) . '</button>';

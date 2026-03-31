@@ -24,6 +24,7 @@ require_once __DIR__ . '/includes/class-clubflow-swish.php';
 require_once __DIR__ . '/includes/class-clubflow-klarna.php';
 require_once __DIR__ . '/includes/class-clubflow-stripe.php';
 require_once __DIR__ . '/includes/class-clubflow-recurrence.php';
+require_once __DIR__ . '/includes/class-clubflow-notifications.php';
 
 final class ClubFlow {
 	public const VERSION = '0.4.5';

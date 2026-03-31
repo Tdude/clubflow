@@ -105,13 +105,18 @@ class ClubFlow_Stripe {
             return new WP_Error( 'no_api_key', __( 'Stripe API key not configured', 'clubflow' ) );
         }
 
+        // Validate key format — must start with sk_test_ or sk_live_
+        if ( ! preg_match( '/^sk_(test|live)_/', $settings['secret_key'] ) ) {
+            return new WP_Error( 'invalid_api_key', __( 'Invalid Stripe secret key format. It must start with sk_test_ or sk_live_.', 'clubflow' ) );
+        }
+
         $args = array(
             'method'  => $method,
             'headers' => array(
                 'Authorization' => 'Bearer ' . $settings['secret_key'],
                 'Content-Type'  => 'application/x-www-form-urlencoded',
             ),
-            'timeout' => 30,
+            'timeout' => 10,
         );
 
         if ( ! empty( $data ) && $method === 'POST' ) {
@@ -406,6 +411,12 @@ class ClubFlow_Stripe {
         // Send confirmation email
         if ( class_exists( 'ClubFlow_Mailchimp' ) ) {
             ClubFlow_Mailchimp::send_booking_confirmation( $booking_id );
+        }
+
+        // Fallback customer confirmation (skips automatically when Mailchimp is active)
+        if ( class_exists( 'ClubFlow_Notifications' ) ) {
+            ClubFlow_Notifications::send_booking_confirmation( $booking_id );
+            ClubFlow_Notifications::send_admin_notification( $booking_id );
         }
 
         // Fire action for extensibility

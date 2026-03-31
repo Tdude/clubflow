@@ -1764,6 +1764,66 @@ body.is-dark .clubflow-list__link a,
 }
 
 /* ==========================================================================
+   Form Sections (Progressive Disclosure)
+   ========================================================================== */
+
+.clubflow-form-section {
+	border: 1px solid var(--clubflow-border, rgba(17, 24, 39, 0.10));
+	border-radius: 10px;
+	padding: 1.25rem 1rem 1rem;
+	margin: 0;
+	background: rgba(0, 0, 0, 0.015);
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.clubflow-form-section--options {
+	background: rgba(0, 0, 0, 0.03);
+}
+
+.clubflow-form-section__legend {
+	font-size: 0.9rem;
+	font-weight: 600;
+	color: var(--clubflow-muted, rgba(17, 24, 39, 0.65));
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	padding: 0 0.5rem;
+}
+
+/* ==========================================================================
+   Per-Field Inline Validation
+   ========================================================================== */
+
+.clubflow-field-error input[type="text"],
+.clubflow-field-error input[type="email"],
+.clubflow-field-error input[type="tel"],
+.clubflow-field-error textarea {
+	border-color: #c62828 !important;
+	box-shadow: 0 0 0 1px rgba(198, 40, 40, 0.15) !important;
+}
+
+.clubflow-field-error-msg {
+	display: block;
+	color: #c62828;
+	font-size: 0.8125rem;
+	line-height: 1.3;
+	margin-top: 0.15rem;
+	animation: clubflow-error-appear 0.2s ease-out;
+}
+
+@keyframes clubflow-error-appear {
+	from {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* ==========================================================================
    Popup Booking Trigger
    [club_booking id="123" popup="true"]
    ========================================================================== */
@@ -1855,8 +1915,19 @@ body.is-dark .clubflow-list__link a,
 }
 
 /* Loading state in modal */
-.clubflow-modal__loading {
+.clubflow-modal__loading,
+.clubflow-modal-loading {
 	text-align: center;
 	padding: 2rem;
-	color: var(--text-light, #666);
+	color: var(--clubflow-muted, #666);
+}
+
+.clubflow-spinner {
+	display: inline-block;
+	width: 32px;
+	height: 32px;
+	border: 3px solid var(--clubflow-border, rgba(17, 24, 39, 0.12));
+	border-top-color: var(--clubflow-accent, #9b4c2d);
+	border-radius: 50%;
+	animation: clubflow-spin 0.8s linear infinite;
 }

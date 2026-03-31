@@ -496,12 +496,90 @@
     }
   }
 
+  function clearFieldError(fieldWrap) {
+    if (!fieldWrap) return;
+    fieldWrap.classList.remove('clubflow-field-error');
+    var msg = qs('.clubflow-field-error-msg', fieldWrap);
+    if (msg && msg.parentNode) {
+      msg.parentNode.removeChild(msg);
+    }
+  }
+
+  function setFieldError(fieldWrap, message) {
+    if (!fieldWrap) return;
+    clearFieldError(fieldWrap);
+    fieldWrap.classList.add('clubflow-field-error');
+    var span = document.createElement('span');
+    span.className = 'clubflow-field-error-msg';
+    span.textContent = message;
+    fieldWrap.appendChild(span);
+  }
+
+  function validateBookingForm(form) {
+    var valid = true;
+
+    // Clear all previous field errors
+    qsa('.clubflow-field-error', form).forEach(function (el) {
+      clearFieldError(el);
+    });
+
+    // Name
+    var nameInput = qs('input[name="name"]', form);
+    if (nameInput) {
+      var nameVal = (nameInput.value || '').trim();
+      if (!nameVal) {
+        setFieldError(nameInput.closest('.clubflow-booking-widget__field'), 'Namn kr\u00e4vs');
+        valid = false;
+      }
+    }
+
+    // Email
+    var emailInput = qs('input[name="email"]', form);
+    if (emailInput) {
+      var emailVal = (emailInput.value || '').trim();
+      var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailVal || !emailPattern.test(emailVal)) {
+        setFieldError(emailInput.closest('.clubflow-booking-widget__field'), 'Ogiltig e-postadress');
+        valid = false;
+      }
+    }
+
+    // Phone
+    var phoneInput = qs('input[name="phone"]', form);
+    if (phoneInput) {
+      var phoneVal = (phoneInput.value || '').trim();
+      if (!phoneVal) {
+        setFieldError(phoneInput.closest('.clubflow-booking-widget__field'), 'Telefonnummer kr\u00e4vs');
+        valid = false;
+      }
+    }
+
+    // Address fields (only when visible / required)
+    qsa('[data-clubflow-free-field]', form).forEach(function (wrap) {
+      if (wrap.style.display === 'none') return;
+      var input = qs('input', wrap);
+      if (input && input.hasAttribute('required') && !(input.value || '').trim()) {
+        var label = qs('label', wrap);
+        var fieldName = label ? label.textContent.replace(/\s*\*\s*$/, '').trim() : 'F\u00e4lt';
+        setFieldError(wrap, fieldName + ' kr\u00e4vs');
+        valid = false;
+      }
+    });
+
+    return valid;
+  }
+
   function handleBookingSubmit(form) {
     if (!window.ClubFlow) {
       return;
     }
 
     updateFreeFields(form);
+
+    // Client-side validation
+    if (!validateBookingForm(form)) {
+      return;
+    }
 
     var submitBtn = qs('button[type="submit"]', form);
     var messageEl = qs('[data-clubflow-booking-message]', form.parentNode);
@@ -566,7 +644,6 @@
             // Show payment info if present
             if (data.data.payment) {
               var p = data.data.payment;
-              console.log('Payment data:', p);  // DEBUG
               html += '<div class="clubflow-payment-info" data-payment-reference="' + (p.reference || '') + '" data-check-url="' + (p.check_url || '') + '">';
               
               if (p.method === 'stripe' && p.checkout_url) {
@@ -578,9 +655,11 @@
                 html += '</div>';
                 
                 // Auto-redirect after short delay
+                // Use a flag so the generic redirect_url handler below skips
+                var stripeRedirectUrl = p.checkout_url;
                 setTimeout(function() {
-                  window.location.href = p.checkout_url;
-                }, 1000);
+                  window.location.href = stripeRedirectUrl;
+                }, 500);
                 
               } else if (p.method === 'klarna' && p.html_snippet) {
                 // Klarna checkout - embed their widget
@@ -642,8 +721,9 @@
 
             // If server provided a redirect URL (e.g. free bookings), navigate there
             // so the PHP confirmation toast can show.
-            // Important: don't override payment redirects (Stripe/Klarna/Swish).
-            if (data.data && data.data.redirect_url && !data.data.payment) {
+            // Skip if Stripe/Klarna payment is pending — those have their own redirect.
+            if (data.data && data.data.redirect_url &&
+                !(data.data.payment && (data.data.payment.method === 'stripe' || data.data.payment.method === 'klarna'))) {
               window.location.href = data.data.redirect_url;
               return;
             }
@@ -937,7 +1017,7 @@
           return;
         }
 
-        openModal('<p>Loading...</p>');
+        openModal('<div class="clubflow-modal-loading"><span class="clubflow-spinner"></span></div>');
 
         var url = new URL(window.ClubFlow.ajaxUrl);
         url.searchParams.set('action', window.ClubFlow.actionDetails);
@@ -1000,6 +1080,27 @@
 
   // Toast is handled by PHP (ClubFlow_Booking::maybe_show_confirmation_toast)
   // which is more reliable and works without JS
+
+  // Clear field-level validation errors as the user types
+  function initFieldErrorClearing() {
+    document.addEventListener('input', function (e) {
+      var t = e && e.target ? e.target : null;
+      if (!t) return;
+      var fieldWrap = t.closest('.clubflow-booking-widget__field');
+      if (fieldWrap && fieldWrap.classList.contains('clubflow-field-error')) {
+        clearFieldError(fieldWrap);
+      }
+    });
+
+    document.addEventListener('change', function (e) {
+      var t = e && e.target ? e.target : null;
+      if (!t) return;
+      var fieldWrap = t.closest('.clubflow-booking-widget__field');
+      if (fieldWrap && fieldWrap.classList.contains('clubflow-field-error')) {
+        clearFieldError(fieldWrap);
+      }
+    });
+  }
 
   // Handle booking forms outside of modal (shortcode embedded)
   function initStandaloneBookingForms() {
@@ -1073,7 +1174,7 @@
       }
       
       // Show loading state
-      openModal('<div class="clubflow-modal__loading"><p>Loading...</p></div>');
+      openModal('<div class="clubflow-modal-loading"><span class="clubflow-spinner"></span></div>');
       
       // Fetch event details via AJAX (same method as calendar eventClick)
       var url = new URL(window.ClubFlow.ajaxUrl);
@@ -1099,6 +1200,7 @@
   function init() {
     ensureSvLocale();
     initModal();
+    initFieldErrorClearing();
     initStandaloneBookingForms();
     initPopupTriggers();
     qsa('.clubflow-calendar').forEach(initOne);
