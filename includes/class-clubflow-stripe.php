@@ -415,12 +415,9 @@ class ClubFlow_Stripe {
             ) );
         }
 
-        // Send confirmation email
-        if ( class_exists( 'ClubFlow_Mailchimp' ) ) {
-            ClubFlow_Mailchimp::send_booking_confirmation( $booking_id );
-        }
-
-        // Fallback customer confirmation (skips automatically when Mailchimp is active)
+        // Send confirmation emails.
+        // Mailchimp handles its own emails via the clubflow_booking_payment_confirmed hook,
+        // so we only call the wp_mail fallback here.
         if ( class_exists( 'ClubFlow_Notifications' ) ) {
             ClubFlow_Notifications::send_booking_confirmation( $booking_id );
             ClubFlow_Notifications::send_admin_notification( $booking_id );

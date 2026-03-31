@@ -2048,7 +2048,11 @@ final class ClubFlow_Booking {
 			if ($status !== 'confirmed') {
 				$session_id = get_post_meta($booking_id, '_stripe_session_id', true);
 				if ($session_id) {
-					$session = ClubFlow_Stripe::verify_and_confirm($booking_id, $session_id);
+					try {
+						ClubFlow_Stripe::verify_and_confirm($booking_id, $session_id);
+					} catch (\Throwable $e) {
+						error_log('ClubFlow Stripe verify_and_confirm error: ' . $e->getMessage());
+					}
 				}
 			}
 		}
