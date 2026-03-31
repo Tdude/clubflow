@@ -33,12 +33,18 @@ final class ClubFlow_Booking {
 		add_action('manage_' . ClubFlow::POST_TYPE . '_posts_custom_column', [$this, 'render_bookings_column'], 10, 2);
 		add_filter('manage_' . self::POST_TYPE . '_posts_columns', [$this, 'booking_admin_columns']);
 		add_filter('manage_edit-' . self::POST_TYPE . '_sortable_columns', [$this, 'booking_admin_sortable_columns']);
+		add_filter('default_hidden_columns', [$this, 'booking_default_hidden_columns'], 10, 2);
 		add_action('pre_get_posts', [$this, 'maybe_apply_booking_admin_sorting']);
 		add_action('manage_' . self::POST_TYPE . '_posts_custom_column', [$this, 'render_booking_admin_column'], 10, 2);
 		add_action('add_meta_boxes_' . self::POST_TYPE, [$this, 'register_booking_details_meta_box']);
 		add_action('admin_post_clubflow_confirm_payment', [$this, 'handle_confirm_payment']);
+		add_action('wp_ajax_clubflow_confirm_payment', [$this, 'ajax_confirm_payment']);
 		add_action('admin_post_clubflow_view_receipt', [$this, 'handle_view_receipt']);
 		add_action('manage_posts_extra_tablenav', [$this, 'render_receipt_controls']);
+		add_filter('post_row_actions', [$this, 'booking_row_actions'], 10, 2);
+		add_filter('bulk_actions-edit-' . self::POST_TYPE, [$this, 'register_booking_bulk_actions']);
+		add_filter('handle_bulk_actions-edit-' . self::POST_TYPE, [$this, 'handle_booking_bulk_actions'], 10, 3);
+		add_action('admin_footer', [$this, 'render_booking_list_inline_js']);
 		add_action('wp_footer', [$this, 'maybe_show_confirmation_toast']);
 		add_action('clubflow_payment_completed', [$this, 'maybe_issue_klippkort_from_booking'], 10, 2);
 		add_action('clubflow_booking_payment_confirmed', [$this, 'maybe_issue_klippkort_from_stripe_booking'], 10, 3);
@@ -973,6 +979,15 @@ final class ClubFlow_Booking {
 	 * AJAX handler for booking
 	 */
 	public function ajax_book(): void {
+		// Rate limiting: max 5 booking attempts per IP per 60 seconds
+		$ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+		$rate_key = 'clubflow_rate_' . md5($ip);
+		$attempts = (int) get_transient($rate_key);
+		if ($attempts >= 5) {
+			wp_send_json_error(['message' => 'För många bokningsförsök. Vänta en stund och försök igen.']);
+		}
+		set_transient($rate_key, $attempts + 1, 60);
+
 		// Verify nonce
 		if (!check_ajax_referer('clubflow_book', '_ajax_nonce', false)) {
 			wp_send_json_error(__('Säkerhetskontrollen misslyckades.', 'clubflow'), 403);
@@ -1112,6 +1127,7 @@ final class ClubFlow_Booking {
 		}
 		echo '</strong></p>';
 
+		echo '<div class="clubflow-table-responsive">';
 		echo '<table class="widefat striped" style="margin-top: 10px;">';
 		echo '<thead><tr>';
 		echo '<th>' . esc_html__('Name', 'clubflow') . '</th>';
@@ -1168,6 +1184,7 @@ final class ClubFlow_Booking {
 		}
 
 		echo '</tbody></table>';
+		echo '</div>'; // .clubflow-table-responsive
 	}
 
 	/**
@@ -1236,6 +1253,24 @@ final class ClubFlow_Booking {
 		$columns['phone'] = 'clubflow_phone';
 		$columns['status'] = 'clubflow_status';
 		return $columns;
+	}
+
+	/**
+	 * Hide non-essential booking columns by default.
+	 * Admins can re-enable them via Screen Options.
+	 */
+	public function booking_default_hidden_columns(array $hidden, \WP_Screen $screen): array {
+		if ($screen->id === 'edit-' . self::POST_TYPE) {
+			$hidden = array_merge($hidden, [
+				'phone',
+				'order_notes',
+				'pay_later',
+				'instructor_student',
+				'discount_code',
+				'code',
+			]);
+		}
+		return $hidden;
 	}
 
 	public function maybe_apply_booking_admin_sorting(\WP_Query $query): void {
@@ -1341,11 +1376,7 @@ final class ClubFlow_Booking {
 				$color = $status === 'confirmed' ? '#2e7d32' : '#ff9800';
 				echo '<span style="color: ' . esc_attr($color) . ';">' . esc_html(ucfirst($status)) . '</span>';
 				if (in_array((string) $status, ['pending', 'pending_payment'], true)) {
-					$confirm_url = wp_nonce_url(
-						admin_url('admin-post.php?action=clubflow_confirm_payment&booking_id=' . $post_id),
-						'clubflow_confirm_payment_' . $post_id
-					);
-					echo '<br><a href="' . esc_url($confirm_url) . '" class="button button-small" style="margin-top: 6px;">' . esc_html__('Bekräfta', 'clubflow') . '</a>';
+					echo '<br><button type="button" class="button button-small clubflow-confirm-payment-btn" data-booking-id="' . esc_attr($post_id) . '" style="margin-top: 6px;">' . esc_html__('Bekräfta', 'clubflow') . '</button>';
 				}
 				break;
 		}
@@ -1577,6 +1608,295 @@ final class ClubFlow_Booking {
 		// Redirect back
 		wp_redirect(get_edit_post_link($booking_id, 'raw'));
 		exit;
+	}
+
+	/**
+	 * AJAX handler for confirming payment (Task 1).
+	 */
+	public function ajax_confirm_payment(): void {
+		if (!current_user_can('edit_posts')) {
+			wp_send_json_error(['message' => __('Unauthorized', 'clubflow')], 403);
+		}
+
+		$booking_id = isset($_POST['booking_id']) ? absint($_POST['booking_id']) : 0;
+		if (!$booking_id || get_post_type($booking_id) !== self::POST_TYPE) {
+			wp_send_json_error(['message' => __('Invalid booking.', 'clubflow')], 400);
+		}
+
+		check_ajax_referer('clubflow_confirm_payment_ajax', '_ajax_nonce');
+
+		// Update payment status
+		if (class_exists('ClubFlow_Payment')) {
+			$payment = ClubFlow_Payment::get_booking_payment($booking_id);
+			if ($payment) {
+				ClubFlow_Payment::update_payment_status(
+					$payment['id'],
+					'completed',
+					sprintf(__('Payment confirmed manually by %s', 'clubflow'), wp_get_current_user()->display_name)
+				);
+			}
+		}
+
+		// Update booking status
+		$current_status = (string) get_post_meta($booking_id, '_clubflow_booking_status', true);
+		if (in_array($current_status, ['pending', 'pending_payment'], true)) {
+			update_post_meta($booking_id, '_clubflow_booking_status', 'confirmed');
+
+			do_action('clubflow_payment_completed', $booking_id, [
+				'status' => 'completed',
+				'source' => 'manual_admin_confirmation',
+			]);
+
+			if (class_exists('ClubFlow_Notifications')) {
+				ClubFlow_Notifications::send_booking_confirmation($booking_id);
+				ClubFlow_Notifications::send_admin_notification($booking_id);
+			}
+		}
+
+		$this->maybe_issue_klippkort_from_booking($booking_id, [
+			'source' => 'manual_admin_confirmation',
+		]);
+
+		wp_send_json_success(['status' => 'confirmed']);
+	}
+
+	/**
+	 * Add custom bulk actions to booking list (Task 2).
+	 */
+	public function register_booking_bulk_actions(array $actions): array {
+		$actions['clubflow_bulk_confirm'] = __('Confirm selected', 'clubflow');
+		$actions['clubflow_bulk_csv']     = __('Export to CSV', 'clubflow');
+		return $actions;
+	}
+
+	/**
+	 * Handle custom bulk actions for bookings (Task 2).
+	 */
+	public function handle_booking_bulk_actions(string $redirect_to, string $doaction, array $post_ids): string {
+		if ($doaction === 'clubflow_bulk_confirm') {
+			$confirmed = 0;
+			foreach ($post_ids as $post_id) {
+				$post_id = absint($post_id);
+				if (get_post_type($post_id) !== self::POST_TYPE) {
+					continue;
+				}
+				$current = (string) get_post_meta($post_id, '_clubflow_booking_status', true);
+				if (!in_array($current, ['pending', 'pending_payment'], true)) {
+					continue;
+				}
+
+				if (class_exists('ClubFlow_Payment')) {
+					$payment = ClubFlow_Payment::get_booking_payment($post_id);
+					if ($payment) {
+						ClubFlow_Payment::update_payment_status(
+							$payment['id'],
+							'completed',
+							sprintf(__('Bulk confirmed by %s', 'clubflow'), wp_get_current_user()->display_name)
+						);
+					}
+				}
+
+				update_post_meta($post_id, '_clubflow_booking_status', 'confirmed');
+				do_action('clubflow_payment_completed', $post_id, [
+					'status' => 'completed',
+					'source' => 'bulk_admin_confirmation',
+				]);
+
+				if (class_exists('ClubFlow_Notifications')) {
+					ClubFlow_Notifications::send_booking_confirmation($post_id);
+					ClubFlow_Notifications::send_admin_notification($post_id);
+				}
+
+				$this->maybe_issue_klippkort_from_booking($post_id, [
+					'source' => 'bulk_admin_confirmation',
+				]);
+				$confirmed++;
+			}
+
+			$redirect_to = add_query_arg('clubflow_bulk_confirmed', $confirmed, $redirect_to);
+			return $redirect_to;
+		}
+
+		if ($doaction === 'clubflow_bulk_csv') {
+			$this->export_bookings_csv($post_ids);
+			// export_bookings_csv calls exit, but just in case:
+			return $redirect_to;
+		}
+
+		return $redirect_to;
+	}
+
+	/**
+	 * Export selected bookings as CSV download (Task 2).
+	 */
+	private function export_bookings_csv(array $post_ids): void {
+		if (!current_user_can('edit_posts')) {
+			wp_die(__('Unauthorized', 'clubflow'));
+		}
+
+		$filename = 'clubflow-bookings-' . gmdate('Y-m-d') . '.csv';
+
+		nocache_headers();
+		header('Content-Type: text/csv; charset=UTF-8');
+		header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+		$output = fopen('php://output', 'w');
+		if (!$output) {
+			wp_die(__('Could not open output stream.', 'clubflow'));
+		}
+
+		// UTF-8 BOM for Excel compatibility
+		fwrite($output, "\xEF\xBB\xBF");
+
+		fputcsv($output, ['Name', 'Email', 'Phone', 'Event', 'Status', 'Date', 'Confirmation Code']);
+
+		foreach ($post_ids as $post_id) {
+			$post_id = absint($post_id);
+			if (get_post_type($post_id) !== self::POST_TYPE) {
+				continue;
+			}
+
+			$name    = (string) get_post_meta($post_id, '_clubflow_booking_name', true);
+			$email   = (string) get_post_meta($post_id, '_clubflow_booking_email', true);
+			$phone   = (string) get_post_meta($post_id, '_clubflow_booking_phone', true);
+			$status  = (string) get_post_meta($post_id, '_clubflow_booking_status', true);
+			$code    = (string) get_post_meta($post_id, '_clubflow_booking_confirmation_code', true);
+			$created = (string) get_post_meta($post_id, '_clubflow_booking_created', true);
+
+			$event_id   = (int) get_post_meta($post_id, '_clubflow_booking_event_id', true);
+			$event_title = $event_id > 0 ? get_the_title($event_id) : '';
+
+			$date_display = $created !== '' ? wp_date('Y-m-d H:i', strtotime($created)) : '';
+
+			fputcsv($output, [$name, $email, $phone, $event_title, $status, $date_display, $code]);
+		}
+
+		fclose($output);
+		exit;
+	}
+
+	/**
+	 * Add "Generera kvitto" row action on individual bookings (Task 3).
+	 */
+	public function booking_row_actions(array $actions, \WP_Post $post): array {
+		if ($post->post_type !== self::POST_TYPE || !current_user_can('edit_posts')) {
+			return $actions;
+		}
+
+		$nonce = wp_create_nonce('clubflow_view_receipt');
+		$email = (string) get_post_meta($post->ID, '_clubflow_booking_email', true);
+		$created = (string) get_post_meta($post->ID, '_clubflow_booking_created', true);
+
+		$from = '';
+		$to = '';
+		if ($created !== '') {
+			$date = wp_date('Y-m-d', strtotime($created));
+			$from = $date;
+			$to   = $date;
+		}
+
+		$receipt_url = add_query_arg([
+			'action'                 => 'clubflow_view_receipt',
+			'_wpnonce'               => $nonce,
+			'clubflow_receipt_email'  => $email,
+			'clubflow_receipt_from'   => $from,
+			'clubflow_receipt_to'     => $to,
+		], admin_url('admin-post.php'));
+
+		$actions['clubflow_receipt'] = '<a href="' . esc_url($receipt_url) . '" target="_blank">' . esc_html__('Receipt', 'clubflow') . '</a>';
+
+		return $actions;
+	}
+
+	/**
+	 * Render inline JS for AJAX confirm and bulk action notices on the booking list (Task 1 / Task 2).
+	 */
+	public function render_booking_list_inline_js(): void {
+		$screen = function_exists('get_current_screen') ? get_current_screen() : null;
+		if (!$screen || $screen->base !== 'edit' || $screen->post_type !== self::POST_TYPE) {
+			return;
+		}
+
+		$nonce = wp_create_nonce('clubflow_confirm_payment_ajax');
+		$ajax_url = admin_url('admin-ajax.php');
+
+		// Show admin notice for bulk confirm results
+		$bulk_confirmed = isset($_GET['clubflow_bulk_confirmed']) ? absint($_GET['clubflow_bulk_confirmed']) : -1;
+		?>
+		<script>
+		(function() {
+			<?php if ($bulk_confirmed >= 0) : ?>
+			(function() {
+				var wrap = document.querySelector('.wrap');
+				if (!wrap) return;
+				var notice = document.createElement('div');
+				notice.className = 'notice notice-success is-dismissible';
+				notice.innerHTML = '<p><?php echo esc_js(sprintf(
+					/* translators: %d = number of confirmed bookings */
+					__('%d booking(s) confirmed.', 'clubflow'),
+					$bulk_confirmed
+				)); ?></p>';
+				var heading = wrap.querySelector('h1, .wp-heading-inline');
+				if (heading && heading.nextSibling) {
+					wrap.insertBefore(notice, heading.nextSibling);
+				} else {
+					wrap.prepend(notice);
+				}
+			})();
+			<?php endif; ?>
+
+			/* AJAX confirm payment buttons */
+			document.addEventListener('click', function(e) {
+				var btn = e.target.closest('.clubflow-confirm-payment-btn');
+				if (!btn) return;
+				e.preventDefault();
+
+				if (btn.disabled) return;
+				btn.disabled = true;
+				btn.textContent = '...';
+
+				var bookingId = btn.getAttribute('data-booking-id');
+				var body = new URLSearchParams();
+				body.append('action', 'clubflow_confirm_payment');
+				body.append('booking_id', bookingId);
+				body.append('_ajax_nonce', <?php echo wp_json_encode($nonce); ?>);
+
+				fetch(<?php echo wp_json_encode($ajax_url); ?>, {
+					method: 'POST',
+					credentials: 'same-origin',
+					headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+					body: body.toString()
+				})
+				.then(function(r) { return r.json(); })
+				.then(function(json) {
+					if (json && json.success) {
+						btn.textContent = '\u2713 Bekr\u00e4ftad';
+						btn.style.color = '#2e7d32';
+						/* Update the status text in the same cell */
+						var cell = btn.closest('td');
+						if (cell) {
+							var statusSpan = cell.querySelector('span');
+							if (statusSpan) {
+								statusSpan.textContent = 'Confirmed';
+								statusSpan.style.color = '#2e7d32';
+							}
+						}
+					} else {
+						var msg = (json && json.data && json.data.message) || 'Error';
+						alert(msg);
+						btn.disabled = false;
+						btn.textContent = <?php echo wp_json_encode(__('Confirm payment received', 'clubflow')); ?>;
+					}
+				})
+				.catch(function() {
+					alert('Network error. Please try again.');
+					btn.disabled = false;
+					btn.textContent = <?php echo wp_json_encode(__('Confirm payment received', 'clubflow')); ?>;
+				});
+			});
+		})();
+		</script>
+		<?php
 	}
 
 	public static function build_receipt_model(array $booking_ids, array $args = []): array {

@@ -350,14 +350,37 @@
       events: loadEvents,
       eventContent: function (arg) {
         var ext = arg.event.extendedProps || {};
+        var bookedNum = typeof ext.booked !== 'undefined' ? parseInt(ext.booked, 10) : 0;
+        var maxNum = typeof ext.maxSpots !== 'undefined' ? parseInt(ext.maxSpots, 10) : 0;
         var booked = typeof ext.booked !== 'undefined' ? String(ext.booked) : '';
-        var max = typeof ext.maxSpots !== 'undefined' && ext.maxSpots > 0 ? String(ext.maxSpots) : '';
+        var max = maxNum > 0 ? String(ext.maxSpots) : '';
         var counter = booked && max ? booked + '/' + max : booked;
         var title = arg.event.title || '';
+
+        // Determine urgency level
+        var urgencyClass = '';
+        var badge = '';
+        if (maxNum > 0 && bookedNum >= maxNum) {
+          urgencyClass = ' clubflow-event--full';
+          badge = '<span class="clubflow-admin-cal__event-badge clubflow-admin-cal__event-badge--full">FULLBOKAT</span>';
+        } else if (maxNum > 0 && bookedNum / maxNum >= 0.8) {
+          urgencyClass = ' clubflow-event--nearly-full';
+          badge = '<span class="clubflow-admin-cal__event-badge clubflow-admin-cal__event-badge--warn">80%+</span>';
+        }
+
+        // Apply urgency class to the FullCalendar event element
+        var el = arg.event._def && arg.event._def.ui;
+        if (urgencyClass) {
+          arg.event.setProp('classNames', [urgencyClass.trim()]);
+        }
+
         var html = '<div class="clubflow-admin-cal__event">';
         html += '<div class="clubflow-admin-cal__event-title">' + escapeHtml(title) + '</div>';
-        if (counter) {
-          html += '<div class="clubflow-admin-cal__event-counter">' + escapeHtml(counter) + '</div>';
+        if (counter || badge) {
+          html += '<div class="clubflow-admin-cal__event-counter">';
+          if (counter) { html += escapeHtml(counter); }
+          if (badge) { html += ' ' + badge; }
+          html += '</div>';
         }
         html += '</div>';
         return { html: html };

@@ -29,6 +29,11 @@ final class ClubFlow_Payment {
 		add_filter('manage_' . self::LOG_POST_TYPE . '_posts_columns', [$this, 'payment_log_columns']);
 		add_action('manage_' . self::LOG_POST_TYPE . '_posts_custom_column', [$this, 'render_payment_log_column'], 10, 2);
 		add_action('admin_notices', [$this, 'payment_log_admin_notice']);
+
+		// Payment log filters and summary
+		add_action('restrict_manage_posts', [$this, 'payment_log_filters'], 10, 2);
+		add_action('pre_get_posts', [$this, 'payment_log_filter_query']);
+		add_action('manage_posts_extra_tablenav', [$this, 'payment_log_summary']);
 	}
 
 	/**
@@ -768,5 +773,158 @@ final class ClubFlow_Payment {
 			'deep_link'    => $deep_link,
 			'qr_data'      => 'C' . $swish_number . ';' . $amount . ';' . ($message ?: $reference) . ';0',
 		];
+	}
+
+	/**
+	 * Add dropdown filters for payment method and status on the payment log list
+	 */
+	public function payment_log_filters(string $post_type, string $which): void {
+		if ($post_type !== self::LOG_POST_TYPE || $which !== 'top') {
+			return;
+		}
+
+		$current_method = sanitize_text_field($_GET['_filter_method'] ?? '');
+		$current_status = sanitize_text_field($_GET['_filter_status'] ?? '');
+
+		$methods = [
+			''       => __('All methods', 'clubflow'),
+			'stripe' => 'Stripe',
+			'swish'  => 'Swish',
+			'klarna' => 'Klarna',
+			'manual' => __('Manual', 'clubflow'),
+		];
+
+		$statuses = [
+			''          => __('All statuses', 'clubflow'),
+			'completed' => __('Completed', 'clubflow'),
+			'pending'   => __('Pending', 'clubflow'),
+			'failed'    => __('Failed', 'clubflow'),
+		];
+
+		echo '<select name="_filter_method">';
+		foreach ($methods as $value => $label) {
+			printf(
+				'<option value="%s"%s>%s</option>',
+				esc_attr($value),
+				selected($current_method, $value, false),
+				esc_html($label)
+			);
+		}
+		echo '</select>';
+
+		echo '<select name="_filter_status">';
+		foreach ($statuses as $value => $label) {
+			printf(
+				'<option value="%s"%s>%s</option>',
+				esc_attr($value),
+				selected($current_status, $value, false),
+				esc_html($label)
+			);
+		}
+		echo '</select>';
+	}
+
+	/**
+	 * Apply payment log filters to the admin query
+	 */
+	public function payment_log_filter_query(\WP_Query $query): void {
+		if (!is_admin() || !$query->is_main_query()) {
+			return;
+		}
+
+		$screen = get_current_screen();
+		if (!$screen || $screen->post_type !== self::LOG_POST_TYPE) {
+			return;
+		}
+
+		$meta_query = $query->get('meta_query') ?: [];
+
+		$filter_method = sanitize_text_field($_GET['_filter_method'] ?? '');
+		if ($filter_method !== '') {
+			$meta_query[] = [
+				'key'   => '_payment_method',
+				'value' => $filter_method,
+			];
+		}
+
+		$filter_status = sanitize_text_field($_GET['_filter_status'] ?? '');
+		if ($filter_status !== '') {
+			$meta_query[] = [
+				'key'   => '_payment_status',
+				'value' => $filter_status,
+			];
+		}
+
+		if (!empty($meta_query)) {
+			$query->set('meta_query', $meta_query);
+		}
+	}
+
+	/**
+	 * Show a summary line above the payment log table (top tablenav only)
+	 */
+	public function payment_log_summary(string $which): void {
+		if ($which !== 'top') {
+			return;
+		}
+
+		$screen = get_current_screen();
+		if (!$screen || $screen->post_type !== self::LOG_POST_TYPE) {
+			return;
+		}
+
+		$completed_total = 0.0;
+		$completed_count = 0;
+		$pending_count   = 0;
+
+		// Query all completed payments
+		$completed_posts = get_posts([
+			'post_type'      => self::LOG_POST_TYPE,
+			'post_status'    => 'publish',
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+			'meta_query'     => [
+				[
+					'key'   => '_payment_status',
+					'value' => 'completed',
+				],
+			],
+		]);
+
+		foreach ($completed_posts as $pid) {
+			$amount = (float) get_post_meta($pid, '_payment_amount', true);
+			$completed_total += $amount;
+			$completed_count++;
+		}
+
+		// Count pending payments
+		$pending_posts = get_posts([
+			'post_type'      => self::LOG_POST_TYPE,
+			'post_status'    => 'publish',
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+			'meta_query'     => [
+				[
+					'key'   => '_payment_status',
+					'value' => 'pending',
+				],
+			],
+		]);
+		$pending_count = count($pending_posts);
+
+		printf(
+			'<div class="alignleft" style="margin: 6px 0 0 8px; font-size: 13px; color: #50575e;">'
+			. '<span style="color: #2e7d32; font-weight: 600;">%s</span> &nbsp;|&nbsp; '
+			. '<span style="color: #ff9800;">%s</span>'
+			. '</div>',
+			/* translators: 1: total kr, 2: number of payments */
+			esc_html(sprintf(__('Total completed: %s kr (%s betalningar)', 'clubflow'),
+				number_format_i18n($completed_total, 0),
+				$completed_count
+			)),
+			esc_html(sprintf(__('Pending: %s betalningar', 'clubflow'),
+				$pending_count
+			))
+		);
 	}
 }

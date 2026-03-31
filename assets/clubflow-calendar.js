@@ -441,11 +441,24 @@
 
     paymentPollInterval = setInterval(function () {
       pollCount++;
-      
+
       if (pollCount > maxPolls) {
         clearInterval(paymentPollInterval);
         updatePaymentStatus(containerEl, 'timeout');
         return;
+      }
+
+      // Progressive guidance messages based on elapsed time
+      var elapsedSeconds = pollCount * 5;
+      var textEl = qs('.clubflow-status-text', containerEl);
+      if (textEl) {
+        if (elapsedSeconds >= 300) {
+          textEl.textContent = 'Väntar fortfarande... Om betalningen inte fungerar, kontakta oss.';
+        } else if (elapsedSeconds >= 120) {
+          textEl.textContent = 'Betalningen verkar ta lång tid. Kontrollera att beloppet stämmer i Swish-appen.';
+        } else if (elapsedSeconds >= 30) {
+          textEl.textContent = 'Har du skannat QR-koden? Öppna Swish-appen och godkänn betalningen.';
+        }
       }
 
       fetch(checkUrl, { credentials: 'same-origin' })
@@ -528,7 +541,7 @@
     if (nameInput) {
       var nameVal = (nameInput.value || '').trim();
       if (!nameVal) {
-        setFieldError(nameInput.closest('.clubflow-booking-widget__field'), 'Namn kr\u00e4vs');
+        setFieldError(nameInput.closest('.clubflow-booking-widget__field'), (window.ClubFlow && window.ClubFlow.i18n && window.ClubFlow.i18n.nameRequired) || 'Namn kr\u00e4vs');
         valid = false;
       }
     }
@@ -539,7 +552,7 @@
       var emailVal = (emailInput.value || '').trim();
       var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailVal || !emailPattern.test(emailVal)) {
-        setFieldError(emailInput.closest('.clubflow-booking-widget__field'), 'Ogiltig e-postadress');
+        setFieldError(emailInput.closest('.clubflow-booking-widget__field'), (window.ClubFlow && window.ClubFlow.i18n && window.ClubFlow.i18n.invalidEmail) || 'Ogiltig e-postadress');
         valid = false;
       }
     }
@@ -549,7 +562,7 @@
     if (phoneInput) {
       var phoneVal = (phoneInput.value || '').trim();
       if (!phoneVal) {
-        setFieldError(phoneInput.closest('.clubflow-booking-widget__field'), 'Telefonnummer kr\u00e4vs');
+        setFieldError(phoneInput.closest('.clubflow-booking-widget__field'), (window.ClubFlow && window.ClubFlow.i18n && window.ClubFlow.i18n.phoneRequired) || 'Telefonnummer kr\u00e4vs');
         valid = false;
       }
     }
@@ -560,8 +573,8 @@
       var input = qs('input', wrap);
       if (input && input.hasAttribute('required') && !(input.value || '').trim()) {
         var label = qs('label', wrap);
-        var fieldName = label ? label.textContent.replace(/\s*\*\s*$/, '').trim() : 'F\u00e4lt';
-        setFieldError(wrap, fieldName + ' kr\u00e4vs');
+        var fieldName = label ? label.textContent.replace(/\s*\*\s*$/, '').trim() : ((window.ClubFlow && window.ClubFlow.i18n && window.ClubFlow.i18n.fieldFallback) || 'F\u00e4lt');
+        setFieldError(wrap, fieldName + ' ' + ((window.ClubFlow && window.ClubFlow.i18n && window.ClubFlow.i18n.fieldRequired) || 'kr\u00e4vs'));
         valid = false;
       }
     });
@@ -615,9 +628,11 @@
           if (messageEl) {
             messageEl.className = 'clubflow-booking__message clubflow-booking__message--success';
             
+            var confCode = data.data.confirmation_code || '';
             var html = '<strong>' + (window.ClubFlow.i18n.booked || 'Bokad!') + '</strong><br>' +
-              (window.ClubFlow.i18n.bookingSuccess || 'Din bokning är bekräftad! Bekräftelsekod:') + 
-              ' <strong>' + (data.data.confirmation_code || '') + '</strong>';
+              (window.ClubFlow.i18n.bookingSuccess || 'Din bokning är bekräftad! Bekräftelsekod:') +
+              ' <strong>' + confCode + '</strong>' +
+              (confCode ? ' <button type="button" class="clubflow-copy-btn" data-clubflow-copy="' + confCode + '">' + (window.ClubFlow.i18n.copy || 'Kopiera') + '</button>' : '');
 
             if (data.data && data.data.klippkort_code) {
               html += '<br>' + (window.ClubFlow.i18n.klippkortCode || 'Klippkortkod:') +
@@ -716,8 +731,30 @@
               html += '</div>';
             }
             
+            // When Klarna checkout is present, expand modal and clear previous content
+            var modal = getModal();
+            if (data.data.payment && data.data.payment.method === 'klarna') {
+              if (modal) modal.classList.add('clubflow-modal--klarna');
+              messageEl.innerHTML = '';
+            } else {
+              if (modal) modal.classList.remove('clubflow-modal--klarna');
+            }
+
             messageEl.innerHTML = html;
             messageEl.style.display = 'block';
+
+            // Copy-to-clipboard for confirmation code
+            var copyBtn = messageEl.querySelector('.clubflow-copy-btn');
+            if (copyBtn) {
+              copyBtn.addEventListener('click', function() {
+                var code = this.getAttribute('data-clubflow-copy');
+                var btn = this;
+                navigator.clipboard.writeText(code).then(function() {
+                  btn.textContent = (window.ClubFlow && window.ClubFlow.i18n && window.ClubFlow.i18n.copied) || 'Kopierad!';
+                  setTimeout(function() { btn.textContent = (window.ClubFlow && window.ClubFlow.i18n && window.ClubFlow.i18n.copy) || 'Kopiera'; }, 2000);
+                });
+              });
+            }
 
             // If server provided a redirect URL (e.g. free bookings), navigate there
             // so the PHP confirmation toast can show.
@@ -770,7 +807,8 @@
                     if (resp.data.remaining === null || typeof resp.data.remaining === 'undefined') return;
                     var n = parseInt(resp.data.remaining, 10);
                     if (isNaN(n)) return;
-                    messageEl.textContent = errMsg + ' ' + 'Du verkar ha ' + n + ' klipp kvar.';
+                    var hintTpl = (window.ClubFlow && window.ClubFlow.i18n && window.ClubFlow.i18n.klippkortHint) || 'Du verkar ha %d klipp kvar.';
+                    messageEl.textContent = errMsg + ' ' + hintTpl.replace('%d', n);
                   })
                   .catch(function () {
                     // Ignore hint failures

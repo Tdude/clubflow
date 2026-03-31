@@ -415,6 +415,27 @@ final class ClubFlow_Shortcodes {
 				$html .= '</div>';
 			}
 
+			// Payment method hint (only for paid events)
+			if ($price_amount > 0) {
+				$payment_settings = get_option('clubflow_payment_settings', []);
+				$active_method = $payment_settings['payment_method'] ?? 'stripe';
+				$payment_hints = [
+					'stripe' => __('Betalning sker via Stripe', 'clubflow'),
+					'swish'  => __('Betalning sker via Swish', 'clubflow'),
+					'klarna' => __('Betalning sker via Klarna', 'clubflow'),
+					'manual' => __('Betalning sker p&aring; plats', 'clubflow'),
+				];
+				$payment_icons = [
+					'stripe' => "\xF0\x9F\x92\xB3",
+					'swish'  => "\xF0\x9F\x93\xB1",
+					'klarna' => "\xF0\x9F\x9B\x92",
+					'manual' => "\xF0\x9F\x92\xB0",
+				];
+				$hint_text = $payment_hints[$active_method] ?? $payment_hints['stripe'];
+				$hint_icon = $payment_icons[$active_method] ?? $payment_icons['stripe'];
+				$html .= '<p class="clubflow-payment-hint">' . $hint_icon . ' ' . esc_html($hint_text) . '</p>';
+			}
+
 			$html .= '<div class="clubflow-booking-widget__submit">';
 			$html .= '<button type="submit" class="clubflow-booking-widget__button">' . esc_html($button_text) . '</button>';
 			$html .= '</div>';

@@ -118,6 +118,9 @@ final class ClubFlow_Admin {
 			.clubflow-admin-cal__event{display:flex;justify-content:space-between;gap:8px; padding:6px;}
 			.clubflow-admin-cal__event-title{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 			.clubflow-admin-cal__event-counter{font-weight:700;font-size:12px;opacity:.9;}
+			.fc-event.clubflow-event--nearly-full{background-color:#e8a020 !important;border-color:#d49318 !important;}
+			.fc-event.clubflow-event--full{background-color:#d63638 !important;border-color:#b32d2e !important;}
+			.clubflow-admin-cal__event-badge{display:inline-block;font-size:10px;font-weight:700;line-height:1;padding:2px 5px;border-radius:3px;text-transform:uppercase;letter-spacing:.03em;background:rgba(255,255,255,.3);color:#fff;}
 			</style>
 			<?php $show_blocks_month = get_option('clubflow_show_blocks_month', '1') !== '0'; ?>
 			<div id="clubflow-admin-calendar"></div>

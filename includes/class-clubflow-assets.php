@@ -154,6 +154,16 @@ final class ClubFlow_Assets {
 					'paymentTimeout' => __('Betalningen kunde inte bekräftas. Kontakta oss om du har betalat.', 'clubflow'),
 					'redirectingToPayment' => __('Skickar dig till betalning...', 'clubflow'),
 					'proceedToPayment' => __('Gå till betalning', 'clubflow'),
+					'nameRequired' => __('Namn krävs', 'clubflow'),
+					'invalidEmail' => __('Ogiltig e-postadress', 'clubflow'),
+					'phoneRequired' => __('Telefonnummer krävs', 'clubflow'),
+					'fieldRequired' => __('krävs', 'clubflow'),
+					'fieldFallback' => __('Fält', 'clubflow'),
+					'copy' => __('Kopiera', 'clubflow'),
+					'copied' => __('Kopierad!', 'clubflow'),
+					'klippkortCode' => __('Klippkortkod:', 'clubflow'),
+					'discount' => __('Rabatt:', 'clubflow'),
+					'klippkortHint' => __('Du verkar ha %d klipp kvar.', 'clubflow'),
 				],
 			]
 		);
