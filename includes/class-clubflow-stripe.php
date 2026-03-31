@@ -383,6 +383,12 @@ class ClubFlow_Stripe {
      * Confirm booking after successful payment
      */
     private static function confirm_booking_payment( int $booking_id, array $session ): void {
+        // Idempotency guard: prevent duplicate payment logs and emails from webhook+polling race
+        $current_status = get_post_meta( $booking_id, '_clubflow_booking_status', true );
+        if ( $current_status === 'confirmed' ) {
+            return;
+        }
+
         $event_id = get_post_meta( $booking_id, '_clubflow_booking_event_id', true );
         $customer_email = get_post_meta( $booking_id, '_clubflow_booking_email', true );
         $customer_name = get_post_meta( $booking_id, '_clubflow_booking_name', true );

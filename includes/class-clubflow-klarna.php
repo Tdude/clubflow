@@ -331,9 +331,11 @@ final class ClubFlow_Klarna {
 		$klarna_order_id = $request->get_param('klarna_order_id');
 
 		// Redirect to a thank you page or back to the booking
+		$code = get_post_meta($booking_id, '_clubflow_booking_confirmation_code', true);
 		$redirect_url = add_query_arg([
 			'booking_confirmed' => '1',
 			'booking_id'        => $booking_id,
+			'code'              => $code,
 		], home_url('/'));
 
 		return new \WP_REST_Response(null, 302, ['Location' => $redirect_url]);

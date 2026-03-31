@@ -371,6 +371,14 @@ final class ClubFlow_Swish {
 
 		$booking_id = $query->posts[0]->ID;
 
+		// Verify booking is actually pending payment (reject replayed/stale callbacks)
+		$current_booking_status = get_post_meta($booking_id, '_clubflow_booking_status', true);
+		if ($status === 'PAID' && $current_booking_status === 'confirmed') {
+			// Idempotency guard: booking already confirmed, nothing to do
+			error_log('Swish callback: booking ' . $booking_id . ' already confirmed, ignoring duplicate callback.');
+			return new \WP_REST_Response(['status' => 'ok'], 200);
+		}
+
 		// Update status
 		update_post_meta($booking_id, '_clubflow_swish_status', $status);
 
@@ -382,6 +390,26 @@ final class ClubFlow_Swish {
 		}
 
 		if ($status === 'PAID') {
+			// Verify payment with Swish API if configured (don't trust callback alone)
+			if ($this->is_api_configured()) {
+				$verify_url = $this->get_api_url() . '/paymentrequests/' . strtoupper($reference);
+				$verify_response = wp_remote_get($verify_url, [
+					'sslcertificates' => $this->settings['swish_cert_path'],
+					'timeout'         => 15,
+				]);
+				if (!is_wp_error($verify_response)) {
+					$verify_body = json_decode(wp_remote_retrieve_body($verify_response), true);
+					$verified_status = $verify_body['status'] ?? '';
+					if ($verified_status !== 'PAID') {
+						error_log('Swish callback: API verification failed for booking ' . $booking_id . '. Callback says PAID but API says ' . $verified_status);
+						return new \WP_REST_Response(['error' => 'Payment verification failed'], 403);
+					}
+				} else {
+					error_log('Swish callback: could not verify payment with API for booking ' . $booking_id . ': ' . $verify_response->get_error_message());
+					// Continue processing - API may be temporarily unreachable
+				}
+			}
+
 			// Payment successful!
 			update_post_meta($booking_id, '_clubflow_booking_status', 'confirmed');
 

@@ -751,6 +751,23 @@ final class ClubFlow_Booking {
 		update_post_meta($booking_id, '_clubflow_booking_event_id', $event_id);
 		update_post_meta($booking_id, '_clubflow_booking_name', $name);
 		update_post_meta($booking_id, '_clubflow_booking_email', $email);
+
+		// Post-insert duplicate check (race condition guard)
+		$dupes = get_posts([
+			'post_type'      => self::POST_TYPE,
+			'post_status'    => 'any',
+			'posts_per_page' => -1,
+			'meta_query'     => [
+				['key' => '_clubflow_booking_email', 'value' => $email],
+				['key' => '_clubflow_booking_event_id', 'value' => $event_id],
+			],
+			'fields' => 'ids',
+		]);
+		if (count($dupes) > 1) {
+			wp_delete_post($booking_id, true);
+			return ['success' => false, 'error' => __('Du har redan bokat detta event.', 'clubflow')];
+		}
+
 		update_post_meta($booking_id, '_clubflow_booking_phone', $phone);
 		update_post_meta($booking_id, '_clubflow_booking_street', $street);
 		update_post_meta($booking_id, '_clubflow_booking_postal_code', $postal_code);
@@ -928,7 +945,7 @@ final class ClubFlow_Booking {
 				} elseif ($payment_method === 'manual') {
 					$payment_info = [
 						'method'  => 'manual',
-						'amount'  => $price,
+						'amount'  => $amount,
 						'message' => __('Pay at the venue', 'clubflow'),
 					];
 				}
@@ -966,8 +983,10 @@ final class ClubFlow_Booking {
 		// Fire action for other integrations (e.g., Mailchimp)
 		do_action('clubflow_booking_created', $booking_id, $result);
 
-		// Send email notifications (customer fallback when Mailchimp is inactive + admin)
-		if (class_exists('ClubFlow_Notifications')) {
+		// Send email notifications only for immediately-complete bookings.
+		// When payment is required, notifications are sent after payment confirms
+		// (via ClubFlow_Stripe::confirm_booking_payment) to avoid duplicates.
+		if (!$payment_required && class_exists('ClubFlow_Notifications')) {
 			ClubFlow_Notifications::send_booking_confirmation($booking_id);
 			ClubFlow_Notifications::send_admin_notification($booking_id);
 		}
