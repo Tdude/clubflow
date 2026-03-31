@@ -186,6 +186,7 @@ class ClubFlow_Stripe {
         $success_url = add_query_arg( array(
             'booking_confirmed' => '1',
             'code'              => $confirmation_code,
+            'booking_id'        => $booking_id,
         ), $base_url );
         
         $cancel_url = add_query_arg( array(
@@ -427,5 +428,24 @@ class ClubFlow_Stripe {
 
         // Fire action for extensibility
         do_action( 'clubflow_booking_payment_confirmed', $booking_id, 'stripe', $session );
+    }
+
+    /**
+     * Verify a Stripe session and confirm booking if paid.
+     * Called on return from Stripe checkout (public-facing, no nonce needed).
+     */
+    public static function verify_and_confirm( int $booking_id, string $session_id ): bool {
+        $session = self::api_request( '/checkout/sessions/' . $session_id, array(), 'GET' );
+
+        if ( is_wp_error( $session ) ) {
+            return false;
+        }
+
+        if ( ( $session['payment_status'] ?? '' ) === 'paid' ) {
+            self::confirm_booking_payment( $booking_id, $session );
+            return true;
+        }
+
+        return false;
     }
 }

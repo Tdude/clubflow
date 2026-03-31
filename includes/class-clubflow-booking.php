@@ -2039,6 +2039,19 @@ final class ClubFlow_Booking {
 		$confirmed = isset($_GET['booking_confirmed']) ? sanitize_text_field($_GET['booking_confirmed']) : '';
 		$pending = isset($_GET['booking_pending']) ? sanitize_text_field($_GET['booking_pending']) : '';
 		$code = isset($_GET['code']) ? sanitize_text_field($_GET['code']) : '';
+		$booking_id = isset($_GET['booking_id']) ? intval($_GET['booking_id']) : 0;
+
+		// On return from Stripe, verify payment and confirm booking server-side.
+		// This is the primary confirmation path — the webhook is a backup.
+		if ($confirmed === '1' && $booking_id > 0 && class_exists('ClubFlow_Stripe')) {
+			$status = get_post_meta($booking_id, '_clubflow_booking_status', true);
+			if ($status !== 'confirmed') {
+				$session_id = get_post_meta($booking_id, '_stripe_session_id', true);
+				if ($session_id) {
+					$session = ClubFlow_Stripe::verify_and_confirm($booking_id, $session_id);
+				}
+			}
+		}
 
 		if (($confirmed !== '1' && $pending !== '1') || empty($code)) {
 			return;
