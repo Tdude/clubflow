@@ -413,20 +413,29 @@ class ClubFlow_Stripe {
         update_post_meta( $booking_id, '_stripe_payment_intent', $session['payment_intent'] ?? '' );
         update_post_meta( $booking_id, '_payment_completed_at', current_time( 'mysql' ) );
 
-        // Log the successful payment
+        // Update the existing pending log entry (created at checkout start)
+        // instead of creating a duplicate "completed" row.
         if ( class_exists( 'ClubFlow_Payment' ) ) {
-            ClubFlow_Payment::log_payment( array(
-                'booking_id' => $booking_id,
-                'event_id'   => $event_id,
-                'method'     => 'stripe',
-                'status'     => 'completed',
-                'amount'     => ( $session['amount_total'] ?? 0 ) / 100,
-                'currency'   => 'SEK',
-                'reference'  => $session['payment_intent'] ?? $session['id'],
-                'email'      => $customer_email,
-                'name'       => $customer_name,
-                'notes'      => 'Stripe Checkout completed',
-            ) );
+            $pending_log_id = ClubFlow_Payment::find_pending_log( $booking_id, 'stripe' );
+            if ( $pending_log_id > 0 ) {
+                ClubFlow_Payment::update_payment_status( $pending_log_id, 'completed', 'Stripe Checkout completed' );
+                // Update reference to payment_intent (pending log stored session_id)
+                update_post_meta( $pending_log_id, '_payment_reference', $session['payment_intent'] ?? $session['id'] );
+            } else {
+                // Fallback: no pending log found, create a new one
+                ClubFlow_Payment::log_payment( array(
+                    'booking_id' => $booking_id,
+                    'event_id'   => $event_id,
+                    'method'     => 'stripe',
+                    'status'     => 'completed',
+                    'amount'     => ( $session['amount_total'] ?? 0 ) / 100,
+                    'currency'   => 'SEK',
+                    'reference'  => $session['payment_intent'] ?? $session['id'],
+                    'email'      => $customer_email,
+                    'name'       => $customer_name,
+                    'notes'      => 'Stripe Checkout completed',
+                ) );
+            }
         }
 
         // Send confirmation emails.

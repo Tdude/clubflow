@@ -32,7 +32,10 @@ Payment Flow Analysis Report
   in a race condition between the return-redirect and webhook, you could theoretically get the webhook arriving just before the return handler. The idempotency guard is on booking meta, not on payment log creation, so the log entry would still be
   written by whichever path runs first.
 
-  Recommendation: In confirm_booking_payment(), find and update the existing pending log entry instead of creating a new one. Use update_payment_status() on the existing log.
+  FIX APPLIED: confirm_booking_payment() now calls ClubFlow_Payment::find_pending_log()
+  to locate the existing pending entry, then updates it via update_payment_status()
+  instead of creating a new row. Falls back to log_payment() if no pending log found.
+  Changed in: class-clubflow-stripe.php and class-clubflow-payment.php (new find_pending_log method).
 
   ---
   3. Stripe ~8-second delay before redirect back to site
@@ -87,7 +90,7 @@ Payment Flow Analysis Report
   ┌─────┬────────────────────────────────────────────────────┬──────────┬───────────────────────────────────────────────────────────────────┐
   │  #  │                       Issue                        │ Severity │                                Fix                                │
   ├─────┼────────────────────────────────────────────────────┼──────────┼───────────────────────────────────────────────────────────────────┤
-  │ 1   │ Duplicate pending+completed log entries for Stripe │ HIGH     │ Update existing log entry instead of creating new one             │
+  │ 1   │ Duplicate pending+completed log entries for Stripe │ HIGH     │ FIXED: confirm_booking_payment now updates existing pending log   │
   ├─────┼────────────────────────────────────────────────────┼──────────┼───────────────────────────────────────────────────────────────────┤
   │ 2   │ Email sends logged as "payments"                   │ MEDIUM   │ Log to a separate mechanism, or filter from payment log UI        │
   ├─────┼────────────────────────────────────────────────────┼──────────┼───────────────────────────────────────────────────────────────────┤
