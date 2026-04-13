@@ -37,7 +37,7 @@ ClubFlow har tre typer av "produkter" som du kan sälja:
 - Klippkortskoden har formatet `KLIPPKORT-XXXXXX` och hör till själva köpet.
 - Antal klipp sätts på klippkortseventet i admin (fält: **Klippkort credits**).
 - Klipp utfärdas automatiskt när betalningen bekräftas.
-- Vid bokning av en vanlig klass kan kunden kryssa i **Använd klippkort**. Systemet hittar klippkort via e-post automatiskt, men om flera delar samma e-post kan kunden ange sin kod.
+- Vid bokning av en vanlig klass väljer kunden **Klippkort** som betalningsmetod. Systemet hittar klippkort via e-post automatiskt, men om flera delar samma e-post kan kunden ange sin kod.
 - Alla utfärdanden och varje förbrukat klipp loggas i **Payment Log** (spårbart även om e-post skulle fallera).
 
 **Viktigt för kunden:**
@@ -96,6 +96,46 @@ Du kan ange två priser per event:
 | Medlemspris | Rabatterat pris (kunden väljer själv) |
 
 Om du bara anger ett pris visas inget val.
+
+Priset visas direkt i event-popupen (under plats) så att kunden ser det innan de fyller i bokningsformuläret.
+
+---
+
+## Betalningsmetoder i bokningsformuläret
+
+När kunden bokar väljer de **en** betalningsmetod:
+
+| Alternativ | Vad som händer |
+|------------|---------------|
+| **Betala online** (standard) | Kunden skickas till Stripe för kortbetalning |
+| **Klippkort** | Ett klipp dras av — ingen betalning sker |
+| **Faktura/Epassi** | Bokningen registreras utan online-betalning |
+| **Betala på plats (endast ws/op)** | Bokningen registreras — kunden betalar vid tillfället |
+
+Dessa visas som radioknappar (man kan bara välja ett).
+
+---
+
+## Rabatter
+
+### Instruktör/Student-rabatt (10%)
+
+Kunden kan kryssa i **Instruktör/Student (10%)** i bokningsformuläret. Rabatten gäller **endast för kurser** (4-8 veckors kurser).
+
+### Mängdrabatt (10%)
+
+Från den andra bokade kursen tillkommer automatiskt en mängdrabatt på 10%. Kan **ej** kombineras med instruktör/student-rabatten.
+
+### Aktivera rabatter för en kategori
+
+Rabatter fungerar bara för event som tillhör en kategori med rabatt aktiverad:
+
+1. Gå till **ClubFlow → Kategorier**
+2. Redigera kategorin (t.ex. "Träning")
+3. Kryssa i **Rabatt tillåten (10% student/instruktör & mängdrabatt)**
+4. Spara
+
+Utan denna bock beräknas ingen rabatt, oavsett vad kunden väljer i formuläret.
 
 ---
 

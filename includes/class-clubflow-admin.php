@@ -21,6 +21,12 @@ final class ClubFlow_Admin {
 		add_action(ClubFlow::TAX_CATEGORY . '_edit_form_fields', [$this, 'render_category_color_field_edit']);
 		add_action('created_' . ClubFlow::TAX_CATEGORY, [$this, 'save_category_color']);
 		add_action('edited_' . ClubFlow::TAX_CATEGORY, [$this, 'save_category_color']);
+
+		// Category discount checkbox (rabatt_ok token in description)
+		add_action(ClubFlow::TAX_CATEGORY . '_add_form_fields', [$this, 'render_discount_field_add']);
+		add_action(ClubFlow::TAX_CATEGORY . '_edit_form_fields', [$this, 'render_discount_field_edit']);
+		add_action('created_' . ClubFlow::TAX_CATEGORY, [$this, 'save_discount_field']);
+		add_action('edited_' . ClubFlow::TAX_CATEGORY, [$this, 'save_discount_field']);
 		
 		// Category color column in list
 		add_filter('manage_edit-' . ClubFlow::TAX_CATEGORY . '_columns', [$this, 'taxonomy_color_column']);
@@ -401,6 +407,66 @@ final class ClubFlow_Admin {
 	}
 
 	/**
+	 * Discount checkbox — "add" form (below categories list)
+	 */
+	public function render_discount_field_add(): void {
+		?>
+		<div class="form-field">
+			<label>
+				<input type="checkbox" name="clubflow_discount_enabled" value="1" />
+				<?php esc_html_e('Rabatt tillåten (10% student/instruktör & mängdrabatt)', 'clubflow'); ?>
+			</label>
+			<p class="description"><?php esc_html_e('Aktivera för kategorier som ska ge rabatt vid ombokning eller student/instruktörsstatus.', 'clubflow'); ?></p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Discount checkbox — "edit" form (single term page)
+	 */
+	public function render_discount_field_edit(\WP_Term $term): void {
+		$checked = strpos(strtolower((string) $term->description), 'rabatt_ok') !== false;
+		?>
+		<tr class="form-field">
+			<th scope="row"><?php esc_html_e('Rabatt', 'clubflow'); ?></th>
+			<td>
+				<label>
+					<input type="checkbox" name="clubflow_discount_enabled" value="1" <?php checked($checked); ?> />
+					<?php esc_html_e('Rabatt tillåten (10% student/instruktör & mängdrabatt)', 'clubflow'); ?>
+				</label>
+				<p class="description"><?php esc_html_e('Aktivera för kategorier som ska ge rabatt vid ombokning eller student/instruktörsstatus.', 'clubflow'); ?></p>
+			</td>
+		</tr>
+		<?php
+	}
+
+	/**
+	 * Save discount token in term description
+	 */
+	public function save_discount_field(int $term_id): void {
+		if (!current_user_can('manage_categories')) {
+			return;
+		}
+
+		$term = get_term($term_id, ClubFlow::TAX_CATEGORY);
+		if (!$term || is_wp_error($term)) {
+			return;
+		}
+
+		$desc = (string) $term->description;
+		$has_token = strpos(strtolower($desc), 'rabatt_ok') !== false;
+		$wants_token = !empty($_POST['clubflow_discount_enabled']);
+
+		if ($wants_token && !$has_token) {
+			$desc = trim($desc) !== '' ? trim($desc) . ' rabatt_ok' : 'rabatt_ok';
+			wp_update_term($term_id, ClubFlow::TAX_CATEGORY, ['description' => $desc]);
+		} elseif (!$wants_token && $has_token) {
+			$desc = trim(preg_replace('/\s*rabatt_ok/i', '', $desc));
+			wp_update_term($term_id, ClubFlow::TAX_CATEGORY, ['description' => $desc]);
+		}
+	}
+
+	/**
 	 * Date & Time meta box (side)
 	 */
 	public function render_datetime_meta_box(\WP_Post $post): void {
@@ -544,12 +610,12 @@ final class ClubFlow_Admin {
 
 		echo '<p>';
 		echo '<label for="clubflow_price">' . esc_html__('Price', 'clubflow') . ' <span style="color: #666;">(' . esc_html__('non-member', 'clubflow') . ')</span></label><br />';
-		echo '<input type="text" id="clubflow_price" name="clubflow_price" value="' . esc_attr((string) $price) . '" placeholder="200 kr" style="width: 100px;" />';
+		echo '<input type="text" id="clubflow_price" name="clubflow_price" value="' . esc_attr((string) $price) . '" placeholder="XX kr" style="width: 100px;" />';
 		echo '</p>';
 
 		echo '<p>';
 		echo '<label for="clubflow_member_price">' . esc_html__('Member price', 'clubflow') . ' <span style="color: #666;">(' . esc_html__('optional', 'clubflow') . ')</span></label><br />';
-		echo '<input type="text" id="clubflow_member_price" name="clubflow_member_price" value="' . esc_attr((string) $member_price) . '" placeholder="150 kr" style="width: 100px;" />';
+		echo '<input type="text" id="clubflow_member_price" name="clubflow_member_price" value="' . esc_attr((string) $member_price) . '" placeholder="XX kr" style="width: 100px;" />';
 		echo '</p>';
 
 		if ($event_mode === 'package') {

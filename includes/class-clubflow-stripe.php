@@ -324,6 +324,10 @@ class ClubFlow_Stripe {
         }
 
         // Handle checkout.session.completed
+        // Signature is already verified above, so we trust the event payload.
+        // Defer ALL heavy work (Stripe API call, DB writes, emails) to after
+        // the HTTP 200 is sent. Stripe holds the customer redirect for up to
+        // 10 s while waiting for our response — returning fast eliminates that delay.
         if ( $event['type'] === 'checkout.session.completed' ) {
             $session_from_event = $event['data']['object'] ?? array();
             $session_id = $session_from_event['id'] ?? '';
@@ -331,16 +335,25 @@ class ClubFlow_Stripe {
                 return new WP_REST_Response( array( 'error' => 'Missing session id' ), 400 );
             }
 
-            // Verify the session directly with Stripe API to avoid trusting any forged payload.
-            $session = self::api_request( '/checkout/sessions/' . $session_id, array(), 'GET' );
-            if ( is_wp_error( $session ) ) {
-                return new WP_REST_Response( array( 'error' => $session->get_error_message() ), 400 );
-            }
+            // Schedule the heavy lifting for after the response is flushed.
+            add_action( 'shutdown', function () use ( $session_id ) {
+                // Flush the response to Stripe/client before doing any work.
+                if ( function_exists( 'fastcgi_finish_request' ) ) {
+                    fastcgi_finish_request();
+                }
 
-            $booking_id = isset( $session['metadata']['booking_id'] ) ? intval( $session['metadata']['booking_id'] ) : 0;
-            if ( $booking_id && ( $session['payment_status'] ?? '' ) === 'paid' ) {
-                self::confirm_booking_payment( $booking_id, $session );
-            }
+                // Now verify with Stripe API and confirm the booking.
+                $session = self::api_request( '/checkout/sessions/' . $session_id, array(), 'GET' );
+                if ( is_wp_error( $session ) ) {
+                    error_log( 'ClubFlow webhook deferred: Stripe API error for session ' . $session_id . ' — ' . $session->get_error_message() );
+                    return;
+                }
+
+                $booking_id = isset( $session['metadata']['booking_id'] ) ? intval( $session['metadata']['booking_id'] ) : 0;
+                if ( $booking_id && ( $session['payment_status'] ?? '' ) === 'paid' ) {
+                    self::confirm_booking_payment( $booking_id, $session );
+                }
+            } );
         }
 
         return new WP_REST_Response( array( 'received' => true ), 200 );

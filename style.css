@@ -2,9 +2,18 @@
 ClubFlow plugin styles
 */
 
+.clubflow-calendar-title {
+	text-align: center;
+}
+
 .clubflow-calendar {
 	max-width: 1100px;
 	margin: 0 auto;
+}
+
+/* Toolbar: collapse center gap when external title is used */
+.clubflow-calendar .fc-toolbar-chunk:empty {
+	display: none;
 }
 
 .clubflow-calendar,
@@ -238,7 +247,8 @@ body.clubflow-modal-open .clubflow-calendar * {
 }
 
 .clubflow-event__datetime,
-.clubflow-event__location {
+.clubflow-event__location,
+.clubflow-event__price {
 	margin: 0 0 8px 0;
 	opacity: 0.95;
 }
@@ -404,7 +414,8 @@ body.is-dark .clubflow-hovercard .fc-list-event td,
 	}
 
 	.clubflow-event__datetime,
-	.clubflow-event__location {
+	.clubflow-event__location,
+	.clubflow-event__price {
 		opacity: 0.9;
 		color: var(--clubflow-muted);
 	}
@@ -1056,7 +1067,6 @@ body.is-dark .clubflow-list__link a,
 
 .clubflow-booking__field--member {
 	background: rgba(0, 0, 0, 0.03);
-	padding: 12px;
 	border-radius: 8px;
 	margin-top: 0.75rem;
 }
@@ -1065,6 +1075,11 @@ body.is-dark .clubflow-list__link a,
 	display: flex;
 	gap: 16px;
 	margin-top: 6px;
+}
+
+.clubflow-booking__radio-group--vertical {
+	flex-direction: column;
+	gap: 8px;
 }
 
 .clubflow-booking__radio {

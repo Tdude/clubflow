@@ -69,6 +69,11 @@
   function showHoverCard(sourceEl) {
     removeHoverCard(true);
 
+    // Disable hovercard on touch devices — it overlaps the modal on tap
+    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+      return;
+    }
+
     if (!sourceEl || !sourceEl.getBoundingClientRect) {
       return;
     }
@@ -375,6 +380,9 @@
     if (!modal) {
       return;
     }
+
+    // Remove any hovercard so it doesn't sit on top of the modal
+    removeHoverCard(true);
 
     // Blur any focused element (prevents clicked event from staying on top)
     if (document.activeElement && document.activeElement.blur) {
@@ -937,6 +945,8 @@
     var category = el.getAttribute('data-category') || '';
     var initialView = el.getAttribute('data-view') || 'dayGridMonth';
     var initialDate = el.getAttribute('data-initial-date') || '';
+    var titleElId = el.getAttribute('data-title-id') || '';
+    var externalTitleEl = titleElId ? document.getElementById(titleElId) : null;
     var listMonths = parseInt(el.getAttribute('data-list-months') || '3', 10);
     if (isNaN(listMonths) || listMonths < 1) {
       listMonths = 3;
@@ -949,8 +959,12 @@
     var listButtonText = listMonths === 1 ? '1 månad' : listMonths + ' månader';
 
     var isMobile = window.innerWidth <= 640;
-    var mobileToolbar = { left: 'prev,next', center: 'title', right: 'today' };
-    var desktopToolbar = { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listRange' };
+    var mobileToolbar = externalTitleEl
+      ? { left: 'prev,next', center: '', right: 'dayGridMonth,listTwoWeeks today' }
+      : { left: 'prev,next', center: 'title', right: 'dayGridMonth,listTwoWeeks today' };
+    var desktopToolbar = externalTitleEl
+      ? { left: 'prev,next today', center: '', right: 'dayGridMonth,listRange' }
+      : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listRange' };
     var calendar = new FullCalendar.Calendar(el, {
       headerToolbar: isMobile ? mobileToolbar : desktopToolbar,
       titleFormat: isMobile ? { month: 'long' } : { year: 'numeric', month: 'long' },
@@ -995,7 +1009,7 @@
         listTwoWeeks: {
           type: 'list',
           duration: { weeks: 2 },
-          buttonText: '2 veckor'
+          buttonText: 'Lista'
         }
       },
       buttonText: { today: 'Idag', month: 'Månad', week: 'Vecka', day: 'Dag', list: 'Lista', dayGridMonth: 'Månad' },
@@ -1014,6 +1028,15 @@
         window.setTimeout(function () {
           normalizeListView(el);
         }, 0);
+        // Sync external title heading with current month
+        if (externalTitleEl && calendar) {
+          try {
+            var currentDate = calendar.getDate();
+            var monthName = currentDate.toLocaleString('sv-SE', { month: 'long', year: 'numeric' });
+            monthName = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+            externalTitleEl.innerHTML = '<span class="upaif-title__first">Kalender</span> – ' + monthName;
+          } catch (e) {}
+        }
       },
       eventsSet: function (events) {
         window.setTimeout(function () {
@@ -1167,7 +1190,7 @@
         updateFreeFields(form);
       }
 
-		if (t && t.hasAttribute && t.hasAttribute('data-clubflow-klippkort-toggle')) {
+		if (t && t.hasAttribute && t.hasAttribute('data-clubflow-payment-method')) {
 			var form = t.closest('[data-clubflow-booking-form]');
 			if (!form) return;
 			updateKlippkortFields(form);
@@ -1182,12 +1205,13 @@
 
 	function updateKlippkortFields(form) {
 		if (!form) return;
-		var toggle = qs('[data-clubflow-klippkort-toggle]', form);
 		var codeField = qs('[data-clubflow-klippkort-code]', form);
-		if (!toggle || !codeField) return;
-		codeField.style.display = toggle.checked ? '' : 'none';
+		if (!codeField) return;
+		var selected = qs('input[name="payment_method"]:checked', form);
+		var isKlippkort = selected && selected.value === 'klippkort';
+		codeField.style.display = isKlippkort ? '' : 'none';
 
-		if (toggle.checked) {
+		if (isKlippkort) {
 			var input = qs('input[name="klippkort_code"]', codeField);
 			if (input && !input.value) {
 				var saved = getCookie('clubflow_klippkort_code');
