@@ -116,7 +116,7 @@ final class ClubFlow_Booking {
 		return strpos($desc, self::COURSE_DISCOUNT_CATEGORY_TOKEN) !== false;
 	}
 
-	private static function is_course_event(int $event_id): bool {
+	public static function is_course_event(int $event_id): bool {
 		$terms = wp_get_post_terms($event_id, ClubFlow::TAX_CATEGORY);
 		if (is_wp_error($terms) || empty($terms)) {
 			return false;

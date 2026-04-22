@@ -787,13 +787,15 @@ final class ClubFlow_Ajax {
 				$html .= '<input type="text" id="clubflow_book_klippkort_code" name="klippkort_code" placeholder="KLIPPKORT-ABC123" />';
 				$html .= '</div>';
 
-				// Discount checkbox (separate axis)
-				$html .= '<div class="clubflow-booking__field">';
-				$html .= '<label class="clubflow-checkline"><input type="checkbox" name="instructor_student" value="1" /> ' . esc_html__('Instruktör/Student (10%) (endast 4-8v kurser)', 'clubflow') . '</label>';
-				$html .= '<span class="clubflow-booking__field--discount-info" style="display:block; font-size: 0.85em; opacity: 0.7; margin-top: 4px;">';
-				$html .= esc_html__('Från den andra bokade kursen tillkommer en mängdrabatt på 10%. Kan ej kombineras med andra 10%.', 'clubflow');
-				$html .= '</span>';
-				$html .= '</div>';
+				// Discount checkbox – only for course events (category with rabatt_ok)
+				if (class_exists('ClubFlow_Booking') && ClubFlow_Booking::is_course_event($event_id)) {
+					$html .= '<div class="clubflow-booking__field">';
+					$html .= '<label class="clubflow-checkline"><input type="checkbox" name="instructor_student" value="1" /> ' . esc_html__('Instruktör/Student (10%) (endast 4-8v kurser)', 'clubflow') . '</label>';
+					$html .= '<span class="clubflow-booking__field--discount-info" style="display:block; font-size: 0.85em; opacity: 0.7; margin-top: 4px;">';
+					$html .= esc_html__('Från den andra bokade kursen tillkommer en mängdrabatt på 10%. Kan ej kombineras med andra 10%.', 'clubflow');
+					$html .= '</span>';
+					$html .= '</div>';
+				}
 			}
 
 			$html .= '<p class="clubflow-booking__field">';
