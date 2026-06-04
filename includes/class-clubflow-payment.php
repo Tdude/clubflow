@@ -569,6 +569,41 @@ final class ClubFlow_Payment {
 	}
 
 	/**
+	 * Find the pending payment log entry for a booking.
+	 * Returns the log post ID, or 0 if none found.
+	 */
+	public static function find_pending_log(int $booking_id, string $method = ''): int {
+		$meta_query = [
+			'relation' => 'AND',
+			[
+				'key'   => '_payment_booking_id',
+				'value' => $booking_id,
+				'type'  => 'NUMERIC',
+			],
+			[
+				'key'   => '_payment_status',
+				'value' => 'pending',
+			],
+		];
+		if ($method !== '') {
+			$meta_query[] = [
+				'key'   => '_payment_method',
+				'value' => $method,
+			];
+		}
+
+		$posts = get_posts([
+			'post_type'      => self::LOG_POST_TYPE,
+			'post_status'    => 'publish',
+			'posts_per_page' => 1,
+			'fields'         => 'ids',
+			'meta_query'     => $meta_query,
+		]);
+
+		return !empty($posts) ? (int) $posts[0] : 0;
+	}
+
+	/**
 	 * Get payment for a booking
 	 */
 	public static function get_booking_payment(int $booking_id): ?array {

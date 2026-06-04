@@ -116,7 +116,7 @@ final class ClubFlow_Booking {
 		return strpos($desc, self::COURSE_DISCOUNT_CATEGORY_TOKEN) !== false;
 	}
 
-	private static function is_course_event(int $event_id): bool {
+	public static function is_course_event(int $event_id): bool {
 		$terms = wp_get_post_terms($event_id, ClubFlow::TAX_CATEGORY);
 		if (is_wp_error($terms) || empty($terms)) {
 			return false;
@@ -635,6 +635,7 @@ final class ClubFlow_Booking {
 		$is_member = !empty($data['is_member']);
 		$use_klippkort = !empty($data['use_klippkort']);
 		$pay_later = !empty($data['pay_later']);
+		$pay_on_site = !empty($data['pay_on_site']);
 		$instructor_student = !empty($data['instructor_student']);
 		$klippkort_code = self::normalize_code((string) ($data['klippkort_code'] ?? ''));
 		$return_url = esc_url_raw($data['return_url'] ?? '');
@@ -777,6 +778,7 @@ final class ClubFlow_Booking {
 		update_post_meta($booking_id, '_clubflow_booking_confirmation_code', $confirmation_code);
 		update_post_meta($booking_id, '_clubflow_booking_created', current_time('mysql'));
 		update_post_meta($booking_id, '_clubflow_booking_pay_later', $pay_later ? '1' : '0');
+		update_post_meta($booking_id, '_clubflow_booking_pay_on_site', $pay_on_site ? '1' : '0');
 		update_post_meta($booking_id, '_clubflow_booking_instructor_student', $instructor_student ? '1' : '0');
 		if ($discount_percent > 0 && $discount_code !== '') {
 			update_post_meta($booking_id, '_clubflow_booking_discount_percent', (string) $discount_percent);
@@ -810,7 +812,7 @@ final class ClubFlow_Booking {
 		// Store the price used for this booking
 		update_post_meta($booking_id, '_clubflow_booking_price', $applicable_price);
 		$payment_enabled = !empty($payment_settings['enabled']);
-		$payment_required = !$pay_later && $payment_enabled && $amount > 0;
+		$payment_required = !$pay_later && !$pay_on_site && $payment_enabled && $amount > 0;
 		
 		// Set initial status: pending_payment if payment required, otherwise pending (manual confirmation)
 		$initial_status = $payment_required ? 'pending_payment' : 'pending';
@@ -1026,8 +1028,9 @@ final class ClubFlow_Booking {
 			'postal_code'   => $_POST['postal_code'] ?? '',
 			'city'          => $_POST['city'] ?? '',
 			'is_member'     => isset($_POST['is_member']) ? $_POST['is_member'] === '1' : false,
-			'use_klippkort' => isset($_POST['use_klippkort']) ? $_POST['use_klippkort'] === '1' : false,
-			'pay_later'     => isset($_POST['pay_later']) ? $_POST['pay_later'] === '1' : false,
+			'use_klippkort' => isset($_POST['payment_method']) ? $_POST['payment_method'] === 'klippkort' : (!empty($_POST['use_klippkort']) && $_POST['use_klippkort'] === '1'),
+			'pay_later'     => isset($_POST['payment_method']) ? $_POST['payment_method'] === 'pay_later' : (!empty($_POST['pay_later']) && $_POST['pay_later'] === '1'),
+			'pay_on_site'   => isset($_POST['payment_method']) ? $_POST['payment_method'] === 'pay_on_site' : (!empty($_POST['pay_on_site']) && $_POST['pay_on_site'] === '1'),
 			'instructor_student' => isset($_POST['instructor_student']) ? $_POST['instructor_student'] === '1' : false,
 			'klippkort_code'=> $_POST['klippkort_code'] ?? '',
 			'return_url'    => $_POST['return_url'] ?? '',
@@ -1103,6 +1106,7 @@ final class ClubFlow_Booking {
 				'created'           => get_post_meta($post->ID, '_clubflow_booking_created', true),
 				'order_notes'       => get_post_meta($post->ID, '_clubflow_booking_order_notes', true),
 				'pay_later'         => get_post_meta($post->ID, '_clubflow_booking_pay_later', true),
+				'pay_on_site'       => get_post_meta($post->ID, '_clubflow_booking_pay_on_site', true),
 				'instructor_student' => get_post_meta($post->ID, '_clubflow_booking_instructor_student', true),
 				'discount_code'     => get_post_meta($post->ID, '_clubflow_booking_discount_code', true),
 			];
@@ -1156,6 +1160,7 @@ final class ClubFlow_Booking {
 		echo '<th>' . esc_html__('Street', 'clubflow') . '</th>';
 		echo '<th>' . esc_html__('Post address', 'clubflow') . '</th>';
 		echo '<th>' . esc_html__('Faktura', 'clubflow') . '<br>' . esc_html__('Epassi', 'clubflow') . '</th>';
+		echo '<th>' . esc_html__('Betala', 'clubflow') . '<br>' . esc_html__('på plats', 'clubflow') . '</th>';
 		echo '<th>' . esc_html__('Instruktör', 'clubflow') . '<br>' . esc_html__('Student', 'clubflow') . '</th>';
 		echo '<th>' . esc_html__('Rabattkod', 'clubflow') . '</th>';
 		echo '<th>' . esc_html__('Notes', 'clubflow') . '</th>';
@@ -1186,6 +1191,8 @@ final class ClubFlow_Booking {
 			echo '<td>' . esc_html($post_display ?: '—') . '</td>';
 			$pay_later = (string) ($booking['pay_later'] ?? '');
 			echo '<td>' . ($pay_later === '1' ? esc_html__('Yes', 'clubflow') : '—') . '</td>';
+			$pay_on_site = (string) ($booking['pay_on_site'] ?? '');
+			echo '<td>' . ($pay_on_site === '1' ? esc_html__('Yes', 'clubflow') : '—') . '</td>';
 			$instructor_student = (string) ($booking['instructor_student'] ?? '');
 			echo '<td>' . ($instructor_student === '1' ? esc_html__('Yes', 'clubflow') : '—') . '</td>';
 			$discount_code = (string) ($booking['discount_code'] ?? '');
@@ -1259,11 +1266,13 @@ final class ClubFlow_Booking {
 			'phone'      => __('Phone', 'clubflow'),
 			'order_notes' => __('Notes', 'clubflow'),
 			'pay_later'  => __('Faktura/Epassi', 'clubflow'),
+			'pay_on_site' => __('Betala på plats', 'clubflow'),
 			'instructor_student' => __('Instruktör/Student', 'clubflow'),
 			'discount_code' => __('Rabattkod', 'clubflow'),
 			'code'       => __('Code', 'clubflow'),
 			'status'     => __('Status', 'clubflow'),
 			'created'    => __('Created', 'clubflow'),
+			'price'      => __('Pris', 'clubflow'),
 		];
 	}
 
@@ -1285,6 +1294,7 @@ final class ClubFlow_Booking {
 				'phone',
 				'order_notes',
 				'pay_later',
+				'pay_on_site',
 				'instructor_student',
 				'discount_code',
 				'code',
@@ -1351,9 +1361,27 @@ final class ClubFlow_Booking {
 					echo '—';
 				}
 				break;
+			case 'price':
+				$booking_price = (string) get_post_meta($post_id, '_clubflow_booking_price', true);
+				$discount_pct = (string) get_post_meta($post_id, '_clubflow_booking_discount_percent', true);
+				if ($booking_price !== '') {
+					$price_num = (float) preg_replace('/[^0-9.]/', '', $booking_price);
+					$display = number_format($price_num, 0, ',', ' ') . ' kr';
+					if ($discount_pct !== '') {
+						$display .= ' <span style="color:#888; font-size:0.85em;">(-' . esc_html($discount_pct) . '%)</span>';
+					}
+					echo $display;
+				} else {
+					echo '—';
+				}
+				break;
 			case 'pay_later':
 				$pay_later = (string) get_post_meta($post_id, '_clubflow_booking_pay_later', true);
 				echo $pay_later === '1' ? esc_html__('Yes', 'clubflow') : '—';
+				break;
+			case 'pay_on_site':
+				$pay_on_site = (string) get_post_meta($post_id, '_clubflow_booking_pay_on_site', true);
+				echo $pay_on_site === '1' ? esc_html__('Yes', 'clubflow') : '—';
 				break;
 			case 'instructor_student':
 				$instructor_student = (string) get_post_meta($post_id, '_clubflow_booking_instructor_student', true);
@@ -1494,6 +1522,8 @@ final class ClubFlow_Booking {
 
 		$pay_later = (string) get_post_meta($post->ID, '_clubflow_booking_pay_later', true);
 		echo '<tr><th>' . esc_html__('Faktura', 'clubflow') . '<br>' . esc_html__('Epassi', 'clubflow') . '</th><td>' . ($pay_later === '1' ? esc_html__('Yes', 'clubflow') : '—') . '</td></tr>';
+		$pay_on_site = (string) get_post_meta($post->ID, '_clubflow_booking_pay_on_site', true);
+		echo '<tr><th>' . esc_html__('Betala på plats', 'clubflow') . '</th><td>' . ($pay_on_site === '1' ? esc_html__('Yes', 'clubflow') : '—') . '</td></tr>';
 		$instructor_student = (string) get_post_meta($post->ID, '_clubflow_booking_instructor_student', true);
 		echo '<tr><th>' . esc_html__('Instruktör', 'clubflow') . '<br>' . esc_html__('Student', 'clubflow') . '</th><td>' . ($instructor_student === '1' ? esc_html__('Yes', 'clubflow') : '—') . '</td></tr>';
 		$discount_percent = (string) get_post_meta($post->ID, '_clubflow_booking_discount_percent', true);

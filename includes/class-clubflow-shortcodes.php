@@ -37,13 +37,17 @@ final class ClubFlow_Shortcodes {
 
 		$this->assets->maybe_enqueue_frontend_assets();
 
+		$title_id = $id . '-title';
 		$calendar = sprintf(
-			'<div id="%s" class="clubflow-calendar" data-category="%s" data-view="%s" data-initial-date="%s" data-list-months="%d"></div>',
+			'<h2 id="%s" class="upaif-section-title clubflow-calendar-title">Kalender</h2>' .
+			'<div id="%s" class="clubflow-calendar" data-category="%s" data-view="%s" data-initial-date="%s" data-list-months="%d" data-title-id="%s"></div>',
+			esc_attr($title_id),
 			esc_attr($id),
 			esc_attr((string) $atts['category']),
 			esc_attr((string) $atts['view']),
 			esc_attr((string) $atts['initial_date']),
-			$list_months
+			$list_months,
+			esc_attr($title_id)
 		);
 
 		if ($this->modal_markup_rendered) {
@@ -387,18 +391,26 @@ final class ClubFlow_Shortcodes {
 				$html .= '<fieldset class="clubflow-form-section clubflow-form-section--options">';
 				$html .= '<legend class="clubflow-form-section__legend">' . esc_html__('Betalningsalternativ', 'clubflow') . '</legend>';
 
-				$html .= '<div class="clubflow-booking-widget__field clubflow-booking-widget__field--klippkort">';
-				$html .= '<label class="clubflow-checkline"><input type="checkbox" name="use_klippkort" value="1" data-clubflow-klippkort-toggle /> ' . esc_html__('Använd klippkort', 'clubflow') . '</label>';
+				// Payment method radio group
+				$html .= '<div class="clubflow-booking-widget__field">';
+				$html .= '<span class="clubflow-booking__radio-group clubflow-booking__radio-group--vertical">';
+				$html .= '<label class="clubflow-booking__radio"><input type="radio" name="payment_method" value="online" checked data-clubflow-payment-method /> ' . esc_html__('Betala online', 'clubflow') . '</label>';
+				$html .= '<label class="clubflow-booking__radio"><input type="radio" name="payment_method" value="klippkort" data-clubflow-payment-method data-clubflow-klippkort-toggle /> ' . esc_html__('Klippkort', 'clubflow') . '</label>';
+				$html .= '<label class="clubflow-booking__radio"><input type="radio" name="payment_method" value="pay_later" data-clubflow-payment-method /> ' . esc_html__('Faktura/Epassi', 'clubflow') . '</label>';
+				$html .= '<label class="clubflow-booking__radio"><input type="radio" name="payment_method" value="pay_on_site" data-clubflow-payment-method /> ' . esc_html__('Betala på plats (endast ws/op)', 'clubflow') . '</label>';
+				$html .= '</span>';
 				$html .= '</div>';
-				$html .= '<div class="clubflow-booking-widget__field clubflow-booking-widget__field--klippkort" data-clubflow-klippkort-code style="display:none; margin-top: -8px;">';
+				$html .= '<div class="clubflow-booking-widget__field" data-clubflow-klippkort-code style="display:none; margin-top: -8px;">';
 				$html .= '<label for="clubflow_widget_klippkort_code_' . $event_id . '">' . esc_html__('Klippkort kod (valfritt)', 'clubflow') . '</label>';
 				$html .= '<input type="text" id="clubflow_widget_klippkort_code_' . $event_id . '" name="klippkort_code" placeholder="KLIPPKORT-ABC123" />';
 				$html .= '</div>';
-				$html .= '<div class="clubflow-booking-widget__field clubflow-booking-widget__field--klippkort">';
-				$html .= '<label class="clubflow-checkline"><input type="checkbox" name="pay_later" value="1" /> ' . esc_html__('Faktura/Epassi', 'clubflow') . '</label>';
-				$html .= '</div>';
-				$html .= '<div class="clubflow-booking-widget__field clubflow-booking-widget__field--klippkort">';
-				$html .= '<label class="clubflow-checkline"><input type="checkbox" name="instructor_student" value="1" /> ' . esc_html__('Instruktör/Student (10%)', 'clubflow') . '</label>';
+
+				// Discount checkbox (separate axis)
+				$html .= '<div class="clubflow-booking-widget__field">';
+				$html .= '<label class="clubflow-checkline"><input type="checkbox" name="instructor_student" value="1" /> ' . esc_html__('Instruktör/Student (10%) (endast 4-8v kurser)', 'clubflow') . '</label>';
+				$html .= '<span style="display:block; font-size: 0.85em; opacity: 0.7; margin-top: 4px;">';
+				$html .= esc_html__('Från den andra bokade kursen tillkommer en mängdrabatt på 10%. Kan ej kombineras med andra 10%.', 'clubflow');
+				$html .= '</span>';
 				$html .= '</div>';
 
 				$html .= '<div class="clubflow-booking-widget__field">';
