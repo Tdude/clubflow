@@ -39,10 +39,19 @@ final class ClubFlow_Recurrence {
 		
 		// Purge cron
 		add_action('clubflow_purge_old_events', [$this, 'purge_old_events']);
-		
+
 		// Schedule purge if not already scheduled
 		if (!wp_next_scheduled('clubflow_purge_old_events')) {
 			wp_schedule_event(time(), 'daily', 'clubflow_purge_old_events');
+		}
+
+		// Auto-extend cron: rolls open-ended (no end date) series forward so the
+		// future window never runs dry. Series WITH an "Until" date are respected
+		// as a hard end and never extended past it.
+		add_action('clubflow_extend_recurring_series', [$this, 'extend_recurring_series']);
+		if (!wp_next_scheduled('clubflow_extend_recurring_series')) {
+			// Offset from the purge run so the two don't fire at the same instant.
+			wp_schedule_event(time() + HOUR_IN_SECONDS, 'daily', 'clubflow_extend_recurring_series');
 		}
 	}
 
@@ -156,7 +165,7 @@ final class ClubFlow_Recurrence {
 	/**
 	 * Generate recurring events from a parent event
 	 */
-	public function generate_recurring_events(int $parent_id, bool $delete_existing = false): array {
+	public function generate_recurring_events(int $parent_id, bool $delete_existing = false, ?string $from = null): array {
 		// HARD BLOCK all save handlers while generating
 		self::$generating_in_progress = true;
 		
@@ -228,8 +237,19 @@ final class ClubFlow_Recurrence {
 		}
 		$max_new = 200 - $existing_count;
 
+		// Determine where to start generating. Manual generation starts at the
+		// series' own start date (so it can backfill from the beginning). The
+		// auto-extend cron passes today, so it only ever creates upcoming
+		// occurrences and never resurrects purged past events. Never start
+		// before the series actually begins.
+		$series_start = date('Y-m-d', strtotime($parent_start));
+		$from_date = ($from !== null && $from !== '') ? date('Y-m-d', strtotime($from)) : $series_start;
+		if ($from_date < $series_start) {
+			$from_date = $series_start;
+		}
+
 		// Generate dates
-		$dates = $this->generate_dates($type, $days, $parent_start, $until);
+		$dates = $this->generate_dates($type, $days, $from_date, $until);
 		
 		$created = 0;
 		$skipped = 0;
@@ -458,8 +478,45 @@ final class ClubFlow_Recurrence {
 	}
 
 	/**
+	 * Auto-extend recurring series (daily cron).
+	 *
+	 * Keeps the future window populated so the calendar never runs dry:
+	 * - Open-ended series (no "Until" date) roll forward on the default ~3-month
+	 *   horizon used by generate_recurring_events().
+	 * - Series WITH an "Until" date are filled up to that date and never beyond;
+	 *   once the date has passed, nothing new is generated and the series ends.
+	 *
+	 * Generation starts at today, so purged past occurrences are never recreated,
+	 * and existing dates are skipped, so this is safe to run repeatedly.
+	 */
+	public function extend_recurring_series(): void {
+		$parents = get_posts([
+			'post_type'      => ClubFlow::POST_TYPE,
+			'post_status'    => ['publish', 'future'],
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+			'meta_query'     => [
+				[
+					'key'   => '_clubflow_recurrence_enabled',
+					'value' => '1',
+				],
+			],
+		]);
+
+		$today = date('Y-m-d');
+
+		foreach ($parents as $parent_id) {
+			// Only true parents drive generation; skip children of a series.
+			if (get_post_meta($parent_id, '_clubflow_recurrence_parent', true)) {
+				continue;
+			}
+			$this->generate_recurring_events($parent_id, false, $today);
+		}
+	}
+
+	/**
 	 * Purge old events (daily cron)
-	 * 
+	 *
 	 * Deletes events that are:
 	 * - More than X days in the past
 	 * - Have no bookings

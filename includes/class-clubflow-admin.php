@@ -610,7 +610,7 @@ final class ClubFlow_Admin {
 		$recurrence_enabled = get_post_meta($post->ID, '_clubflow_recurrence_enabled', true) === '1';
 		$recurrence_type = get_post_meta($post->ID, '_clubflow_recurrence_type', true) ?: 'weekly';
 		$recurrence_days = get_post_meta($post->ID, '_clubflow_recurrence_days', true) ?: [];
-		$recurrence_until = get_post_meta($post->ID, '_clubflow_recurrence_until', true) ?: date('Y-m-d', strtotime('+3 months'));
+		$recurrence_until = get_post_meta($post->ID, '_clubflow_recurrence_until', true);
 
 		echo '<p>';
 		echo '<label><input type="checkbox" id="clubflow_recurrence_enabled" name="clubflow_recurrence_enabled" value="1" ' . checked($recurrence_enabled, true, false) . ' /> ';
@@ -650,6 +650,7 @@ final class ClubFlow_Admin {
 		echo '<p>';
 		echo '<label for="clubflow_recurrence_until"><strong>' . esc_html__('Until', 'clubflow') . '</strong></label><br>';
 		echo '<input type="date" id="clubflow_recurrence_until" name="clubflow_recurrence_until" value="' . esc_attr($recurrence_until) . '" style="width: 100%;" />';
+		echo '<small style="display:block; color:#666; margin-top:4px;">' . esc_html__('Leave empty for no end date — new occurrences are generated automatically (rolling). Set a date to end the series on that day.', 'clubflow') . '</small>';
 		echo '</p>';
 
 		// Generate button
