@@ -2,7 +2,7 @@
 /**
  * Plugin Name: ClubFlow
  * Description: Event calendar with bookings and payments for clubs and associations. Lightweight, modern, integrated Stripe payments.
- * Version: 0.4.8
+ * Version: 0.4.9
  * Author: Tibor Berki <https://github.com/Tdude>
  * Text Domain: clubflow
  */
@@ -27,7 +27,7 @@ require_once __DIR__ . '/includes/class-clubflow-recurrence.php';
 require_once __DIR__ . '/includes/class-clubflow-notifications.php';
 
 final class ClubFlow {
-	public const VERSION = '0.4.8';
+	public const VERSION = '0.4.9';
 	public const POST_TYPE = 'club_event';
 	public const TAX_CATEGORY = 'event_category';
 	public const TAX_TAG = 'event_tag';
@@ -107,7 +107,11 @@ final class ClubFlow {
 	 * @param \WP_Query $query   The query being run.
 	 * @return array
 	 */
-	public function fix_meta_value_orderby_for_strict_sql(array $clauses, \WP_Query $query): array {
+	public function fix_meta_value_orderby_for_strict_sql($clauses, $query) {
+		// Defensive: this filter can be invoked by other code with unexpected args.
+		if (!is_array($clauses) || !($query instanceof \WP_Query)) {
+			return $clauses;
+		}
 		$post_types = (array) $query->get('post_type');
 		if (!array_intersect($post_types, [self::POST_TYPE, 'club_booking'])) {
 			return $clauses;
