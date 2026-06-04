@@ -2,7 +2,7 @@
 /**
  * Plugin Name: ClubFlow
  * Description: Event calendar with bookings and payments for clubs and associations. Lightweight, modern, integrated Stripe payments.
- * Version: 0.4.7
+ * Version: 0.4.8
  * Author: Tibor Berki <https://github.com/Tdude>
  * Text Domain: clubflow
  */
@@ -27,7 +27,7 @@ require_once __DIR__ . '/includes/class-clubflow-recurrence.php';
 require_once __DIR__ . '/includes/class-clubflow-notifications.php';
 
 final class ClubFlow {
-	public const VERSION = '0.4.7';
+	public const VERSION = '0.4.8';
 	public const POST_TYPE = 'club_event';
 	public const TAX_CATEGORY = 'event_category';
 	public const TAX_TAG = 'event_tag';
@@ -73,6 +73,7 @@ final class ClubFlow {
 
 	public function init(): void {
 		add_action('plugins_loaded', [$this, 'load_textdomain']);
+		add_filter('posts_clauses', [$this, 'fix_meta_value_orderby_for_strict_sql'], 10, 2);
 		$this->cpt->register();
 		$this->admin->register();
 		$this->shortcodes->register();
@@ -85,6 +86,37 @@ final class ClubFlow {
 		$this->klarna->register();
 		$this->stripe->register();
 		$this->recurrence->register();
+	}
+
+	/**
+	 * Make `orderby => 'meta_value'` queries compatible with MySQL strict mode.
+	 *
+	 * WordPress builds meta-value-ordered queries as:
+	 *     GROUP BY wp_posts.ID ... ORDER BY wp_postmeta.meta_value
+	 * Under ONLY_FULL_GROUP_BY (enabled by default on many hosts, e.g. one.com)
+	 * MySQL rejects a non-aggregated joined column in ORDER BY. The query then
+	 * errors and WP_Query returns ZERO rows — which silently blanks the public
+	 * calendar feed, the events list, and the admin list/calendar.
+	 *
+	 * Wrapping the meta_value reference in MIN() satisfies the SQL mode without
+	 * changing the result order (each post has a single row for the ordered meta
+	 * key, so MIN() === that value). Scoped to this plugin's post types and only
+	 * applied when a GROUP BY is actually present, so nothing else is affected.
+	 *
+	 * @param array     $clauses SQL clauses (join/where/groupby/orderby/...).
+	 * @param \WP_Query $query   The query being run.
+	 * @return array
+	 */
+	public function fix_meta_value_orderby_for_strict_sql(array $clauses, \WP_Query $query): array {
+		$post_types = (array) $query->get('post_type');
+		if (!array_intersect($post_types, [self::POST_TYPE, 'club_booking'])) {
+			return $clauses;
+		}
+		if (empty($clauses['groupby']) || strpos((string) $clauses['orderby'], '.meta_value') === false) {
+			return $clauses;
+		}
+		$clauses['orderby'] = preg_replace('/\b(\w+)\.meta_value\b/', 'MIN($1.meta_value)', $clauses['orderby']);
+		return $clauses;
 	}
 
 	public function load_textdomain(): void {

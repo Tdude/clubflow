@@ -935,6 +935,32 @@
     }
 
     var category = el.getAttribute('data-category') || '';
+
+    // Show a non-blocking notice when the events feed fails, instead of leaving
+    // the calendar silently empty (which looks identical to "no events").
+    function showFeedError() {
+      var existing = el.parentNode ? el.parentNode.querySelector('[data-clubflow-feed-error]') : null;
+      if (existing) {
+        existing.style.display = '';
+        return;
+      }
+      var note = document.createElement('div');
+      note.setAttribute('data-clubflow-feed-error', '1');
+      note.className = 'clubflow-feed-error';
+      note.setAttribute('role', 'status');
+      note.textContent = (window.ClubFlow && window.ClubFlow.i18n && window.ClubFlow.i18n.feedError)
+        || 'Kunde inte ladda kalendern just nu. Försök att ladda om sidan.';
+      if (el.parentNode) {
+        el.parentNode.insertBefore(note, el);
+      }
+    }
+    function clearFeedError() {
+      var existing = el.parentNode ? el.parentNode.querySelector('[data-clubflow-feed-error]') : null;
+      if (existing) {
+        existing.style.display = 'none';
+      }
+    }
+
     var initialView = el.getAttribute('data-view') || 'dayGridMonth';
     var initialDate = el.getAttribute('data-initial-date') || '';
     var listMonths = parseInt(el.getAttribute('data-list-months') || '3', 10);
@@ -1102,12 +1128,16 @@
                 }
               } catch (e) {}
 
+              clearFeedError();
               success(events);
             } else {
+              // e.g. nonce/permission failure returns -1, or a server-side error.
+              showFeedError();
               failure(data && data.data ? data.data : 'Invalid response');
             }
           })
           .catch(function (err) {
+            showFeedError();
             failure(err);
           });
       }

@@ -192,6 +192,7 @@ final class ClubFlow_Assets {
 					'klippkortCode' => __('Klippkortkod:', 'clubflow'),
 					'discount' => __('Rabatt:', 'clubflow'),
 					'klippkortHint' => __('Du verkar ha %d klipp kvar.', 'clubflow'),
+					'feedError' => __('Kunde inte ladda kalendern just nu. Försök att ladda om sidan.', 'clubflow'),
 				],
 			]
 		);
