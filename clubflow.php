@@ -2,7 +2,7 @@
 /**
  * Plugin Name: ClubFlow
  * Description: Event calendar with bookings and payments for clubs and associations. Lightweight, modern, integrated Stripe payments.
- * Version: 0.4.9
+ * Version: 0.4.10
  * Author: Tibor Berki <https://github.com/Tdude>
  * Text Domain: clubflow
  */
@@ -27,7 +27,7 @@ require_once __DIR__ . '/includes/class-clubflow-recurrence.php';
 require_once __DIR__ . '/includes/class-clubflow-notifications.php';
 
 final class ClubFlow {
-	public const VERSION = '0.4.9';
+	public const VERSION = '0.4.10';
 	public const POST_TYPE = 'club_event';
 	public const TAX_CATEGORY = 'event_category';
 	public const TAX_TAG = 'event_tag';
@@ -72,6 +72,7 @@ final class ClubFlow {
 	}
 
 	public function init(): void {
+		$this->relax_join_size_limit();
 		add_action('plugins_loaded', [$this, 'load_textdomain']);
 		add_filter('posts_clauses', [$this, 'fix_meta_value_orderby_for_strict_sql'], 10, 2);
 		$this->cpt->register();
@@ -86,6 +87,25 @@ final class ClubFlow {
 		$this->klarna->register();
 		$this->stripe->register();
 		$this->recurrence->register();
+	}
+
+	/**
+	 * Allow large joins for this request (fixes blank calendar on one.com etc.).
+	 *
+	 * Some managed hosts run MySQL with SQL_BIG_SELECTS=0 and a low MAX_JOIN_SIZE.
+	 * WordPress meta_query'd calendar queries build several postmeta self-joins
+	 * (one per meta clause, plus one for meta_value ordering). On those hosts
+	 * MySQL aborts the query with "The SELECT would examine more than
+	 * MAX_JOIN_SIZE rows" (error 1104), so WP_Query returns ZERO rows and the
+	 * public calendar / event list / admin views go silently blank. The row
+	 * counts here are tiny in absolute terms — the host limit is just very
+	 * conservative — so enabling big selects for this request is safe.
+	 */
+	public function relax_join_size_limit(): void {
+		global $wpdb;
+		if (isset($wpdb) && is_object($wpdb)) {
+			$wpdb->query('SET SESSION SQL_BIG_SELECTS=1');
+		}
 	}
 
 	/**
